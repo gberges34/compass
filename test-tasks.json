@@ -1,0 +1,7 @@
+{
+  "tasks": [
+    {"name": "Study for tomorrow's physics exam"},
+    {"name": "Call mom this weekend"},
+    {"name": "Finish quarterly report by Friday", "due": "2025-11-15T17:00:00Z"}
+  ]
+}

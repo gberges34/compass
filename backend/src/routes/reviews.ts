@@ -1,0 +1,287 @@
+import { Router, Request, Response } from 'express';
+import { prisma } from '../prisma';
+import { z } from 'zod';
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, subDays } from 'date-fns';
+
+const router = Router();
+
+// Validation schema
+const createReviewSchema = z.object({
+  type: z.enum(['DAILY', 'WEEKLY']),
+  wins: z.array(z.string()).max(3),
+  misses: z.array(z.string()).max(3),
+  lessons: z.array(z.string()).max(3),
+  nextGoals: z.array(z.string()).max(3),
+  energyAssessment: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
+});
+
+// Helper function to calculate daily metrics
+async function calculateDailyMetrics(date: Date) {
+  const dayStart = startOfDay(date);
+  const dayEnd = endOfDay(date);
+
+  // Get completed tasks for the day
+  const completedTasks = await prisma.task.count({
+    where: {
+      status: 'DONE',
+      updatedAt: {
+        gte: dayStart,
+        lte: dayEnd,
+      }
+    }
+  });
+
+  // Get daily plan (if exists) to determine planned outcomes
+  const dailyPlan = await prisma.dailyPlan.findUnique({
+    where: { date: dayStart }
+  });
+
+  const plannedTasks = dailyPlan?.topOutcomes.length || 0;
+  const executionRate = plannedTasks > 0
+    ? (completedTasks / plannedTasks) * 100
+    : 0;
+
+  // Get all post-do logs for the day
+  const postDoLogs = await prisma.postDoLog.findMany({
+    where: {
+      completionDate: {
+        gte: dayStart,
+        lte: dayEnd,
+      }
+    },
+    include: { task: true }
+  });
+
+  // Calculate deep work hours (tasks with HIGH energy)
+  const deepWorkMinutes = postDoLogs
+    .filter(log => log.task.energyRequired === 'HIGH')
+    .reduce((sum, log) => sum + log.actualDuration, 0);
+
+  const deepWorkHours = Math.round((deepWorkMinutes / 60) * 10) / 10;
+
+  // Calculate category balance
+  const categoryBreakdown: Record<string, number> = {};
+  postDoLogs.forEach(log => {
+    const category = log.task.category;
+    categoryBreakdown[category] = (categoryBreakdown[category] || 0) + log.actualDuration;
+  });
+
+  // Total tracked time in minutes
+  const totalTrackedTime = Object.values(categoryBreakdown)
+    .reduce((sum, mins) => sum + mins, 0);
+
+  // Calculate time coverage (assuming 16 waking hours = 960 minutes)
+  const wakingMinutes = 960;
+  const timeCoverage = Math.round((totalTrackedTime / wakingMinutes) * 100 * 10) / 10;
+
+  // Count context switches (approximation - tasks with different contexts in sequence)
+  const contextSwitches = postDoLogs.length > 1 ? postDoLogs.length - 1 : 0;
+
+  return {
+    executionRate: Math.round(executionRate * 10) / 10,
+    tasksCompleted: completedTasks,
+    deepWorkHours,
+    categoryBalance: categoryBreakdown,
+    totalTrackedTime,
+    timeCoverage,
+    contextSwitches,
+  };
+}
+
+// Helper function to calculate weekly metrics
+async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date) {
+  // Get all completed tasks for the week
+  const completedTasks = await prisma.task.count({
+    where: {
+      status: 'DONE',
+      updatedAt: {
+        gte: weekStart,
+        lte: weekEnd,
+      }
+    }
+  });
+
+  // Get all daily plans for the week
+  const dailyPlans = await prisma.dailyPlan.findMany({
+    where: {
+      date: {
+        gte: weekStart,
+        lte: weekEnd,
+      }
+    }
+  });
+
+  const totalPlannedOutcomes = dailyPlans.reduce(
+    (sum, plan) => sum + plan.topOutcomes.length,
+    0
+  );
+
+  const executionRate = totalPlannedOutcomes > 0
+    ? (completedTasks / totalPlannedOutcomes) * 100
+    : 0;
+
+  // Get all post-do logs for the week
+  const postDoLogs = await prisma.postDoLog.findMany({
+    where: {
+      completionDate: {
+        gte: weekStart,
+        lte: weekEnd,
+      }
+    },
+    include: { task: true }
+  });
+
+  // Calculate deep work hours
+  const deepWorkMinutes = postDoLogs
+    .filter(log => log.task.energyRequired === 'HIGH')
+    .reduce((sum, log) => sum + log.actualDuration, 0);
+
+  const deepWorkHours = Math.round((deepWorkMinutes / 60) * 10) / 10;
+
+  // Calculate category balance
+  const categoryBreakdown: Record<string, number> = {};
+  postDoLogs.forEach(log => {
+    const category = log.task.category;
+    categoryBreakdown[category] = (categoryBreakdown[category] || 0) + log.actualDuration;
+  });
+
+  // Total tracked time
+  const totalTrackedTime = Object.values(categoryBreakdown)
+    .reduce((sum, mins) => sum + mins, 0);
+
+  // 7 days × 16 hours = 6720 minutes
+  const weeklyWakingMinutes = 7 * 960;
+  const timeCoverage = Math.round((totalTrackedTime / weeklyWakingMinutes) * 100 * 10) / 10;
+
+  const contextSwitches = postDoLogs.length > 1 ? postDoLogs.length - 1 : 0;
+
+  return {
+    executionRate: Math.round(executionRate * 10) / 10,
+    tasksCompleted: completedTasks,
+    deepWorkHours,
+    categoryBalance: categoryBreakdown,
+    totalTrackedTime,
+    timeCoverage,
+    contextSwitches,
+  };
+}
+
+// POST /api/reviews/daily - Create daily review
+router.post('/daily', async (req: Request, res: Response) => {
+  try {
+    const validatedData = createReviewSchema.parse({
+      ...req.body,
+      type: 'DAILY'
+    });
+
+    const today = new Date();
+    const periodStart = startOfDay(today);
+    const periodEnd = endOfDay(today);
+
+    // Calculate metrics
+    const metrics = await calculateDailyMetrics(today);
+
+    // Create review
+    const review = await prisma.review.create({
+      data: {
+        type: 'DAILY',
+        periodStart,
+        periodEnd,
+        wins: validatedData.wins,
+        misses: validatedData.misses,
+        lessons: validatedData.lessons,
+        nextGoals: validatedData.nextGoals,
+        energyAssessment: validatedData.energyAssessment || null,
+        ...metrics,
+      }
+    });
+
+    res.status(201).json(review);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation error', details: error.issues });
+    }
+    console.error('Error creating daily review:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/reviews/weekly - Create weekly review
+router.post('/weekly', async (req: Request, res: Response) => {
+  try {
+    const validatedData = createReviewSchema.parse({
+      ...req.body,
+      type: 'WEEKLY'
+    });
+
+    const today = new Date();
+    const periodStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
+    const periodEnd = endOfWeek(today, { weekStartsOn: 0 });
+
+    // Calculate metrics
+    const metrics = await calculateWeeklyMetrics(periodStart, periodEnd);
+
+    // Create review
+    const review = await prisma.review.create({
+      data: {
+        type: 'WEEKLY',
+        periodStart,
+        periodEnd,
+        wins: validatedData.wins,
+        misses: validatedData.misses,
+        lessons: validatedData.lessons,
+        nextGoals: validatedData.nextGoals,
+        energyAssessment: validatedData.energyAssessment || null,
+        ...metrics,
+      }
+    });
+
+    res.status(201).json(review);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation error', details: error.issues });
+    }
+    console.error('Error creating weekly review:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/reviews - Get all reviews (with optional filters)
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const { type, limit } = req.query;
+
+    const reviews = await prisma.review.findMany({
+      where: type ? { type: type as any } : undefined,
+      orderBy: { periodStart: 'desc' },
+      take: limit ? parseInt(limit as string) : undefined,
+    });
+
+    res.json(reviews);
+  } catch (error: any) {
+    console.error('Error fetching reviews:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/reviews/:id - Get single review
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const review = await prisma.review.findUnique({
+      where: { id }
+    });
+
+    if (!review) {
+      return res.status(404).json({ error: 'Review not found' });
+    }
+
+    res.json(review);
+  } catch (error: any) {
+    console.error('Error fetching review:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+export default router;
