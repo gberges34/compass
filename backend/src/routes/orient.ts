@@ -114,10 +114,8 @@ router.get('/today', async (req: Request, res: Response) => {
       where: { date: today }
     });
 
-    if (!plan) {
-      return res.status(404).json({ error: 'No plan found for today' });
-    }
-
+    // Return null instead of 404 when no plan exists
+    // This prevents error notifications on the frontend
     res.json(plan);
   } catch (error: any) {
     console.error('Error fetching today\'s plan:', error);
@@ -134,10 +132,8 @@ router.get('/:date', async (req: Request, res: Response) => {
       where: { date }
     });
 
-    if (!plan) {
-      return res.status(404).json({ error: 'No plan found for this date' });
-    }
-
+    // Return null instead of 404 when no plan exists
+    // This prevents error notifications on the frontend
     res.json(plan);
   } catch (error: any) {
     console.error('Error fetching plan:', error);
