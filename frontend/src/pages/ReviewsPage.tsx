@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { getReviews, createDailyReview, createWeeklyReview } from '../lib/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import { getReviews } from '../lib/api';
 import type { Review, ReviewType } from '../types';
 import {
   LineChart,
@@ -32,11 +32,7 @@ const ReviewsPage: React.FC = () => {
     };
   }>({});
 
-  useEffect(() => {
-    fetchReviews();
-  }, [activeTab]);
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setLoading(true);
       const limit = activeTab === 'DAILY' ? 30 : 12;
@@ -48,7 +44,11 @@ const ReviewsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, toast]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const toggleSection = (reviewId: string, section: 'wins' | 'misses' | 'lessons' | 'nextGoals') => {
     setExpandedSections((prev) => ({
