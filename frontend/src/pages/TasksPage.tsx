@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getTasks, createTask, activateTask, completeTask, updateTask, deleteTask } from '../lib/api';
 import type { Task, TaskStatus, Category, Energy, Priority } from '../types';
 import { useToast } from '../contexts/ToastContext';
@@ -24,9 +24,9 @@ const TasksPage: React.FC = () => {
 
   useEffect(() => {
     fetchTasks();
-  }, [selectedTab, categoryFilter, energyFilter, priorityFilter]);
+  }, [selectedTab, categoryFilter, energyFilter, priorityFilter, fetchTasks]);
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
       const filters: any = { status: selectedTab };
@@ -42,7 +42,7 @@ const TasksPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedTab, categoryFilter, energyFilter, priorityFilter, toast]);
 
   const getPriorityColor = (priority: Priority) => {
     switch (priority) {
