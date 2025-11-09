@@ -1,0 +1,33 @@
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastProvider } from './contexts/ToastContext';
+import Layout from './components/Layout';
+import TodayPage from './pages/TodayPage';
+import TasksPage from './pages/TasksPage';
+import CalendarPage from './pages/CalendarPage';
+import OrientEastPage from './pages/OrientEastPage';
+import OrientWestPage from './pages/OrientWestPage';
+import ReviewsPage from './pages/ReviewsPage';
+import ClarifyPage from './pages/ClarifyPage';
+
+function App() {
+  return (
+    <ToastProvider>
+      <Router>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Navigate to="/today" replace />} />
+            <Route path="/today" element={<TodayPage />} />
+            <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/clarify" element={<ClarifyPage />} />
+            <Route path="/orient/east" element={<OrientEastPage />} />
+            <Route path="/orient/west" element={<OrientWestPage />} />
+            <Route path="/reviews" element={<ReviewsPage />} />
+          </Routes>
+        </Layout>
+      </Router>
+    </ToastProvider>
+  );
+}
+
+export default App;
