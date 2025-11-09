@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar, momentLocalizer, Event as BigCalendarEvent } from 'react-big-calendar';
+import { Calendar, momentLocalizer, Event as BigCalendarEvent, View } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { getTasks, scheduleTask, getTodayPlan } from '../lib/api';
@@ -17,6 +17,7 @@ const CalendarPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+  const [view, setView] = useState<View>('month');
 
   useEffect(() => {
     fetchData();
@@ -404,7 +405,8 @@ const CalendarPage: React.FC = () => {
             selectable
             eventPropGetter={eventStyleGetter}
             views={['month', 'week', 'day']}
-            defaultView="month"
+            view={view}
+            onView={setView}
             step={30}
             showMultiDayTimes
             tooltipAccessor={(event: BigCalendarEvent) => {
