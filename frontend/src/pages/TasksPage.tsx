@@ -1,52 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { getTasks, createTask, activateTask, completeTask, updateTask, deleteTask } from '../lib/api';
+import React, { useState } from 'react';
 import type { Task, TaskStatus, Category, Energy, Priority } from '../types';
 import { useToast } from '../contexts/ToastContext';
+import {
+  useTasks,
+  useCreateTask,
+  useActivateTask,
+  useCompleteTask,
+  useUpdateTask,
+  useDeleteTask,
+} from '../hooks/useTasks';
 import TaskModal from '../components/TaskModal';
 import CompleteTaskModal from '../components/CompleteTaskModal';
 import TaskActions from '../components/TaskActions';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
-import { getPriorityStyle, getCategoryStyle, getEnergyStyle } from '../lib/designTokens';
+import { getCategoryStyle } from '../lib/designTokens';
 
 const TasksPage: React.FC = () => {
   const toast = useToast();
   const [selectedTab, setSelectedTab] = useState<TaskStatus>('NEXT');
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [showNewTaskModal, setShowNewTaskModal] = useState(false);
-  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
-  const [taskToComplete, setTaskToComplete] = useState<Task | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
 
   // Filters
   const [categoryFilter, setCategoryFilter] = useState<Category | ''>('');
   const [energyFilter, setEnergyFilter] = useState<Energy | ''>('');
   const [priorityFilter, setPriorityFilter] = useState<Priority | ''>('');
 
-  useEffect(() => {
-    fetchTasks();
-  }, [selectedTab, categoryFilter, energyFilter, priorityFilter]);
+  // Build filters object
+  const filters: any = { status: selectedTab };
+  if (categoryFilter) filters.category = categoryFilter;
+  if (energyFilter) filters.energyRequired = energyFilter;
+  if (priorityFilter) filters.priority = priorityFilter;
 
-  const fetchTasks = async () => {
-    setLoading(true);
-    try {
-      const filters: any = { status: selectedTab };
-      if (categoryFilter) filters.category = categoryFilter;
-      if (energyFilter) filters.energyRequired = energyFilter;
-      if (priorityFilter) filters.priority = priorityFilter;
+  // React Query hooks
+  const { data: tasks = [], isLoading: loading } = useTasks(filters);
+  const createTaskMutation = useCreateTask();
+  const activateTaskMutation = useActivateTask();
+  const completeTaskMutation = useCompleteTask();
+  const updateTaskMutation = useUpdateTask();
+  const deleteTaskMutation = useDeleteTask();
 
-      const data = await getTasks(filters);
-      setTasks(data);
-    } catch (err) {
-      toast.showError('Failed to load tasks. Please try again.');
-      console.error('Error fetching tasks:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Local UI state only
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+  const [taskToComplete, setTaskToComplete] = useState<Task | null>(null);
 
   const formatDuration = (minutes: number) => {
     if (minutes < 60) return `${minutes}m`;
@@ -58,66 +56,56 @@ const TasksPage: React.FC = () => {
   // Action handlers
   const handleActivateTask = async (task: Task) => {
     try {
-      setActionLoading(true);
-      const response = await activateTask(task.id);
+      const response = await activateTaskMutation.mutateAsync(task.id);
       toast.showSuccess(`Task activated!\nFocus Mode: ${response.focusMode}\nTimer: ${response.timeryProject}`);
-      await fetchTasks();
       setSelectedTask(null);
     } catch (err) {
       toast.showError('Failed to activate task');
       console.error('Error activating task:', err);
-    } finally {
-      setActionLoading(false);
     }
   };
 
   const handleCompleteTask = async (completionData: any) => {
     if (!taskToComplete) return;
     try {
-      setActionLoading(true);
-      await completeTask(taskToComplete.id, completionData);
+      await completeTaskMutation.mutateAsync({
+        id: taskToComplete.id,
+        request: completionData,
+      });
       toast.showSuccess('Task completed successfully!');
       setTaskToComplete(null);
-      await fetchTasks();
       setSelectedTask(null);
     } catch (err) {
       toast.showError('Failed to complete task');
       console.error('Error completing task:', err);
-    } finally {
-      setActionLoading(false);
     }
   };
 
   const handleEditTask = async (taskData: Partial<Task>) => {
     if (!taskToEdit) return;
     try {
-      setActionLoading(true);
-      await updateTask(taskToEdit.id, taskData);
+      await updateTaskMutation.mutateAsync({
+        id: taskToEdit.id,
+        updates: taskData,
+      });
       toast.showSuccess('Task updated successfully!');
       setTaskToEdit(null);
-      await fetchTasks();
       setSelectedTask(null);
     } catch (err) {
       toast.showError('Failed to update task');
       console.error('Error updating task:', err);
-    } finally {
-      setActionLoading(false);
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
     if (!window.confirm('Delete this task? This cannot be undone.')) return;
     try {
-      setActionLoading(true);
-      await deleteTask(taskId);
+      await deleteTaskMutation.mutateAsync(taskId);
       toast.showSuccess('Task deleted successfully!');
-      await fetchTasks();
       setSelectedTask(null);
     } catch (err) {
       toast.showError('Failed to delete task');
       console.error('Error deleting task:', err);
-    } finally {
-      setActionLoading(false);
     }
   };
 
@@ -257,7 +245,12 @@ const TasksPage: React.FC = () => {
                 onEdit={() => setTaskToEdit(task)}
                 onDelete={() => handleDeleteTask(task.id)}
                 compact
-                loading={actionLoading}
+                loading={
+                  activateTaskMutation.isPending ||
+                  completeTaskMutation.isPending ||
+                  updateTaskMutation.isPending ||
+                  deleteTaskMutation.isPending
+                }
               />
             </Card>
           ))}
@@ -345,9 +338,14 @@ const TasksPage: React.FC = () => {
           mode="create"
           onClose={() => setShowNewTaskModal(false)}
           onSave={async (taskData) => {
-            await createTask(taskData);
-            setShowNewTaskModal(false);
-            await fetchTasks();
+            try {
+              await createTaskMutation.mutateAsync(taskData);
+              toast.showSuccess('Task created successfully!');
+              setShowNewTaskModal(false);
+            } catch (err) {
+              toast.showError('Failed to create task');
+              console.error('Error creating task:', err);
+            }
           }}
         />
       )}
