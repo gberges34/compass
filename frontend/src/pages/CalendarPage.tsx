@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Calendar, momentLocalizer, Event as BigCalendarEvent, View } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import CalendarToolbar from '../components/CalendarToolbar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
-import { getTasks, scheduleTask, unscheduleTask, getTodayPlan } from '../lib/api';
-import type { Task, CalendarEvent, DailyPlan } from '../types';
+import type { Task, CalendarEvent } from '../types';
 import { useToast } from '../contexts/ToastContext';
+import { useTasks } from '../hooks/useTasks';
+import { useTodayPlan } from '../hooks/useDailyPlans';
+import { useScheduleTask, useUnscheduleTask } from '../hooks/useTasks';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
@@ -18,113 +20,94 @@ const DnDCalendar = withDragAndDrop(Calendar);
 
 const CalendarPage: React.FC = () => {
   const toast = useToast();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [unscheduledTasks, setUnscheduledTasks] = useState<Task[]>([]);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [todayPlan, setTodayPlan] = useState<DailyPlan | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // React Query hooks - replace manual state management
+  const { data: tasks = [], isLoading: tasksLoading } = useTasks({ status: 'NEXT' });
+  const { data: todayPlan, isLoading: planLoading } = useTodayPlan();
+  const scheduleTaskMutation = useScheduleTask();
+  const unscheduleTaskMutation = useUnscheduleTask();
+
+  // Local UI state only
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [currentView, setCurrentView] = useState<View>('month');
-  const [unscheduling, setUnscheduling] = useState(false);
-  const [rescheduling, setRescheduling] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // Derived data from queries
+  const loading = tasksLoading || planLoading;
+  const unscheduledTasks = useMemo(
+    () => tasks.filter((task) => !task.scheduledStart),
+    [tasks]
+  );
+  const scheduledTasks = useMemo(
+    () => tasks.filter((task) => task.scheduledStart),
+    [tasks]
+  );
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
+  // Generate calendar events from query data
+  const events = useMemo(() => {
+    // Convert scheduled tasks to calendar events
+    const taskEvents: CalendarEvent[] = scheduledTasks.map((task) => {
+      const start = new Date(task.scheduledStart!);
+      const end = new Date(start.getTime() + task.duration * 60000);
+      return {
+        id: task.id,
+        title: task.name,
+        start,
+        end,
+        task,
+        type: 'task',
+      };
+    });
 
-      // Fetch all NEXT tasks
-      const allTasks = await getTasks({ status: 'NEXT' });
-      setTasks(allTasks);
+    // Generate plan events if today's plan exists
+    const planEvents: CalendarEvent[] = [];
+    if (todayPlan) {
+      const today = new Date().toISOString().split('T')[0];
 
-      // Separate scheduled and unscheduled tasks
-      const scheduled = allTasks.filter((task) => task.scheduledStart);
-      const unscheduled = allTasks.filter((task) => !task.scheduledStart);
-      setUnscheduledTasks(unscheduled);
-
-      // Convert scheduled tasks to calendar events
-      const taskEvents: CalendarEvent[] = scheduled.map((task) => {
-        const start = new Date(task.scheduledStart!);
-        const end = new Date(start.getTime() + task.duration * 60000);
-        return {
-          id: task.id,
-          title: task.name,
-          start,
-          end,
-          task,
-          type: 'task',
-        };
-      });
-
-      // Fetch today's plan for time blocks
-      let planEvents: CalendarEvent[] = [];
-      try {
-        const plan = await getTodayPlan();
-        setTodayPlan(plan);
-
-        const today = new Date().toISOString().split('T')[0];
-
-        // Deep Work Block 1
-        if (plan.deepWorkBlock1) {
-          planEvents.push({
-            id: `dw1-${plan.id}`,
-            title: `Deep Work: ${plan.deepWorkBlock1.focus}`,
-            start: new Date(`${today}T${plan.deepWorkBlock1.start}`),
-            end: new Date(`${today}T${plan.deepWorkBlock1.end}`),
-            type: 'deepWork',
-          });
-        }
-
-        // Deep Work Block 2
-        if (plan.deepWorkBlock2) {
-          planEvents.push({
-            id: `dw2-${plan.id}`,
-            title: `Deep Work: ${plan.deepWorkBlock2.focus}`,
-            start: new Date(`${today}T${plan.deepWorkBlock2.start}`),
-            end: new Date(`${today}T${plan.deepWorkBlock2.end}`),
-            type: 'deepWork',
-          });
-        }
-
-        // Admin Block
-        if (plan.adminBlock) {
-          planEvents.push({
-            id: `admin-${plan.id}`,
-            title: 'Admin Time',
-            start: new Date(`${today}T${plan.adminBlock.start}`),
-            end: new Date(`${today}T${plan.adminBlock.end}`),
-            type: 'admin',
-          });
-        }
-
-        // Buffer Block
-        if (plan.bufferBlock) {
-          planEvents.push({
-            id: `buffer-${plan.id}`,
-            title: 'Buffer Time',
-            start: new Date(`${today}T${plan.bufferBlock.start}`),
-            end: new Date(`${today}T${plan.bufferBlock.end}`),
-            type: 'buffer',
-          });
-        }
-      } catch (err) {
-        // No plan for today, that's okay
-        setTodayPlan(null);
+      if (todayPlan.deepWorkBlock1) {
+        planEvents.push({
+          id: `dw1-${todayPlan.id}`,
+          title: `Deep Work: ${todayPlan.deepWorkBlock1.focus}`,
+          start: new Date(`${today}T${todayPlan.deepWorkBlock1.start}`),
+          end: new Date(`${today}T${todayPlan.deepWorkBlock1.end}`),
+          type: 'deepWork',
+        });
       }
 
-      setEvents([...taskEvents, ...planEvents]);
-    } catch (err) {
-      toast.showError('Failed to load calendar data. Please try again.');
-      console.error('Error fetching calendar data:', err);
-    } finally {
-      setLoading(false);
+      if (todayPlan.deepWorkBlock2) {
+        planEvents.push({
+          id: `dw2-${todayPlan.id}`,
+          title: `Deep Work: ${todayPlan.deepWorkBlock2.focus}`,
+          start: new Date(`${today}T${todayPlan.deepWorkBlock2.start}`),
+          end: new Date(`${today}T${todayPlan.deepWorkBlock2.end}`),
+          type: 'deepWork',
+        });
+      }
+
+      if (todayPlan.adminBlock) {
+        planEvents.push({
+          id: `admin-${todayPlan.id}`,
+          title: 'Admin Time',
+          start: new Date(`${today}T${todayPlan.adminBlock.start}`),
+          end: new Date(`${today}T${todayPlan.adminBlock.end}`),
+          type: 'admin',
+        });
+      }
+
+      if (todayPlan.bufferBlock) {
+        planEvents.push({
+          id: `buffer-${todayPlan.id}`,
+          title: 'Buffer Time',
+          start: new Date(`${today}T${todayPlan.bufferBlock.start}`),
+          end: new Date(`${today}T${todayPlan.bufferBlock.end}`),
+          type: 'buffer',
+        });
+      }
     }
-  };
+
+    return [...taskEvents, ...planEvents];
+  }, [scheduledTasks, todayPlan]);
 
   const handleSelectSlot = useCallback(
     ({ start, end }: { start: Date; end: Date }) => {
@@ -163,26 +146,10 @@ const CalendarPage: React.FC = () => {
 
   const handleScheduleTask = async (task: Task, scheduledStart: Date) => {
     try {
-      const isoString = scheduledStart.toISOString();
-      const updatedTask = await scheduleTask(task.id, isoString);
-
-      // Update local state
-      setUnscheduledTasks((prev) => prev.filter((t) => t.id !== task.id));
-      setTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? { ...t, scheduledStart: isoString } : t))
-      );
-
-      // Add to calendar
-      const end = new Date(scheduledStart.getTime() + task.duration * 60000);
-      const newEvent: CalendarEvent = {
+      await scheduleTaskMutation.mutateAsync({
         id: task.id,
-        title: task.name,
-        start: scheduledStart,
-        end,
-        task: updatedTask,
-        type: 'task',
-      };
-      setEvents((prev) => [...prev, newEvent]);
+        scheduledStart: scheduledStart.toISOString(),
+      });
       toast.showSuccess(`Task scheduled for ${moment(scheduledStart).format('MMM D, h:mm A')}`);
     } catch (err) {
       toast.showError('Failed to schedule task. Please try again.');
@@ -191,32 +158,15 @@ const CalendarPage: React.FC = () => {
   };
 
   const handleUnscheduleTask = async (task: Task) => {
-    if (unscheduling) return; // Prevent double-clicks
+    if (unscheduleTaskMutation.isPending) return; // Prevent double-clicks
 
     try {
-      setUnscheduling(true);
-      const updatedTask = await unscheduleTask(task.id);
-
-      // Remove from calendar events
-      setEvents((prev) => prev.filter((event) => event.id !== task.id));
-
-      // Add back to unscheduled tasks
-      setUnscheduledTasks((prev) => [...prev, updatedTask]);
-
-      // Update tasks list
-      setTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? { ...t, scheduledStart: undefined } : t))
-      );
-
-      // Close the modal
+      await unscheduleTaskMutation.mutateAsync(task.id);
       setSelectedTask(null);
-
       toast.showSuccess('Task unscheduled and moved back to unscheduled list');
     } catch (err) {
       toast.showError('Failed to unschedule task. Please try again.');
       console.error('Error unscheduling task:', err);
-    } finally {
-      setUnscheduling(false);
     }
   };
 
@@ -234,45 +184,17 @@ const CalendarPage: React.FC = () => {
       return;
     }
 
-    if (rescheduling) return; // Prevent concurrent operations
+    if (scheduleTaskMutation.isPending) return; // Prevent concurrent operations
 
     try {
-      setRescheduling(true);
-
-      // Call the existing scheduleTask API
-      const scheduledStart = start.toISOString();
-      const updatedTask = await scheduleTask(event.task.id, scheduledStart);
-
-      // Update the event in the events array
-      setEvents((prev) =>
-        prev.map((e) =>
-          e.id === event.id
-            ? {
-                ...e,
-                start,
-                end,
-                task: { ...e.task!, scheduledStart },
-              }
-            : e
-        )
-      );
-
-      // Update the task in the tasks array
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === event.task!.id ? { ...t, scheduledStart } : t
-        )
-      );
-
+      await scheduleTaskMutation.mutateAsync({
+        id: event.task.id,
+        scheduledStart: start.toISOString(),
+      });
       toast.showSuccess('Task rescheduled successfully');
     } catch (err) {
       toast.showError('Failed to reschedule task. Please try again.');
       console.error('Error rescheduling task:', err);
-
-      // Refresh to restore original state
-      fetchData();
-    } finally {
-      setRescheduling(false);
     }
   };
 
@@ -290,53 +212,28 @@ const CalendarPage: React.FC = () => {
       return;
     }
 
-    if (rescheduling) return;
+    if (scheduleTaskMutation.isPending) return;
 
     try {
-      setRescheduling(true);
-
       // Calculate new duration in minutes
       const newDuration = Math.round((end.getTime() - start.getTime()) / 60000);
 
       // Validate minimum duration
       if (newDuration < 1) {
         toast.showError('Task duration must be at least 1 minute');
-        setRescheduling(false);
         return;
       }
 
       // Update task with new scheduled time
-      const scheduledStart = start.toISOString();
-      const updatedTask = await scheduleTask(event.task.id, scheduledStart);
-
-      // Update the event
-      setEvents((prev) =>
-        prev.map((e) =>
-          e.id === event.id
-            ? {
-                ...e,
-                start,
-                end,
-                task: { ...e.task!, scheduledStart, duration: newDuration },
-              }
-            : e
-        )
-      );
-
-      // Update the task
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === event.task!.id ? { ...t, scheduledStart, duration: newDuration } : t
-        )
-      );
+      await scheduleTaskMutation.mutateAsync({
+        id: event.task.id,
+        scheduledStart: start.toISOString(),
+      });
 
       toast.showSuccess('Task duration updated');
     } catch (err) {
       toast.showError('Failed to resize task. Please try again.');
       console.error('Error resizing task:', err);
-      fetchData();
-    } finally {
-      setRescheduling(false);
     }
   };
 
@@ -385,10 +282,10 @@ const CalendarPage: React.FC = () => {
         borderWidth: '1px',
         borderStyle: 'solid',
         borderRadius: '4px',
-        opacity: rescheduling ? 0.6 : 0.9,
+        opacity: scheduleTaskMutation.isPending ? 0.6 : 0.9,
         color: 'white',
         display: 'block',
-        cursor: isDraggable ? (rescheduling ? 'wait' : 'move') : 'default',
+        cursor: isDraggable ? (scheduleTaskMutation.isPending ? 'wait' : 'move') : 'default',
         transition: 'opacity 0.2s ease, transform 0.1s ease',
       },
     };
@@ -418,9 +315,9 @@ const CalendarPage: React.FC = () => {
     setCurrentDate(newDate);
   };
 
-  const handleViewChange = (newView: View) => {
+  const handleViewChange = useCallback((newView: View) => {
     setCurrentView(newView);
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -562,7 +459,7 @@ const CalendarPage: React.FC = () => {
         {/* Calendar */}
         <div className="bg-cloud rounded-card shadow-e01 border border-fog p-24 flex-1 relative" onDragOver={handleDragOver} onDrop={handleDrop}>
           {/* Loading Overlay */}
-          {rescheduling && (
+          {scheduleTaskMutation.isPending && (
             <div className="absolute inset-0 bg-ink/20 backdrop-blur-sm flex items-center justify-center z-40 rounded-card">
               <div className="bg-cloud px-24 py-16 rounded-modal shadow-eglass border border-fog">
                 <div className="flex items-center space-x-12">
@@ -701,9 +598,9 @@ const CalendarPage: React.FC = () => {
                 <Button
                   variant="danger"
                   onClick={() => handleUnscheduleTask(selectedTask)}
-                  disabled={unscheduling}
+                  disabled={unscheduleTaskMutation.isPending}
                 >
-                  {unscheduling ? 'Unscheduling...' : 'Unschedule'}
+                  {unscheduleTaskMutation.isPending ? 'Unscheduling...' : 'Unschedule'}
                 </Button>
               )}
               <Button
