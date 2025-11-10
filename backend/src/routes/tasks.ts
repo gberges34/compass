@@ -52,6 +52,8 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const { status, priority, category, scheduledDate } = req.query;
 
+    console.log('[GET /tasks] Query params:', { status, priority, category, scheduledDate });
+
     const where: any = {};
 
     if (status) where.status = status;
@@ -65,6 +67,8 @@ router.get('/', async (req: Request, res: Response) => {
       };
     }
 
+    console.log('[GET /tasks] Query where clause:', JSON.stringify(where));
+
     const tasks = await prisma.task.findMany({
       where,
       orderBy: [
@@ -74,8 +78,10 @@ router.get('/', async (req: Request, res: Response) => {
       ],
     });
 
+    console.log('[GET /tasks] Found tasks:', tasks.length);
     res.json(tasks);
   } catch (error: any) {
+    console.error('[GET /tasks] Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -247,11 +253,34 @@ router.patch('/:id/schedule', async (req: Request, res: Response) => {
     const { id } = req.params;
     const { scheduledStart } = scheduleTaskSchema.parse(req.body);
 
+    console.log('[PATCH /schedule] Request for task:', { id, scheduledStart });
+
+    // Get task BEFORE update for logging
+    const taskBefore = await prisma.task.findUnique({
+      where: { id },
+    });
+
+    if (!taskBefore) {
+      console.log('[PATCH /schedule] Task not found:', id);
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    console.log('[PATCH /schedule] Task state BEFORE:', {
+      id: taskBefore.id,
+      name: taskBefore.name,
+      scheduledStart: taskBefore.scheduledStart,
+      updatedAt: taskBefore.updatedAt,
+    });
+
     // Validate not scheduling in the past
     const scheduledDate = new Date(scheduledStart);
     const now = new Date();
 
     if (scheduledDate < now) {
+      console.log('[PATCH /schedule] Validation failed - past date:', {
+        requestedDate: scheduledDate.toISOString(),
+        currentTime: now.toISOString(),
+      });
       return res.status(400).json({
         error: 'Cannot schedule task in the past',
         scheduledStart,
@@ -267,10 +296,27 @@ router.patch('/:id/schedule', async (req: Request, res: Response) => {
       },
     });
 
-    console.log(`[schedule] Task ${id} scheduled for ${scheduledDate.toISOString()}`);
+    console.log('[PATCH /schedule] Task state AFTER:', {
+      id: task.id,
+      name: task.name,
+      scheduledStart: task.scheduledStart,
+      updatedAt: task.updatedAt,
+    });
+
+    console.log('[PATCH /schedule] Success - task scheduled:', {
+      taskId: id,
+      previousScheduledStart: taskBefore.scheduledStart,
+      newScheduledStart: task.scheduledStart,
+      durationMinutes: task.duration,
+    });
+
     res.json(task);
   } catch (error: any) {
-    console.error('[schedule] Error:', error);
+    console.error('[PATCH /schedule] Error:', {
+      taskId: req.params.id,
+      error: error.message,
+      code: error.code,
+    });
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request', details: error.issues });
     }
@@ -286,6 +332,26 @@ router.patch('/:id/unschedule', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
+    console.log('[PATCH /unschedule] Request for task:', { id });
+
+    // Get task BEFORE update for logging
+    const taskBefore = await prisma.task.findUnique({
+      where: { id },
+    });
+
+    if (!taskBefore) {
+      console.log('[PATCH /unschedule] Task not found:', id);
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    console.log('[PATCH /unschedule] Task state BEFORE:', {
+      id: taskBefore.id,
+      name: taskBefore.name,
+      scheduledStart: taskBefore.scheduledStart,
+      updatedAt: taskBefore.updatedAt,
+    });
+
+    // Update task
     const task = await prisma.task.update({
       where: { id },
       data: {
@@ -293,10 +359,26 @@ router.patch('/:id/unschedule', async (req: Request, res: Response) => {
       },
     });
 
-    console.log(`[unschedule] Task ${id} unscheduled`);
+    console.log('[PATCH /unschedule] Task state AFTER:', {
+      id: task.id,
+      name: task.name,
+      scheduledStart: task.scheduledStart,
+      updatedAt: task.updatedAt,
+    });
+
+    console.log('[PATCH /unschedule] Success - task unscheduled:', {
+      taskId: id,
+      previousScheduledStart: taskBefore.scheduledStart,
+      newScheduledStart: task.scheduledStart,
+    });
+
     res.json(task);
   } catch (error: any) {
-    console.error('[unschedule] Error:', error);
+    console.error('[PATCH /unschedule] Error:', {
+      taskId: req.params.id,
+      error: error.message,
+      code: error.code,
+    });
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Task not found' });
     }
