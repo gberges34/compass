@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar, momentLocalizer, Event as BigCalendarEvent } from 'react-big-calendar';
+import { Calendar, momentLocalizer, Event as BigCalendarEvent, View } from 'react-big-calendar';
+import CalendarToolbar from '../components/CalendarToolbar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { getTasks, scheduleTask, getTodayPlan } from '../lib/api';
+import { getTasks, scheduleTask, unscheduleTask, getTodayPlan } from '../lib/api';
 import type { Task, CalendarEvent, DailyPlan } from '../types';
 import { useToast } from '../contexts/ToastContext';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
+import Button from '../components/Button';
+import { getCategoryStyle } from '../lib/designTokens';
 
 const localizer = momentLocalizer(moment);
 
@@ -17,6 +22,8 @@ const CalendarPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [currentView, setCurrentView] = useState<View>('month');
 
   useEffect(() => {
     fetchData();
@@ -135,7 +142,8 @@ const CalendarPage: React.FC = () => {
         }
       }
     },
-    [unscheduledTasks, toast]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [unscheduledTasks] // toast removed - context functions are stable
   );
 
   const handleSelectEvent = useCallback((event: BigCalendarEvent) => {
@@ -145,7 +153,8 @@ const CalendarPage: React.FC = () => {
     } else {
       toast.showInfo(`${calendarEvent.title}\nType: ${calendarEvent.type}`);
     }
-  }, [toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // toast removed - context functions are stable
 
   const handleScheduleTask = async (task: Task, scheduledStart: Date) => {
     try {
@@ -173,6 +182,31 @@ const CalendarPage: React.FC = () => {
     } catch (err) {
       toast.showError('Failed to schedule task. Please try again.');
       console.error('Error scheduling task:', err);
+    }
+  };
+
+  const handleUnscheduleTask = async (task: Task) => {
+    try {
+      const updatedTask = await unscheduleTask(task.id);
+
+      // Remove from calendar events
+      setEvents((prev) => prev.filter((event) => event.id !== task.id));
+
+      // Add back to unscheduled tasks
+      setUnscheduledTasks((prev) => [...prev, updatedTask]);
+
+      // Update tasks list
+      setTasks((prev) =>
+        prev.map((t) => (t.id === task.id ? { ...t, scheduledStart: null } : t))
+      );
+
+      // Close the modal
+      setSelectedTask(null);
+
+      toast.showSuccess('Task unscheduled and moved back to unscheduled list');
+    } catch (err) {
+      toast.showError('Failed to unschedule task. Please try again.');
+      console.error('Error unscheduling task:', err);
     }
   };
 
@@ -244,36 +278,45 @@ const CalendarPage: React.FC = () => {
     setDraggedTask(null);
   };
 
+  // Calendar navigation handlers
+  const handleNavigate = (newDate: Date) => {
+    setCurrentDate(newDate);
+  };
+
+  const handleViewChange = (newView: View) => {
+    setCurrentView(newView);
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center py-64">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading calendar...</p>
+          <div className="animate-spin rounded-full h-48 w-48 border-b-4 border-action"></div>
+          <p className="mt-16 text-slate">Loading calendar...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-24">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-        <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
-        <p className="text-gray-600 mt-1">Schedule and organize your tasks</p>
-      </div>
+      <Card padding="large">
+        <h1 className="text-h1 text-ink">Calendar</h1>
+        <p className="text-slate mt-4">Schedule and organize your tasks</p>
+      </Card>
 
       {/* Main Layout */}
-      <div className="flex gap-6">
+      <div className="flex gap-24">
         {/* Sidebar - Unscheduled Tasks */}
-        <div className="w-1/4 space-y-4">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="w-1/4 space-y-16">
+          <Card padding="medium">
+            <h2 className="text-h2 text-ink mb-16">
               Unscheduled Tasks ({unscheduledTasks.length})
             </h2>
-            <div className="space-y-3 max-h-[600px] overflow-y-auto">
+            <div className="space-y-12 max-h-[600px] overflow-y-auto">
               {unscheduledTasks.length === 0 ? (
-                <p className="text-gray-600 text-sm text-center py-4">
+                <p className="text-slate text-small text-center py-16">
                   All tasks are scheduled!
                 </p>
               ) : (
@@ -282,36 +325,30 @@ const CalendarPage: React.FC = () => {
                     key={task.id}
                     draggable
                     onDragStart={() => handleDragStart(task)}
-                    className="border border-gray-200 rounded-lg p-3 cursor-move hover:shadow-md transition-shadow bg-white"
+                    className="border border-stone rounded-card p-12 cursor-move hover:shadow-e02 transition-shadow duration-micro bg-snow"
                     style={{
                       borderLeftWidth: '4px',
                       borderLeftColor: getCategoryColor(task.category),
                     }}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-xs font-bold text-gray-500">#{index + 1}</span>
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          task.priority === 'MUST'
-                            ? 'bg-red-100 text-red-800'
-                            : task.priority === 'SHOULD'
-                            ? 'bg-orange-100 text-orange-800'
-                            : task.priority === 'COULD'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
+                    <div className="flex items-start justify-between mb-8">
+                      <span className="text-micro font-bold text-slate">#{index + 1}</span>
+                      <Badge
+                        variant={task.priority === 'MUST' ? 'danger' : task.priority === 'SHOULD' ? 'warn' : task.priority === 'COULD' ? 'sun' : 'neutral'}
+                        size="small"
                       >
                         {task.priority}
-                      </span>
+                      </Badge>
                     </div>
-                    <h3 className="font-medium text-gray-900 text-sm mb-2 line-clamp-2">
+                    <h3 className="font-medium text-ink text-small mb-8 line-clamp-2">
                       {task.name}
                     </h3>
-                    <div className="flex items-center justify-between text-xs text-gray-600">
+                    <div className="flex items-center justify-between text-micro text-slate mb-8">
                       <span>{task.duration} min</span>
                       <span>{task.category}</span>
                     </div>
-                    <button
+                    <Button
+                      variant="primary"
                       onClick={() => {
                         const timeString = prompt(
                           'Enter scheduled time (e.g., "2:00 PM" or "14:00"):'
@@ -332,35 +369,35 @@ const CalendarPage: React.FC = () => {
                           }
                         }
                       }}
-                      className="mt-2 w-full px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                      className="w-full text-small"
                     >
                       Schedule
-                    </button>
+                    </Button>
                   </div>
                 ))
               )}
             </div>
-          </div>
+          </Card>
 
           {/* Legend */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Legend</h3>
-            <div className="space-y-2 text-xs">
+          <Card padding="medium">
+            <h3 className="text-h3 text-ink mb-12">Legend</h3>
+            <div className="space-y-8 text-small">
               <div className="flex items-center">
-                <div className="w-4 h-4 rounded bg-blue-500 mr-2"></div>
-                <span className="text-gray-700">Deep Work</span>
+                <div className="w-16 h-16 rounded-default bg-sky mr-8"></div>
+                <span className="text-ink">Deep Work</span>
               </div>
               <div className="flex items-center">
-                <div className="w-4 h-4 rounded bg-purple-500 mr-2"></div>
-                <span className="text-gray-700">Admin Time</span>
+                <div className="w-16 h-16 rounded-default bg-lavender mr-8"></div>
+                <span className="text-ink">Admin Time</span>
               </div>
               <div className="flex items-center">
-                <div className="w-4 h-4 rounded bg-gray-500 mr-2"></div>
-                <span className="text-gray-700">Buffer Time</span>
+                <div className="w-16 h-16 rounded-default bg-fog mr-8"></div>
+                <span className="text-ink">Buffer Time</span>
               </div>
-              <div className="pt-2 border-t border-gray-200">
-                <p className="text-gray-600 font-medium mb-1">Task Categories:</p>
-                <div className="grid grid-cols-2 gap-1">
+              <div className="pt-8 border-t border-fog">
+                <p className="text-slate font-medium mb-8 text-small">Task Categories:</p>
+                <div className="grid grid-cols-2 gap-4">
                   {Object.entries({
                     SCHOOL: '#3b82f6',
                     MUSIC: '#8b5cf6',
@@ -375,24 +412,20 @@ const CalendarPage: React.FC = () => {
                   }).map(([category, color]) => (
                     <div key={category} className="flex items-center">
                       <div
-                        className="w-3 h-3 rounded mr-1"
+                        className="w-12 h-12 rounded mr-4"
                         style={{ backgroundColor: color }}
                       ></div>
-                      <span className="text-gray-700 text-xs">{category}</span>
+                      <span className="text-ink text-micro">{category}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Calendar */}
-        <div
-          className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-        >
+        <div className="bg-cloud rounded-card shadow-e01 border border-fog p-24 flex-1" onDragOver={handleDragOver} onDrop={handleDrop}>
           <Calendar
             localizer={localizer}
             events={events as BigCalendarEvent[]}
@@ -404,7 +437,13 @@ const CalendarPage: React.FC = () => {
             selectable
             eventPropGetter={eventStyleGetter}
             views={['month', 'week', 'day']}
-            defaultView="month"
+            view={currentView}
+            date={currentDate}
+            onNavigate={handleNavigate}
+            onView={handleViewChange}
+            components={{
+              toolbar: CalendarToolbar,
+            }}
             step={30}
             showMultiDayTimes
             tooltipAccessor={(event: BigCalendarEvent) => {
@@ -421,77 +460,73 @@ const CalendarPage: React.FC = () => {
       {/* Task Detail Modal */}
       {selectedTask && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-ink/50 backdrop-blur-sm flex items-center justify-center z-50 p-24"
           onClick={() => setSelectedTask(null)}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 p-6"
+            className="bg-cloud rounded-modal shadow-eglass border border-fog max-w-2xl w-full p-32"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">{selectedTask.name}</h2>
+            <div className="flex items-start justify-between mb-16">
+              <h2 className="text-h2 text-ink">{selectedTask.name}</h2>
               <button
                 onClick={() => setSelectedTask(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-slate hover:text-ink transition-colors duration-micro"
               >
-                ✕
+                <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-16">
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-1">
+                <h3 className="text-h3 text-ink mb-8">
                   Definition of Done
                 </h3>
-                <p className="text-gray-900">{selectedTask.definitionOfDone}</p>
+                <p className="text-body text-ink">{selectedTask.definitionOfDone}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-16 text-body">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-1">Priority</h3>
-                  <span
-                    className={`inline-block px-3 py-1 rounded text-sm font-medium ${
-                      selectedTask.priority === 'MUST'
-                        ? 'bg-red-100 text-red-800'
-                        : selectedTask.priority === 'SHOULD'
-                        ? 'bg-orange-100 text-orange-800'
-                        : selectedTask.priority === 'COULD'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
+                  <h3 className="font-medium text-ink mb-4">Priority</h3>
+                  <Badge
+                    variant={selectedTask.priority === 'MUST' ? 'danger' : selectedTask.priority === 'SHOULD' ? 'warn' : selectedTask.priority === 'COULD' ? 'sun' : 'neutral'}
                   >
                     {selectedTask.priority}
-                  </span>
+                  </Badge>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-1">Category</h3>
-                  <span className="text-gray-900">{selectedTask.category}</span>
+                  <h3 className="font-medium text-ink mb-4">Category</h3>
+                  <span className="text-slate">{selectedTask.category}</span>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-1">Duration</h3>
-                  <span className="text-gray-900">{selectedTask.duration} minutes</span>
+                  <h3 className="font-medium text-ink mb-4">Duration</h3>
+                  <span className="text-slate">{selectedTask.duration} minutes</span>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-1">
+                  <h3 className="font-medium text-ink mb-4">
                     Energy Required
                   </h3>
-                  <span className="text-gray-900">{selectedTask.energyRequired}</span>
+                  <Badge variant={selectedTask.energyRequired === 'HIGH' ? 'mint' : selectedTask.energyRequired === 'MEDIUM' ? 'sun' : 'blush'}>
+                    {selectedTask.energyRequired}
+                  </Badge>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-1">Context</h3>
-                  <span className="text-gray-900">{selectedTask.context}</span>
+                  <h3 className="font-medium text-ink mb-4">Context</h3>
+                  <span className="text-slate">{selectedTask.context}</span>
                 </div>
 
                 {selectedTask.scheduledStart && (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-1">
+                    <h3 className="font-medium text-ink mb-4">
                       Scheduled Time
                     </h3>
-                    <span className="text-gray-900">
+                    <span className="text-slate">
                       {moment(selectedTask.scheduledStart).format('MMM D, YYYY h:mm A')}
                     </span>
                   </div>
@@ -499,8 +534,8 @@ const CalendarPage: React.FC = () => {
 
                 {selectedTask.dueDate && (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-1">Due Date</h3>
-                    <span className="text-gray-900">
+                    <h3 className="font-medium text-ink mb-4">Due Date</h3>
+                    <span className="text-slate">
                       {moment(selectedTask.dueDate).format('MMM D, YYYY')}
                     </span>
                   </div>
@@ -508,13 +543,13 @@ const CalendarPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
-              <button
+            <div className="mt-24 flex justify-end">
+              <Button
+                variant="secondary"
                 onClick={() => setSelectedTask(null)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
               >
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>
