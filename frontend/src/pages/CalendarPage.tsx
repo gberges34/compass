@@ -24,6 +24,7 @@ const CalendarPage: React.FC = () => {
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [currentView, setCurrentView] = useState<View>('month');
+  const [unscheduling, setUnscheduling] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -186,7 +187,10 @@ const CalendarPage: React.FC = () => {
   };
 
   const handleUnscheduleTask = async (task: Task) => {
+    if (unscheduling) return; // Prevent double-clicks
+
     try {
+      setUnscheduling(true);
       const updatedTask = await unscheduleTask(task.id);
 
       // Remove from calendar events
@@ -207,6 +211,8 @@ const CalendarPage: React.FC = () => {
     } catch (err) {
       toast.showError('Failed to unschedule task. Please try again.');
       console.error('Error unscheduling task:', err);
+    } finally {
+      setUnscheduling(false);
     }
   };
 
@@ -548,8 +554,9 @@ const CalendarPage: React.FC = () => {
                 <Button
                   variant="danger"
                   onClick={() => handleUnscheduleTask(selectedTask)}
+                  disabled={unscheduling}
                 >
-                  Unschedule
+                  {unscheduling ? 'Unscheduling...' : 'Unschedule'}
                 </Button>
               )}
               <Button
