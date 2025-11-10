@@ -68,6 +68,9 @@ const CalendarPage: React.FC = () => {
 
   // Generate calendar events from query data
   const events = useMemo(() => {
+    // Note: This regenerates 4x per mutation due to optimistic updates + refetch:
+    // 1. onMutate (optimistic), 2-3. React Query cache sync, 4. onSuccess refetch
+    // This is expected behavior and ensures UI stays in sync with server
     log('[Calendar] Generating events from tasks:', scheduledTasks.length);
 
     // Convert scheduled tasks to calendar events with defensive null checks
