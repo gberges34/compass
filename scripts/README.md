@@ -109,3 +109,185 @@ If tests fail, the script provides specific fix instructions for each failure. C
 - **Wrong branch**: `git checkout main`
 
 Remember: Since local/terminal is authoritative, use `git push --force` when needed to make remote match local state.
+
+---
+
+# Compass Development Scripts
+
+Utility scripts for development, deployment, and maintenance.
+
+## Setup & Verification
+
+### `setup.sh`
+Initial development environment setup.
+
+```bash
+npm run setup
+# or directly: bash scripts/setup.sh
+```
+
+**What it does:**
+- ✓ Verifies Node.js 18+ installed
+- ✓ Installs backend and frontend dependencies
+- ✓ Copies .env.example to .env if missing
+- ✓ Generates Prisma client
+- ✓ Provides next steps
+
+**When to use:** First time setup or after pulling major changes
+
+---
+
+### `verify-environment.sh`
+Comprehensive environment validation.
+
+```bash
+npm run verify
+```
+
+**Checks:**
+- Node.js and npm versions
+- Environment files exist
+- Dependencies installed
+- Prisma client generated
+- Port availability (3000, 3001)
+- Database connectivity
+
+**Exit codes:**
+- 0: All checks passed
+- 1: Critical errors found
+
+**When to use:** Before starting development, after setup, troubleshooting
+
+---
+
+### `health-check.sh`
+Runtime health check for running services.
+
+```bash
+npm run health
+```
+
+**Checks:**
+- Backend API responding (http://localhost:3001)
+- Frontend serving (http://localhost:3000)
+- Database connection active
+
+**When to use:** Verify running application, monitoring, CI/CD
+
+---
+
+## Development
+
+### `dev.sh`
+Start both frontend and backend servers.
+
+```bash
+npm run dev
+```
+
+**Process:**
+1. Runs `verify-environment.sh`
+2. Starts backend on port 3001
+3. Waits for backend health check
+4. Starts frontend on port 3000
+5. Logs to `backend.log` and `frontend.log`
+
+**Features:**
+- Automatic health checks
+- Graceful shutdown with Ctrl+C
+- Detailed error messages
+- Log file generation
+
+**When to use:** Daily development
+
+---
+
+## Git & Deployment
+
+### `verify-git-sync.sh`
+Verify git worktree sync and deployment readiness.
+
+**When to use:** Before merging, pre-deployment
+
+---
+
+## Script Architecture
+
+```
+scripts/
+├── setup.sh              # One-time setup
+├── verify-environment.sh # Pre-flight checks
+├── dev.sh               # Development runtime
+├── health-check.sh      # Runtime monitoring
+└── verify-git-sync.sh   # Git operations
+```
+
+## Error Handling
+
+All scripts use:
+- Color-coded output (✓ green, ✗ red, ⚠ yellow)
+- Descriptive error messages
+- Non-zero exit codes on failure
+- Automatic cleanup on interruption
+
+## Logs
+
+When running `npm run dev`, logs are written to:
+- `backend.log` - Backend server output
+- `frontend.log` - Frontend server output
+
+View live logs:
+```bash
+tail -f backend.log
+tail -f frontend.log
+```
+
+## Troubleshooting
+
+**Script not executable**
+```bash
+chmod +x scripts/*.sh
+```
+
+**Colors not showing**
+Ensure terminal supports ANSI colors.
+
+**Database checks failing**
+1. Verify DATABASE_URL in backend/.env
+2. Ensure PostgreSQL is running
+3. Check network connectivity
+
+## Adding New Scripts
+
+When creating new scripts:
+
+1. **Header template:**
+```bash
+#!/bin/bash
+set -e  # Exit on error
+
+echo "🧭 Script Name"
+echo "============"
+```
+
+2. **Use color codes:**
+```bash
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+```
+
+3. **Make executable:**
+```bash
+chmod +x scripts/new-script.sh
+```
+
+4. **Add to root package.json:**
+```json
+"scripts": {
+  "new-command": "bash scripts/new-script.sh"
+}
+```
+
+5. **Document here**
