@@ -14,6 +14,7 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import { getCategoryStyle } from '../lib/designTokens';
+import { format, parseISO, startOfDay, addMinutes } from 'date-fns';
 
 const localizer = momentLocalizer(moment);
 const DnDCalendar = withDragAndDrop(Calendar);
@@ -171,13 +172,15 @@ const CalendarPage: React.FC = () => {
   };
 
   const handleEventDrop = async ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
+    console.log('[handleEventDrop] Dropping event:', { event, start, end });
+
     // Only allow rescheduling task events, not time blocks
     if (event.type !== 'task' || !event.task) {
       toast.showError('Cannot reschedule time blocks');
       return;
     }
 
-    // Prevent scheduling in the past
+    // Prevent scheduling in the past (compare UTC times)
     const now = new Date();
     if (start < now) {
       toast.showError('Cannot schedule tasks in the past');
@@ -187,18 +190,29 @@ const CalendarPage: React.FC = () => {
     if (scheduleTaskMutation.isPending) return; // Prevent concurrent operations
 
     try {
+      // Convert local Date to UTC ISO string
+      const scheduledStartUTC = start.toISOString();
+
+      console.log('[handleEventDrop] Scheduling task:', {
+        taskId: event.task.id,
+        scheduledStartUTC,
+        localTime: start.toString(),
+      });
+
       await scheduleTaskMutation.mutateAsync({
         id: event.task.id,
-        scheduledStart: start.toISOString(),
+        scheduledStart: scheduledStartUTC,
       });
       toast.showSuccess('Task rescheduled successfully');
     } catch (err) {
       toast.showError('Failed to reschedule task. Please try again.');
-      console.error('Error rescheduling task:', err);
+      console.error('[handleEventDrop] Failed to schedule:', err);
     }
   };
 
   const handleEventResize = async ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
+    console.log('[handleEventResize] Resizing event:', { event, start, end });
+
     // Only allow resizing task events
     if (event.type !== 'task' || !event.task) {
       toast.showError('Cannot resize time blocks');
@@ -216,13 +230,16 @@ const CalendarPage: React.FC = () => {
 
     try {
       // Calculate new duration in minutes
-      const newDuration = Math.round((end.getTime() - start.getTime()) / 60000);
+      const durationMs = end.getTime() - start.getTime();
+      const durationMinutes = Math.round(durationMs / (1000 * 60));
 
       // Validate minimum duration
-      if (newDuration < 1) {
+      if (durationMinutes < 1) {
         toast.showError('Task duration must be at least 1 minute');
         return;
       }
+
+      console.log('[handleEventResize] New duration:', { durationMinutes });
 
       // Update task with new scheduled time
       await scheduleTaskMutation.mutateAsync({
@@ -233,7 +250,7 @@ const CalendarPage: React.FC = () => {
       toast.showSuccess('Task duration updated');
     } catch (err) {
       toast.showError('Failed to resize task. Please try again.');
-      console.error('Error resizing task:', err);
+      console.error('[handleEventResize] Failed to resize:', err);
     }
   };
 
