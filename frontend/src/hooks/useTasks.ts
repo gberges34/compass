@@ -52,7 +52,41 @@ export function useUpdateTask() {
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Task> }) =>
       api.updateTask(id, updates),
+    onMutate: async ({ id, updates }) => {
+      log('[useUpdateTask] onMutate called:', { id, updates });
+
+      // Cancel all task queries to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
+
+      // Get ALL cached task lists
+      const allCachedQueries = queryClient.getQueriesData({ queryKey: taskKeys.lists() });
+
+      // Update task in ALL cached lists
+      allCachedQueries.forEach(([queryKey, data]) => {
+        if (Array.isArray(data)) {
+          queryClient.setQueryData(queryKey, (old: Task[] = []) =>
+            old.map((task) =>
+              task.id === id
+                ? { ...task, ...updates, updatedAt: new Date().toISOString() }
+                : task
+            )
+          );
+        }
+      });
+
+      return { allCachedQueries };
+    },
+    onError: (err, variables, context) => {
+      console.error('[useUpdateTask] Error:', err);
+      // Rollback ALL cache entries
+      if (context?.allCachedQueries) {
+        context.allCachedQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
     onSuccess: (_, variables) => {
+      log('[useUpdateTask] Success, refetching queries');
       queryClient.refetchQueries({ queryKey: taskKeys.detail(variables.id) });
       queryClient.refetchQueries({ queryKey: taskKeys.lists() });
     },
