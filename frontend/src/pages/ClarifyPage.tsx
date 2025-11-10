@@ -11,7 +11,7 @@ interface EnrichedTaskData {
 }
 
 const ClarifyPage: React.FC = () => {
-  const toast = useToast();
+  const { showError, showSuccess } = useToast();
   const [pendingTasks, setPendingTasks] = useState<TempCapturedTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<TempCapturedTask | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,12 +34,12 @@ const ClarifyPage: React.FC = () => {
       const response = await getTodoistPending();
       setPendingTasks(response.tasks);
     } catch (err) {
-      toast.showError('Failed to load pending tasks. Please try again.');
+      showError('Failed to load pending tasks. Please try again.');
       console.error('Error fetching pending tasks:', err);
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [showError]);
 
   useEffect(() => {
     fetchPendingTasks();
@@ -71,9 +71,9 @@ const ClarifyPage: React.FC = () => {
         context: enrichedTask.context,
         definitionOfDone: enrichedTask.definitionOfDone,
       });
-      toast.showSuccess('Task enriched successfully!');
+      showSuccess('Task enriched successfully!');
     } catch (err) {
-      toast.showError('Failed to enrich task. Please try again.');
+      showError('Failed to enrich task. Please try again.');
       console.error('Error enriching task:', err);
     } finally {
       setEnriching(false);
@@ -104,7 +104,7 @@ const ClarifyPage: React.FC = () => {
         dueDate: selectedTask.dueDate,
       });
 
-      toast.showSuccess('Task saved successfully!');
+      showSuccess('Task saved successfully!');
 
       // Remove from pending list
       setPendingTasks(prev => prev.filter(t => t.id !== selectedTask.id));
@@ -113,7 +113,7 @@ const ClarifyPage: React.FC = () => {
       setSelectedTask(null);
       setEnrichedData(null);
     } catch (err) {
-      toast.showError('Failed to save task. Please try again.');
+      showError('Failed to save task. Please try again.');
       console.error('Error saving task:', err);
     } finally {
       setSaving(false);
