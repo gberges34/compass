@@ -127,7 +127,7 @@ const CompleteTaskModal: React.FC<CompleteTaskModalProps> = ({ task, onClose, on
                 How hard was it? <span className="text-red-500">*</span>
               </label>
               <div className="flex space-x-3">
-                {(['EASY', 'MEDIUM', 'HARD'] as Effort[]).map((level) => (
+                {(['SMALL', 'MEDIUM', 'LARGE'] as Effort[]).map((level) => (
                   <label
                     key={level}
                     className={`flex-1 cursor-pointer border-2 rounded-lg p-4 transition-all ${
@@ -146,9 +146,9 @@ const CompleteTaskModal: React.FC<CompleteTaskModalProps> = ({ task, onClose, on
                     />
                     <div className="text-center">
                       <div className="text-2xl mb-1">
-                        {level === 'EASY' && '😊'}
+                        {level === 'SMALL' && '😊'}
                         {level === 'MEDIUM' && '😐'}
-                        {level === 'HARD' && '😰'}
+                        {level === 'LARGE' && '😰'}
                       </div>
                       <div className="font-medium text-gray-900">{level}</div>
                     </div>
