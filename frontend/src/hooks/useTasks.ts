@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as api from '../lib/api';
 import type { Task, TaskFilters, EnrichTaskRequest, CompleteTaskRequest } from '../types';
+import { useToast } from '../contexts/ToastContext';
 
 // Query Keys
 export const taskKeys = {
@@ -67,33 +68,41 @@ export function useDeleteTask() {
 
 export function useScheduleTask() {
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   return useMutation({
     mutationFn: ({ id, scheduledStart }: { id: string; scheduledStart: string }) =>
       api.scheduleTask(id, scheduledStart),
     onMutate: async ({ id, scheduledStart }) => {
-      // Cancel outgoing refetches
+      console.log('[useScheduleTask] onMutate called:', { id, scheduledStart });
+
       await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
 
-      // Snapshot previous value
       const previousTasks = queryClient.getQueryData(taskKeys.list({ status: 'NEXT' }));
+      console.log('[useScheduleTask] Previous cache:', previousTasks);
 
-      // Optimistically update
-      queryClient.setQueryData(taskKeys.list({ status: 'NEXT' }), (old: Task[] = []) =>
-        old.map((task) =>
-          task.id === id ? { ...task, scheduledStart } : task
-        )
-      );
+      queryClient.setQueryData(taskKeys.list({ status: 'NEXT' }), (old: Task[] = []) => {
+        const updated = old.map((task) =>
+          task.id === id ? { ...task, scheduledStart, updatedAt: new Date().toISOString() } : task
+        );
+        console.log('[useScheduleTask] Updated cache:', updated);
+        return updated;
+      });
 
       return { previousTasks };
     },
     onError: (err, variables, context) => {
-      // Rollback on error
+      console.error('[useScheduleTask] Error:', err);
       if (context?.previousTasks) {
         queryClient.setQueryData(taskKeys.list({ status: 'NEXT' }), context.previousTasks);
       }
+      toast.showError('Failed to schedule task');
+    },
+    onSuccess: (data) => {
+      console.log('[useScheduleTask] Success response:', data);
     },
     onSettled: () => {
+      console.log('[useScheduleTask] Invalidating queries');
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
@@ -101,28 +110,40 @@ export function useScheduleTask() {
 
 export function useUnscheduleTask() {
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   return useMutation({
     mutationFn: (id: string) => api.unscheduleTask(id),
     onMutate: async (id) => {
+      console.log('[useUnscheduleTask] onMutate called:', { id });
+
       await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
 
       const previousTasks = queryClient.getQueryData(taskKeys.list({ status: 'NEXT' }));
+      console.log('[useUnscheduleTask] Previous cache:', previousTasks);
 
-      queryClient.setQueryData(taskKeys.list({ status: 'NEXT' }), (old: Task[] = []) =>
-        old.map((task) =>
-          task.id === id ? { ...task, scheduledStart: null } : task
-        )
-      );
+      queryClient.setQueryData(taskKeys.list({ status: 'NEXT' }), (old: Task[] = []) => {
+        const updated = old.map((task) =>
+          task.id === id ? { ...task, scheduledStart: null, updatedAt: new Date().toISOString() } : task
+        );
+        console.log('[useUnscheduleTask] Updated cache:', updated);
+        return updated;
+      });
 
       return { previousTasks };
     },
     onError: (err, variables, context) => {
+      console.error('[useUnscheduleTask] Error:', err);
       if (context?.previousTasks) {
         queryClient.setQueryData(taskKeys.list({ status: 'NEXT' }), context.previousTasks);
       }
+      toast.showError('Failed to unschedule task');
+    },
+    onSuccess: (data) => {
+      console.log('[useUnscheduleTask] Success response:', data);
     },
     onSettled: () => {
+      console.log('[useUnscheduleTask] Invalidating queries');
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
