@@ -40,9 +40,11 @@ cd ..
 
 # Wait for backend to start
 echo "Waiting for backend to be ready..."
+BACKEND_READY=false
 for i in {1..30}; do
     if curl -s http://localhost:3001/api/health > /dev/null 2>&1; then
         echo -e "${GREEN}✓ Backend ready${NC}"
+        BACKEND_READY=true
         break
     fi
     if ! ps -p $BACKEND_PID > /dev/null; then
@@ -54,6 +56,15 @@ for i in {1..30}; do
     echo -n "."
 done
 echo ""
+
+# Check if backend is ready after timeout
+if [ "$BACKEND_READY" = false ]; then
+    echo -e "${RED}✗ Backend health check timeout after 30 seconds${NC}"
+    echo -e "${RED}Displaying last 20 lines of backend.log:${NC}"
+    tail -20 backend.log
+    kill $BACKEND_PID 2>/dev/null
+    exit 1
+fi
 
 # Start frontend
 echo -e "${BLUE}Starting frontend server on http://localhost:3000${NC}"
