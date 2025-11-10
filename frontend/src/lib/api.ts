@@ -82,6 +82,11 @@ export const scheduleTask = async (id: string, scheduledStart: string): Promise<
   return response.data;
 };
 
+export const unscheduleTask = async (id: string): Promise<Task> => {
+  const response = await api.patch<Task>(`/tasks/${id}/unschedule`);
+  return response.data;
+};
+
 // Todoist API
 
 export const getTodoistPending = async (): Promise<{ count: number; tasks: TempCapturedTask[] }> => {
