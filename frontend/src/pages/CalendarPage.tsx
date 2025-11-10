@@ -36,7 +36,7 @@ const CalendarPage: React.FC = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [currentView, setCurrentView] = useState<View>('month');
+  const [currentView, setCurrentView] = useState<View>('week');
 
   // Derived data from queries
   const loading = tasksLoading || planLoading;
