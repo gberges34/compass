@@ -535,7 +535,7 @@ const CalendarPage: React.FC = () => {
 
         {/* Calendar */}
         <div className="bg-cloud rounded-card shadow-e01 border border-fog p-24 flex-1" onDragOver={handleDragOver} onDrop={handleDrop}>
-          <Calendar
+          <DnDCalendar
             localizer={localizer}
             events={events as BigCalendarEvent[]}
             startAccessor="start"
@@ -562,6 +562,10 @@ const CalendarPage: React.FC = () => {
               }
               return calendarEvent.title;
             }}
+            draggableAccessor={(event: CalendarEvent) => event.type === 'task'}
+            resizable
+            onEventDrop={handleEventDrop}
+            onEventResize={handleEventResize}
           />
         </div>
       </div>
