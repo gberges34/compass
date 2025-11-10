@@ -55,7 +55,7 @@ export const createTask = async (task: Partial<Task>): Promise<Task> => {
 };
 
 export const updateTask = async (id: string, updates: Partial<Task>): Promise<Task> => {
-  const response = await api.put<Task>(`/tasks/${id}`, updates);
+  const response = await api.patch<Task>(`/tasks/${id}`, updates);
   return response.data;
 };
 
