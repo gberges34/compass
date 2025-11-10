@@ -197,7 +197,7 @@ const CalendarPage: React.FC = () => {
 
       // Update tasks list
       setTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? { ...t, scheduledStart: null } : t))
+        prev.map((t) => (t.id === task.id ? { ...t, scheduledStart: undefined } : t))
       );
 
       // Close the modal
