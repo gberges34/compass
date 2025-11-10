@@ -53,8 +53,8 @@ export function useUpdateTask() {
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Task> }) =>
       api.updateTask(id, updates),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.detail(variables.id) });
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      queryClient.refetchQueries({ queryKey: taskKeys.detail(variables.id) });
+      queryClient.refetchQueries({ queryKey: taskKeys.lists() });
     },
   });
 }
@@ -113,10 +113,11 @@ export function useScheduleTask() {
     },
     onSuccess: (data) => {
       log('[useScheduleTask] Success response:', data);
+      // Explicitly refetch all task queries to ensure immediate UI update
+      queryClient.refetchQueries({ queryKey: taskKeys.lists() });
     },
     onSettled: () => {
-      log('[useScheduleTask] Invalidating all task queries');
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      log('[useScheduleTask] Mutation settled');
     },
   });
 }
@@ -159,10 +160,11 @@ export function useUnscheduleTask() {
     },
     onSuccess: (data) => {
       log('[useUnscheduleTask] Success response:', data);
+      // Explicitly refetch all task queries to ensure immediate UI update
+      queryClient.refetchQueries({ queryKey: taskKeys.lists() });
     },
     onSettled: () => {
-      log('[useUnscheduleTask] Invalidating all task queries');
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      log('[useUnscheduleTask] Mutation settled');
     },
   });
 }
