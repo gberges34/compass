@@ -1,0 +1,23 @@
+{
+  "name": "compass-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Compass Personal Productivity System",
+  "scripts": {
+    "dev": "bash scripts/dev.sh",
+    "start:backend": "cd backend && npm run dev",
+    "start:frontend": "cd frontend && npm start",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ..",
+    "build": "cd backend && npm run build && cd ../frontend && npm run build && cd ..",
+    "db:migrate": "cd backend && npx prisma migrate dev",
+    "db:generate": "cd backend && npx prisma generate",
+    "db:studio": "cd backend && npx prisma studio",
+    "db:reset": "cd backend && npx prisma migrate reset",
+    "setup": "bash scripts/setup.sh",
+    "verify": "bash scripts/verify-environment.sh",
+    "health": "bash scripts/health-check.sh"
+  },
+  "keywords": ["productivity", "task-management", "calendar"],
+  "author": "",
+  "license": "MIT"
+}
