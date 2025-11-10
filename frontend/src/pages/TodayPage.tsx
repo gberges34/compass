@@ -8,6 +8,7 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import { getPriorityStyle, getEnergyStyle } from '../lib/designTokens';
+import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
 
 const TodayPage: React.FC = () => {
   const toast = useToast();
@@ -159,13 +160,7 @@ const TodayPage: React.FC = () => {
               <div className="flex items-center space-x-12">
                 <span className="text-slate font-medium">Energy Level:</span>
                 <Badge
-                  variant={
-                    plan.energyLevel === 'HIGH'
-                      ? 'mint'
-                      : plan.energyLevel === 'MEDIUM'
-                      ? 'sun'
-                      : 'blush'
-                  }
+                  variant={getEnergyBadgeVariant(plan.energyLevel)}
                 >
                   {getEnergyStyle(plan.energyLevel).icon} {plan.energyLevel}
                 </Badge>
@@ -255,7 +250,7 @@ const TodayPage: React.FC = () => {
                       <h3 className="font-semibold text-ink">{task.name}</h3>
                       <p className="text-small text-slate mt-4">{task.definitionOfDone}</p>
                       <div className="flex items-center space-x-12 mt-8">
-                        <Badge variant={task.priority === 'MUST' ? 'danger' : task.priority === 'SHOULD' ? 'warn' : task.priority === 'COULD' ? 'sun' : 'neutral'} size="small">
+                        <Badge variant={getPriorityBadgeVariant(task.priority)} size="small">
                           {task.priority}
                         </Badge>
                         <span className="text-micro text-slate">{task.duration} min</span>
@@ -290,7 +285,7 @@ const TodayPage: React.FC = () => {
                       <h3 className="font-semibold text-ink">{task.name}</h3>
                       <p className="text-small text-slate mt-4">{task.definitionOfDone}</p>
                       <div className="flex items-center space-x-12 mt-8">
-                        <Badge variant={task.priority === 'MUST' ? 'danger' : task.priority === 'SHOULD' ? 'warn' : task.priority === 'COULD' ? 'sun' : 'neutral'} size="small">
+                        <Badge variant={getPriorityBadgeVariant(task.priority)} size="small">
                           {task.priority}
                         </Badge>
                         <span className="text-micro text-slate">{task.duration} min</span>

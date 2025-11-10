@@ -16,6 +16,7 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import { getCategoryStyle } from '../lib/designTokens';
+import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
 
 const TasksPage: React.FC = () => {
   const toast = useToast();
@@ -213,14 +214,14 @@ const TasksPage: React.FC = () => {
                 <Badge variant={getCategoryStyle(task.category).bg === 'bg-sky' ? 'sky' : getCategoryStyle(task.category).bg === 'bg-lavender' ? 'lavender' : getCategoryStyle(task.category).bg === 'bg-mint' ? 'mint' : getCategoryStyle(task.category).bg === 'bg-blush' ? 'blush' : getCategoryStyle(task.category).bg === 'bg-sun' ? 'sun' : 'neutral'} size="small">
                   {task.category}
                 </Badge>
-                <Badge variant={task.energyRequired === 'HIGH' ? 'mint' : task.energyRequired === 'MEDIUM' ? 'sun' : 'blush'} size="small">
+                <Badge variant={getEnergyBadgeVariant(task.energyRequired)} size="small">
                   {task.energyRequired}
                 </Badge>
               </div>
 
               <div className="flex items-center justify-between text-small text-slate mb-12">
                 <div className="flex items-center space-x-12">
-                  <Badge variant={task.priority === 'MUST' ? 'danger' : task.priority === 'SHOULD' ? 'warn' : task.priority === 'COULD' ? 'sun' : 'neutral'} size="small">
+                  <Badge variant={getPriorityBadgeVariant(task.priority)} size="small">
                     {task.priority}
                   </Badge>
                   <span className="flex items-center text-micro">
@@ -279,10 +280,10 @@ const TasksPage: React.FC = () => {
                   <Badge variant={getCategoryStyle(selectedTask.category).bg === 'bg-sky' ? 'sky' : getCategoryStyle(selectedTask.category).bg === 'bg-lavender' ? 'lavender' : getCategoryStyle(selectedTask.category).bg === 'bg-mint' ? 'mint' : getCategoryStyle(selectedTask.category).bg === 'bg-blush' ? 'blush' : getCategoryStyle(selectedTask.category).bg === 'bg-sun' ? 'sun' : 'neutral'}>
                     {selectedTask.category}
                   </Badge>
-                  <Badge variant={selectedTask.energyRequired === 'HIGH' ? 'mint' : selectedTask.energyRequired === 'MEDIUM' ? 'sun' : 'blush'}>
+                  <Badge variant={getEnergyBadgeVariant(selectedTask.energyRequired)}>
                     {selectedTask.energyRequired} Energy
                   </Badge>
-                  <Badge variant={selectedTask.priority === 'MUST' ? 'danger' : selectedTask.priority === 'SHOULD' ? 'warn' : selectedTask.priority === 'COULD' ? 'sun' : 'neutral'}>
+                  <Badge variant={getPriorityBadgeVariant(selectedTask.priority)}>
                     {selectedTask.priority}
                   </Badge>
                 </div>

@@ -14,6 +14,7 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import { getCategoryStyle } from '../lib/designTokens';
+import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
 
 // Development-only logging
 const DEBUG = process.env.NODE_ENV === 'development';
@@ -61,7 +62,7 @@ const UnscheduledTaskCard = React.memo<UnscheduledTaskCardProps>(({ task, index,
       <div className="flex items-start justify-between mb-8">
         <span className="text-micro font-bold text-slate">#{index + 1}</span>
         <Badge
-          variant={task.priority === 'MUST' ? 'danger' : task.priority === 'SHOULD' ? 'warn' : task.priority === 'COULD' ? 'sun' : 'neutral'}
+          variant={getPriorityBadgeVariant(task.priority)}
           size="small"
         >
           {task.priority}
@@ -626,7 +627,7 @@ const CalendarPage: React.FC = () => {
                 <div>
                   <h3 className="font-medium text-ink mb-4">Priority</h3>
                   <Badge
-                    variant={selectedTask.priority === 'MUST' ? 'danger' : selectedTask.priority === 'SHOULD' ? 'warn' : selectedTask.priority === 'COULD' ? 'sun' : 'neutral'}
+                    variant={getPriorityBadgeVariant(selectedTask.priority)}
                   >
                     {selectedTask.priority}
                   </Badge>
@@ -646,7 +647,7 @@ const CalendarPage: React.FC = () => {
                   <h3 className="font-medium text-ink mb-4">
                     Energy Required
                   </h3>
-                  <Badge variant={selectedTask.energyRequired === 'HIGH' ? 'mint' : selectedTask.energyRequired === 'MEDIUM' ? 'sun' : 'blush'}>
+                  <Badge variant={getEnergyBadgeVariant(selectedTask.energyRequired)}>
                     {selectedTask.energyRequired}
                   </Badge>
                 </div>
