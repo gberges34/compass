@@ -22,6 +22,23 @@ const log = DEBUG ? console.log : () => {};
 const localizer = momentLocalizer(moment);
 const DnDCalendar = withDragAndDrop(Calendar);
 
+// Category color mapping - defined outside component to prevent recreations
+const getCategoryColor = (category: string): string => {
+  const colors: Record<string, string> = {
+    SCHOOL: '#3b82f6',
+    MUSIC: '#8b5cf6',
+    FITNESS: '#10b981',
+    GAMING: '#f59e0b',
+    NUTRITION: '#14b8a6',
+    HYGIENE: '#06b6d4',
+    PET: '#ec4899',
+    SOCIAL: '#f97316',
+    PERSONAL: '#6366f1',
+    ADMIN: '#84cc16',
+  };
+  return colors[category] || '#6b7280';
+};
+
 const CalendarPage: React.FC = () => {
   const toast = useToast();
 
@@ -284,22 +301,6 @@ const CalendarPage: React.FC = () => {
       toast.showError('Failed to resize task. Please try again.');
       console.error('[handleEventResize] Failed to resize:', err);
     }
-  };
-
-  const getCategoryColor = (category: string): string => {
-    const colors: Record<string, string> = {
-      SCHOOL: '#3b82f6',
-      MUSIC: '#8b5cf6',
-      FITNESS: '#10b981',
-      GAMING: '#f59e0b',
-      NUTRITION: '#14b8a6',
-      HYGIENE: '#06b6d4',
-      PET: '#ec4899',
-      SOCIAL: '#f97316',
-      PERSONAL: '#6366f1',
-      ADMIN: '#84cc16',
-    };
-    return colors[category] || '#6b7280';
   };
 
   const eventStyleGetter = useCallback(
