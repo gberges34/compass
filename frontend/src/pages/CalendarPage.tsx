@@ -372,6 +372,19 @@ const CalendarPage: React.FC = () => {
     setCurrentView(newView);
   }, []);
 
+  const tooltipAccessor = useCallback((event: BigCalendarEvent) => {
+    const calendarEvent = event as unknown as CalendarEvent;
+    if (calendarEvent.task) {
+      return `${calendarEvent.title}\nDuration: ${calendarEvent.task.duration} min\nCategory: ${calendarEvent.task.category}`;
+    }
+    return calendarEvent.title;
+  }, []);
+
+  const draggableAccessor = useCallback((event: any) => {
+    const calendarEvent = event as CalendarEvent;
+    return calendarEvent.type === 'task';
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-64">
@@ -542,17 +555,8 @@ const CalendarPage: React.FC = () => {
             }}
             step={30}
             showMultiDayTimes
-            tooltipAccessor={(event: BigCalendarEvent) => {
-              const calendarEvent = event as unknown as CalendarEvent;
-              if (calendarEvent.task) {
-                return `${calendarEvent.title}\nDuration: ${calendarEvent.task.duration} min\nCategory: ${calendarEvent.task.category}`;
-              }
-              return calendarEvent.title;
-            }}
-            draggableAccessor={(event: any) => {
-              const calendarEvent = event as CalendarEvent;
-              return calendarEvent.type === 'task';
-            }}
+            tooltipAccessor={tooltipAccessor}
+            draggableAccessor={draggableAccessor}
             resizable
             onEventDrop={handleEventDrop as any}
             onEventResize={handleEventResize as any}
