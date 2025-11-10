@@ -247,22 +247,37 @@ router.patch('/:id/schedule', async (req: Request, res: Response) => {
     const { id } = req.params;
     const { scheduledStart } = scheduleTaskSchema.parse(req.body);
 
+    // Validate not scheduling in the past
+    const scheduledDate = new Date(scheduledStart);
+    const now = new Date();
+
+    if (scheduledDate < now) {
+      return res.status(400).json({
+        error: 'Cannot schedule task in the past',
+        scheduledStart,
+        now: now.toISOString(),
+      });
+    }
+
+    // Update task
     const task = await prisma.task.update({
       where: { id },
       data: {
-        scheduledStart: new Date(scheduledStart),
+        scheduledStart: scheduledDate,
       },
     });
 
+    console.log(`[schedule] Task ${id} scheduled for ${scheduledDate.toISOString()}`);
     res.json(task);
   } catch (error: any) {
+    console.error('[schedule] Error:', error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.issues });
+      return res.status(400).json({ error: 'Invalid request', details: error.issues });
     }
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Task not found' });
     }
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to schedule task' });
   }
 });
 
@@ -278,12 +293,14 @@ router.patch('/:id/unschedule', async (req: Request, res: Response) => {
       },
     });
 
+    console.log(`[unschedule] Task ${id} unscheduled`);
     res.json(task);
   } catch (error: any) {
+    console.error('[unschedule] Error:', error);
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Task not found' });
     }
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to unschedule task' });
   }
 });
 
