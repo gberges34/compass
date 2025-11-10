@@ -354,6 +354,9 @@ const CalendarPage: React.FC = () => {
       borderColor = '#4b5563';
     }
 
+    // Add visual feedback for draggable events
+    const isDraggable = calendarEvent.type === 'task';
+
     return {
       style: {
         backgroundColor,
@@ -361,9 +364,11 @@ const CalendarPage: React.FC = () => {
         borderWidth: '1px',
         borderStyle: 'solid',
         borderRadius: '4px',
-        opacity: 0.9,
+        opacity: rescheduling ? 0.6 : 0.9,
         color: 'white',
         display: 'block',
+        cursor: isDraggable ? (rescheduling ? 'wait' : 'move') : 'default',
+        transition: 'opacity 0.2s ease, transform 0.1s ease',
       },
     };
   };
@@ -534,7 +539,18 @@ const CalendarPage: React.FC = () => {
         </div>
 
         {/* Calendar */}
-        <div className="bg-cloud rounded-card shadow-e01 border border-fog p-24 flex-1" onDragOver={handleDragOver} onDrop={handleDrop}>
+        <div className="bg-cloud rounded-card shadow-e01 border border-fog p-24 flex-1 relative" onDragOver={handleDragOver} onDrop={handleDrop}>
+          {/* Loading Overlay */}
+          {rescheduling && (
+            <div className="absolute inset-0 bg-ink/20 backdrop-blur-sm flex items-center justify-center z-40 rounded-card">
+              <div className="bg-cloud px-24 py-16 rounded-modal shadow-eglass border border-fog">
+                <div className="flex items-center space-x-12">
+                  <div className="animate-spin rounded-full h-20 w-20 border-b-2 border-ink"></div>
+                  <span className="text-ink text-body">Rescheduling task...</span>
+                </div>
+              </div>
+            </div>
+          )}
           <DnDCalendar
             localizer={localizer}
             events={events as BigCalendarEvent[]}
