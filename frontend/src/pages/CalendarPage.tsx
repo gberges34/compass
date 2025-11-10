@@ -575,8 +575,8 @@ const CalendarPage: React.FC = () => {
           <DnDCalendar
             localizer={localizer}
             events={events as BigCalendarEvent[]}
-            startAccessor="start"
-            endAccessor="end"
+            startAccessor={(event: any) => event.start}
+            endAccessor={(event: any) => event.end}
             style={{ height: 700 }}
             onSelectSlot={handleSelectSlot}
             onSelectEvent={handleSelectEvent}
@@ -599,10 +599,13 @@ const CalendarPage: React.FC = () => {
               }
               return calendarEvent.title;
             }}
-            draggableAccessor={(event: CalendarEvent) => event.type === 'task'}
+            draggableAccessor={(event: any) => {
+              const calendarEvent = event as CalendarEvent;
+              return calendarEvent.type === 'task';
+            }}
             resizable
-            onEventDrop={handleEventDrop}
-            onEventResize={handleEventResize}
+            onEventDrop={handleEventDrop as any}
+            onEventResize={handleEventResize as any}
           />
         </div>
       </div>
