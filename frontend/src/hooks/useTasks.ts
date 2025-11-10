@@ -48,6 +48,7 @@ export function useCreateTask() {
 
 export function useUpdateTask() {
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Task> }) =>
@@ -84,6 +85,7 @@ export function useUpdateTask() {
           queryClient.setQueryData(queryKey, data);
         });
       }
+      toast.showError('Failed to update task');
     },
     onSuccess: (_, variables) => {
       log('[useUpdateTask] Success, refetching queries');
