@@ -39,6 +39,55 @@ const getCategoryColor = (category: string): string => {
   return colors[category] || '#6b7280';
 };
 
+// Memoized UnscheduledTaskCard component to prevent unnecessary re-renders
+interface UnscheduledTaskCardProps {
+  task: Task;
+  index: number;
+  onDragStart: (task: Task) => void;
+  onSchedule: (task: Task) => void;
+}
+
+const UnscheduledTaskCard = React.memo<UnscheduledTaskCardProps>(({ task, index, onDragStart, onSchedule }) => {
+  return (
+    <div
+      key={task.id}
+      draggable
+      onDragStart={() => onDragStart(task)}
+      className="border border-stone rounded-card p-12 cursor-move hover:shadow-e02 transition-shadow duration-micro bg-snow"
+      style={{
+        borderLeftWidth: '4px',
+        borderLeftColor: getCategoryColor(task.category),
+      }}
+    >
+      <div className="flex items-start justify-between mb-8">
+        <span className="text-micro font-bold text-slate">#{index + 1}</span>
+        <Badge
+          variant={task.priority === 'MUST' ? 'danger' : task.priority === 'SHOULD' ? 'warn' : task.priority === 'COULD' ? 'sun' : 'neutral'}
+          size="small"
+        >
+          {task.priority}
+        </Badge>
+      </div>
+      <h3 className="font-medium text-ink text-small mb-8 line-clamp-2">
+        {task.name}
+      </h3>
+      <div className="flex items-center justify-between text-micro text-slate mb-8">
+        <span>{task.duration} min</span>
+        <span>{task.category}</span>
+      </div>
+      <Button
+        variant="primary"
+        onClick={() => onSchedule(task)}
+        className="w-full text-small"
+      >
+        Schedule
+      </Button>
+    </div>
+  );
+});
+
+UnscheduledTaskCard.displayName = 'UnscheduledTaskCard';
+
 const CalendarPage: React.FC = () => {
   const toast = useToast();
 
@@ -388,6 +437,29 @@ const CalendarPage: React.FC = () => {
     return calendarEvent.type === 'task';
   }, []);
 
+  // Handler for scheduling tasks from sidebar
+  const handleScheduleFromSidebar = useCallback((task: Task) => {
+    const timeString = prompt(
+      'Enter scheduled time (e.g., "2:00 PM" or "14:00"):'
+    );
+    if (timeString) {
+      try {
+        const scheduledTime = moment(timeString, [
+          'h:mm A',
+          'HH:mm',
+        ]).toDate();
+        if (isNaN(scheduledTime.getTime())) {
+          toast.showError('Invalid time format');
+          return;
+        }
+        handleScheduleTask(task, scheduledTime);
+      } catch (err) {
+        toast.showError('Invalid time format');
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // toast removed - context functions are stable
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-64">
@@ -422,59 +494,13 @@ const CalendarPage: React.FC = () => {
                 </p>
               ) : (
                 unscheduledTasks.map((task, index) => (
-                  <div
+                  <UnscheduledTaskCard
                     key={task.id}
-                    draggable
-                    onDragStart={() => handleDragStart(task)}
-                    className="border border-stone rounded-card p-12 cursor-move hover:shadow-e02 transition-shadow duration-micro bg-snow"
-                    style={{
-                      borderLeftWidth: '4px',
-                      borderLeftColor: getCategoryColor(task.category),
-                    }}
-                  >
-                    <div className="flex items-start justify-between mb-8">
-                      <span className="text-micro font-bold text-slate">#{index + 1}</span>
-                      <Badge
-                        variant={task.priority === 'MUST' ? 'danger' : task.priority === 'SHOULD' ? 'warn' : task.priority === 'COULD' ? 'sun' : 'neutral'}
-                        size="small"
-                      >
-                        {task.priority}
-                      </Badge>
-                    </div>
-                    <h3 className="font-medium text-ink text-small mb-8 line-clamp-2">
-                      {task.name}
-                    </h3>
-                    <div className="flex items-center justify-between text-micro text-slate mb-8">
-                      <span>{task.duration} min</span>
-                      <span>{task.category}</span>
-                    </div>
-                    <Button
-                      variant="primary"
-                      onClick={() => {
-                        const timeString = prompt(
-                          'Enter scheduled time (e.g., "2:00 PM" or "14:00"):'
-                        );
-                        if (timeString) {
-                          try {
-                            const scheduledTime = moment(timeString, [
-                              'h:mm A',
-                              'HH:mm',
-                            ]).toDate();
-                            if (isNaN(scheduledTime.getTime())) {
-                              toast.showError('Invalid time format');
-                              return;
-                            }
-                            handleScheduleTask(task, scheduledTime);
-                          } catch (err) {
-                            toast.showError('Invalid time format');
-                          }
-                        }
-                      }}
-                      className="w-full text-small"
-                    >
-                      Schedule
-                    </Button>
-                  </div>
+                    task={task}
+                    index={index}
+                    onDragStart={handleDragStart}
+                    onSchedule={handleScheduleFromSidebar}
+                  />
                 ))
               )}
             </div>
