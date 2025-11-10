@@ -220,6 +220,105 @@ const CalendarPage: React.FC = () => {
     }
   };
 
+  const handleEventDrop = async ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
+    // Only allow rescheduling task events, not time blocks
+    if (event.type !== 'task' || !event.task) {
+      toast.showError('Cannot reschedule time blocks');
+      return;
+    }
+
+    if (rescheduling) return; // Prevent concurrent operations
+
+    try {
+      setRescheduling(true);
+
+      // Call the existing scheduleTask API
+      const scheduledStart = start.toISOString();
+      const updatedTask = await scheduleTask(event.task.id, scheduledStart);
+
+      // Update the event in the events array
+      setEvents((prev) =>
+        prev.map((e) =>
+          e.id === event.id
+            ? {
+                ...e,
+                start,
+                end,
+                task: { ...e.task!, scheduledStart },
+              }
+            : e
+        )
+      );
+
+      // Update the task in the tasks array
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === event.task!.id ? { ...t, scheduledStart } : t
+        )
+      );
+
+      toast.showSuccess('Task rescheduled successfully');
+    } catch (err) {
+      toast.showError('Failed to reschedule task. Please try again.');
+      console.error('Error rescheduling task:', err);
+
+      // Refresh to restore original state
+      fetchData();
+    } finally {
+      setRescheduling(false);
+    }
+  };
+
+  const handleEventResize = async ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
+    // Only allow resizing task events
+    if (event.type !== 'task' || !event.task) {
+      toast.showError('Cannot resize time blocks');
+      return;
+    }
+
+    if (rescheduling) return;
+
+    try {
+      setRescheduling(true);
+
+      // Calculate new duration in minutes
+      const newDuration = Math.round((end.getTime() - start.getTime()) / 60000);
+
+      // Update task with new scheduled time
+      const scheduledStart = start.toISOString();
+      const updatedTask = await scheduleTask(event.task.id, scheduledStart);
+
+      // Update the event
+      setEvents((prev) =>
+        prev.map((e) =>
+          e.id === event.id
+            ? {
+                ...e,
+                start,
+                end,
+                task: { ...e.task!, scheduledStart, duration: newDuration },
+              }
+            : e
+        )
+      );
+
+      // Update the task
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === event.task!.id ? { ...t, scheduledStart, duration: newDuration } : t
+        )
+      );
+
+      toast.showSuccess('Task duration updated');
+    } catch (err) {
+      toast.showError('Failed to resize task. Please try again.');
+      console.error('Error resizing task:', err);
+      fetchData();
+    } finally {
+      setRescheduling(false);
+    }
+  };
+
   const getCategoryColor = (category: string): string => {
     const colors: Record<string, string> = {
       SCHOOL: '#3b82f6',
