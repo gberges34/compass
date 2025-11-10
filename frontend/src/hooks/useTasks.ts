@@ -76,25 +76,34 @@ export function useScheduleTask() {
     onMutate: async ({ id, scheduledStart }) => {
       console.log('[useScheduleTask] onMutate called:', { id, scheduledStart });
 
+      // Cancel all task queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
 
-      const previousTasks = queryClient.getQueryData(taskKeys.list({ status: 'NEXT' }));
-      console.log('[useScheduleTask] Previous cache:', previousTasks);
+      // Get ALL cached task lists (not just status: NEXT)
+      const allCachedQueries = queryClient.getQueriesData({ queryKey: taskKeys.lists() });
 
-      queryClient.setQueryData(taskKeys.list({ status: 'NEXT' }), (old: Task[] = []) => {
-        const updated = old.map((task) =>
-          task.id === id ? { ...task, scheduledStart, updatedAt: new Date().toISOString() } : task
-        );
-        console.log('[useScheduleTask] Updated cache:', updated);
-        return updated;
+      // Update task in ALL cached lists
+      allCachedQueries.forEach(([queryKey, data]) => {
+        if (Array.isArray(data)) {
+          queryClient.setQueryData(queryKey, (old: Task[] = []) =>
+            old.map((task) =>
+              task.id === id
+                ? { ...task, scheduledStart, updatedAt: new Date().toISOString() }
+                : task
+            )
+          );
+        }
       });
 
-      return { previousTasks };
+      return { allCachedQueries };
     },
     onError: (err, variables, context) => {
       console.error('[useScheduleTask] Error:', err);
-      if (context?.previousTasks) {
-        queryClient.setQueryData(taskKeys.list({ status: 'NEXT' }), context.previousTasks);
+      // Rollback ALL cache entries
+      if (context?.allCachedQueries) {
+        context.allCachedQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       }
       toast.showError('Failed to schedule task');
     },
@@ -102,7 +111,7 @@ export function useScheduleTask() {
       console.log('[useScheduleTask] Success response:', data);
     },
     onSettled: () => {
-      console.log('[useScheduleTask] Invalidating queries');
+      console.log('[useScheduleTask] Invalidating all task queries');
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
@@ -119,23 +128,28 @@ export function useUnscheduleTask() {
 
       await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
 
-      const previousTasks = queryClient.getQueryData(taskKeys.list({ status: 'NEXT' }));
-      console.log('[useUnscheduleTask] Previous cache:', previousTasks);
+      const allCachedQueries = queryClient.getQueriesData({ queryKey: taskKeys.lists() });
 
-      queryClient.setQueryData(taskKeys.list({ status: 'NEXT' }), (old: Task[] = []) => {
-        const updated = old.map((task) =>
-          task.id === id ? { ...task, scheduledStart: null, updatedAt: new Date().toISOString() } : task
-        );
-        console.log('[useUnscheduleTask] Updated cache:', updated);
-        return updated;
+      allCachedQueries.forEach(([queryKey, data]) => {
+        if (Array.isArray(data)) {
+          queryClient.setQueryData(queryKey, (old: Task[] = []) =>
+            old.map((task) =>
+              task.id === id
+                ? { ...task, scheduledStart: null, updatedAt: new Date().toISOString() }
+                : task
+            )
+          );
+        }
       });
 
-      return { previousTasks };
+      return { allCachedQueries };
     },
     onError: (err, variables, context) => {
       console.error('[useUnscheduleTask] Error:', err);
-      if (context?.previousTasks) {
-        queryClient.setQueryData(taskKeys.list({ status: 'NEXT' }), context.previousTasks);
+      if (context?.allCachedQueries) {
+        context.allCachedQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       }
       toast.showError('Failed to unschedule task');
     },
@@ -143,7 +157,7 @@ export function useUnscheduleTask() {
       console.log('[useUnscheduleTask] Success response:', data);
     },
     onSettled: () => {
-      console.log('[useUnscheduleTask] Invalidating queries');
+      console.log('[useUnscheduleTask] Invalidating all task queries');
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
