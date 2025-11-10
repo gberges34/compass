@@ -16,6 +16,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useToast } from '../contexts/ToastContext';
+import Card from '../components/Card';
+import Button from '../components/Button';
 
 const ReviewsPage: React.FC = () => {
   const toast = useToast();
@@ -135,25 +137,26 @@ const ReviewsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center py-64">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading reviews...</p>
+          <div className="animate-spin rounded-full h-48 w-48 border-b-4 border-action"></div>
+          <p className="mt-16 text-slate">Loading reviews...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-24">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+      <Card padding="large">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Reviews</h1>
-            <p className="text-gray-600 mt-1">Track your progress and reflect on your journey</p>
+            <h1 className="text-h1 text-ink">Reviews</h1>
+            <p className="text-slate mt-4">Track your progress and reflect on your journey</p>
           </div>
-          <button
+          <Button
+            variant="primary"
             onClick={() => {
               // TODO: Open modal to create review
               if (activeTab === 'DAILY') {
@@ -162,47 +165,46 @@ const ReviewsPage: React.FC = () => {
                 console.log('Create weekly review');
               }
             }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
             Create {activeTab === 'DAILY' ? 'Daily' : 'Weekly'} Review
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="border-b border-gray-200">
+      <Card padding="none">
+        <div className="border-b border-fog">
           <div className="flex">
             <button
               onClick={() => setActiveTab('DAILY')}
-              className={`px-6 py-3 font-medium border-b-2 transition-colors ${
+              className={`px-24 py-12 font-medium border-b-2 transition-standard ${
                 activeTab === 'DAILY'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  ? 'border-action text-action'
+                  : 'border-transparent text-slate hover:text-ink'
               }`}
             >
               Daily Reviews
             </button>
             <button
               onClick={() => setActiveTab('WEEKLY')}
-              className={`px-6 py-3 font-medium border-b-2 transition-colors ${
+              className={`px-24 py-12 font-medium border-b-2 transition-standard ${
                 activeTab === 'WEEKLY'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  ? 'border-action text-action'
+                  : 'border-transparent text-slate hover:text-ink'
               }`}
             >
               Weekly Reviews
             </button>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Charts Section */}
       {reviews.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-24">
           {/* Execution Rate Trend */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <Card padding="medium">
+            <h3 className="text-h3 text-ink mb-16">
               Execution Rate Trend (Last 7)
             </h3>
             <ResponsiveContainer width="100%" height={200}>
@@ -211,14 +213,14 @@ const ReviewsPage: React.FC = () => {
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
-                <Line type="monotone" dataKey="rate" stroke="#3b82f6" strokeWidth={2} />
+                <Line type="monotone" dataKey="rate" stroke="#2A6FF2" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
-          </div>
+          </Card>
 
           {/* Category Balance */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Category Balance</h3>
+          <Card padding="medium">
+            <h3 className="text-h3 text-ink mb-16">Category Balance</h3>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
@@ -238,11 +240,11 @@ const ReviewsPage: React.FC = () => {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-          </div>
+          </Card>
 
           {/* Deep Work Hours Trend */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <Card padding="medium">
+            <h3 className="text-h3 text-ink mb-16">
               Deep Work Hours (Last 7)
             </h3>
             <ResponsiveContainer width="100%" height={200}>
@@ -254,65 +256,68 @@ const ReviewsPage: React.FC = () => {
                 <Bar dataKey="hours" fill="#8b5cf6" />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* Reviews List */}
-      <div className="space-y-4">
+      <div className="space-y-16">
         {reviews.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-            <p className="text-gray-600 mb-4">No {activeTab.toLowerCase()} reviews yet</p>
-            <button
-              onClick={() => {
-                if (activeTab === 'DAILY') {
-                  console.log('Create daily review');
-                } else {
-                  console.log('Create weekly review');
-                }
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Create Your First {activeTab === 'DAILY' ? 'Daily' : 'Weekly'} Review
-            </button>
-          </div>
+          <Card padding="large">
+            <div className="text-center">
+              <p className="text-slate mb-16">No {activeTab.toLowerCase()} reviews yet</p>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  if (activeTab === 'DAILY') {
+                    console.log('Create daily review');
+                  } else {
+                    console.log('Create weekly review');
+                  }
+                }}
+              >
+                Create Your First {activeTab === 'DAILY' ? 'Daily' : 'Weekly'} Review
+              </Button>
+            </div>
+          </Card>
         ) : (
           reviews.map((review) => (
-            <div
+            <Card
               key={review.id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+              padding="none"
+              className="overflow-hidden hover:shadow-e02 transition-shadow duration-micro"
             >
               {/* Review Header */}
               <div
-                className="p-6 cursor-pointer"
+                className="p-24 cursor-pointer"
                 onClick={() =>
                   setExpandedReview(expandedReview === review.id ? null : review.id)
                 }
               >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-gray-900">
+                <div className="flex items-center justify-between mb-16">
+                  <h3 className="text-h3 text-ink">
                     {formatPeriod(review)}
                   </h3>
-                  <span className="text-gray-400">
+                  <span className="text-slate">
                     {expandedReview === review.id ? '▼' : '▶'}
                   </span>
                 </div>
 
                 {/* Execution Rate */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Execution Rate</span>
+                <div className="mb-16">
+                  <div className="flex items-center justify-between mb-8">
+                    <span className="text-small font-medium text-ink">Execution Rate</span>
                     <span
-                      className={`text-lg font-bold ${getExecutionRateTextColor(
+                      className={`text-body font-bold ${getExecutionRateTextColor(
                         review.executionRate
                       )}`}
                     >
                       {review.executionRate?.toFixed(1) || 0}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div className="w-full bg-fog rounded-pill h-12">
                     <div
-                      className={`h-3 rounded-full ${getExecutionRateColor(
+                      className={`h-12 rounded-pill ${getExecutionRateColor(
                         review.executionRate
                       )}`}
                       style={{
@@ -323,20 +328,20 @@ const ReviewsPage: React.FC = () => {
                 </div>
 
                 {/* Quick Stats Grid */}
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div className="bg-blue-50 rounded-lg p-3">
-                    <p className="text-xs text-blue-600 font-medium">Tasks Completed</p>
-                    <p className="text-2xl font-bold text-blue-900">{review.tasksCompleted}</p>
+                <div className="grid grid-cols-3 gap-16 mb-16">
+                  <div className="bg-sky rounded-default p-12">
+                    <p className="text-micro text-blue-600 font-medium">Tasks Completed</p>
+                    <p className="text-display text-blue-900">{review.tasksCompleted}</p>
                   </div>
-                  <div className="bg-purple-50 rounded-lg p-3">
-                    <p className="text-xs text-purple-600 font-medium">Deep Work Hours</p>
-                    <p className="text-2xl font-bold text-purple-900">
+                  <div className="bg-lavender rounded-default p-12">
+                    <p className="text-micro text-purple-600 font-medium">Deep Work Hours</p>
+                    <p className="text-display text-purple-900">
                       {review.deepWorkHours.toFixed(1)}
                     </p>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-3">
-                    <p className="text-xs text-green-600 font-medium">Time Coverage</p>
-                    <p className="text-2xl font-bold text-green-900">
+                  <div className="bg-mint rounded-default p-12">
+                    <p className="text-micro text-green-600 font-medium">Time Coverage</p>
+                    <p className="text-display text-green-900">
                       {review.timeCoverage.toFixed(0)}%
                     </p>
                   </div>
@@ -528,7 +533,7 @@ const ReviewsPage: React.FC = () => {
                   </div>
                 </div>
               )}
-            </div>
+            </Card>
           ))
         )}
       </div>

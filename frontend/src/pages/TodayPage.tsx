@@ -4,6 +4,10 @@ import { getTodayPlan, getTasks, getPostDoLogs } from '../lib/api';
 import type { DailyPlan, Task, PostDoLog } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSkeleton from '../components/LoadingSkeleton';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
+import Button from '../components/Button';
+import { getPriorityStyle, getEnergyStyle } from '../lib/designTokens';
 
 const TodayPage: React.FC = () => {
   const toast = useToast();
@@ -21,6 +25,8 @@ const TodayPage: React.FC = () => {
   });
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -29,14 +35,19 @@ const TodayPage: React.FC = () => {
         let dailyPlan: DailyPlan | null = null;
         try {
           dailyPlan = await getTodayPlan();
-          setPlan(dailyPlan);
+          if (isMounted) {
+            setPlan(dailyPlan);
+          }
         } catch (err) {
           // No plan yet, that's okay
-          setPlan(null);
+          if (isMounted) {
+            setPlan(null);
+          }
         }
 
         // Fetch active tasks
         const active = await getTasks({ status: 'ACTIVE' });
+        if (!isMounted) return;
         setActiveTasks(active);
 
         // Fetch next tasks (limit to 5 most important)
@@ -46,6 +57,7 @@ const TodayPage: React.FC = () => {
         const sortedNext = next.sort(
           (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
         );
+        if (!isMounted) return;
         setNextTasks(sortedNext.slice(0, 5));
 
         // Fetch today's completed tasks
@@ -54,17 +66,27 @@ const TodayPage: React.FC = () => {
           startDate: todayDate,
           endDate: todayDate,
         });
+        if (!isMounted) return;
         setTodayLogs(logs);
       } catch (err) {
-        toast.showError(err instanceof Error ? err.message : 'Failed to load data');
-        console.error('Error loading today page data:', err);
+        if (isMounted) {
+          toast.showError(err instanceof Error ? err.message : 'Failed to load data');
+          console.error('Error loading today page data:', err);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
-  }, [toast]);
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // toast removed - context functions are stable
 
   // Calculate stats
   const tasksCompletedToday = todayLogs.length;
@@ -95,30 +117,30 @@ const TodayPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-24">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-        <h1 className="text-3xl font-bold text-gray-900">{today}</h1>
-        <p className="text-gray-600 mt-1">Your daily command center</p>
-      </div>
+      <Card padding="large">
+        <h1 className="text-h1 text-ink">{today}</h1>
+        <p className="text-slate mt-4">Your daily command center</p>
+      </Card>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
+        <div className="gradient-aurora rounded-card shadow-e02 p-24">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Tasks Completed</p>
-              <p className="text-4xl font-bold mt-2">{tasksCompletedToday}</p>
+              <p className="text-small font-medium text-green-700">Tasks Completed</p>
+              <p className="text-display text-ink mt-8">{tasksCompletedToday}</p>
             </div>
             <div className="text-5xl opacity-20">✓</div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md p-6 text-white">
+        <div className="gradient-dawn rounded-card shadow-e02 p-24">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm font-medium">Deep Work Hours</p>
-              <p className="text-4xl font-bold mt-2">{deepWorkHoursToday.toFixed(1)}</p>
+              <p className="text-small font-medium text-blue-700">Deep Work Hours</p>
+              <p className="text-display text-ink mt-8">{deepWorkHoursToday.toFixed(1)}</p>
             </div>
             <div className="text-5xl opacity-20">⏱</div>
           </div>
@@ -126,50 +148,50 @@ const TodayPage: React.FC = () => {
       </div>
 
       {/* Daily Plan */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Today's Plan</h2>
+      <Card padding="none">
+        <div className="p-24 border-b border-fog">
+          <h2 className="text-h2 text-ink">Today's Plan</h2>
         </div>
-        <div className="p-6">
+        <div className="p-24">
           {plan ? (
-            <div className="space-y-4">
+            <div className="space-y-16">
               {/* Energy Level */}
-              <div className="flex items-center space-x-3">
-                <span className="text-gray-600 font-medium">Energy Level:</span>
-                <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+              <div className="flex items-center space-x-12">
+                <span className="text-slate font-medium">Energy Level:</span>
+                <Badge
+                  variant={
                     plan.energyLevel === 'HIGH'
-                      ? 'bg-green-100 text-green-800'
+                      ? 'mint'
                       : plan.energyLevel === 'MEDIUM'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}
+                      ? 'sun'
+                      : 'blush'
+                  }
                 >
-                  {plan.energyLevel}
-                </span>
+                  {getEnergyStyle(plan.energyLevel).icon} {plan.energyLevel}
+                </Badge>
               </div>
 
               {/* Deep Work Blocks */}
               <div>
-                <h3 className="font-medium text-gray-900 mb-2">Deep Work Blocks</h3>
-                <div className="space-y-2">
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                <h3 className="text-h3 text-ink mb-8">Deep Work Blocks</h3>
+                <div className="space-y-8">
+                  <div className="bg-sky border border-sky rounded-default p-12">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-blue-900">
                         {plan.deepWorkBlock1.focus}
                       </span>
-                      <span className="text-sm text-blue-700">
+                      <span className="text-small text-blue-700">
                         {plan.deepWorkBlock1.start} - {plan.deepWorkBlock1.end}
                       </span>
                     </div>
                   </div>
                   {plan.deepWorkBlock2 && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                    <div className="bg-sky border border-sky rounded-default p-12">
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-blue-900">
                           {plan.deepWorkBlock2.focus}
                         </span>
-                        <span className="text-sm text-blue-700">
+                        <span className="text-small text-blue-700">
                           {plan.deepWorkBlock2.start} - {plan.deepWorkBlock2.end}
                         </span>
                       </div>
@@ -180,12 +202,12 @@ const TodayPage: React.FC = () => {
 
               {/* Top 3 Outcomes */}
               <div>
-                <h3 className="font-medium text-gray-900 mb-2">Top 3 Outcomes</h3>
-                <ul className="space-y-1">
+                <h3 className="text-h3 text-ink mb-8">Top 3 Outcomes</h3>
+                <ul className="space-y-4">
                   {plan.topOutcomes.map((outcome, index) => (
                     <li key={index} className="flex items-start">
-                      <span className="text-blue-600 font-bold mr-2">{index + 1}.</span>
-                      <span className="text-gray-700">{outcome}</span>
+                      <span className="text-action font-bold mr-8">{index + 1}.</span>
+                      <span className="text-ink">{outcome}</span>
                     </li>
                   ))}
                 </ul>
@@ -193,9 +215,9 @@ const TodayPage: React.FC = () => {
 
               {/* Reward */}
               {plan.reward && (
-                <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
+                <div className="bg-sun border border-sun rounded-default p-12">
                   <div className="flex items-center">
-                    <span className="text-2xl mr-2">🎁</span>
+                    <span className="text-2xl mr-8">🎁</span>
                     <div>
                       <span className="font-medium text-amber-900">Reward: </span>
                       <span className="text-amber-800">{plan.reward}</span>
@@ -205,52 +227,39 @@ const TodayPage: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-600 mb-4">No plan set for today yet</p>
-              <Link
-                to="/orient/east"
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Create Today's Plan
+            <div className="text-center py-32">
+              <p className="text-slate mb-16">No plan set for today yet</p>
+              <Link to="/orient/east">
+                <Button variant="primary">Create Today's Plan</Button>
               </Link>
             </div>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Active Tasks */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Active Tasks</h2>
+      <Card padding="none">
+        <div className="p-24 border-b border-fog">
+          <h2 className="text-h2 text-ink">Active Tasks</h2>
         </div>
-        <div className="p-6">
+        <div className="p-24">
           {activeTasks.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-12">
               {activeTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="border border-green-200 bg-green-50 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  className="border border-mint bg-mint rounded-card p-16 hover:shadow-e02 transition-shadow duration-micro"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{task.name}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{task.definitionOfDone}</p>
-                      <div className="flex items-center space-x-3 mt-2">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            task.priority === 'MUST'
-                              ? 'bg-red-100 text-red-800'
-                              : task.priority === 'SHOULD'
-                              ? 'bg-orange-100 text-orange-800'
-                              : task.priority === 'COULD'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
+                      <h3 className="font-semibold text-ink">{task.name}</h3>
+                      <p className="text-small text-slate mt-4">{task.definitionOfDone}</p>
+                      <div className="flex items-center space-x-12 mt-8">
+                        <Badge variant={task.priority === 'MUST' ? 'danger' : task.priority === 'SHOULD' ? 'warn' : task.priority === 'COULD' ? 'sun' : 'neutral'} size="small">
                           {task.priority}
-                        </span>
-                        <span className="text-xs text-gray-500">{task.duration} min</span>
-                        <span className="text-xs text-gray-500">{task.category}</span>
+                        </Badge>
+                        <span className="text-micro text-slate">{task.duration} min</span>
+                        <span className="text-micro text-slate">{task.category}</span>
                       </div>
                     </div>
                   </div>
@@ -258,45 +267,35 @@ const TodayPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-600 text-center py-4">No active tasks</p>
+            <p className="text-slate text-center py-16">No active tasks</p>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Next Tasks */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Next Up (Top 5)</h2>
+      <Card padding="none">
+        <div className="p-24 border-b border-fog">
+          <h2 className="text-h2 text-ink">Next Up (Top 5)</h2>
         </div>
-        <div className="p-6">
+        <div className="p-24">
           {nextTasks.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-12">
               {nextTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="border border-gray-200 bg-white rounded-lg p-4 hover:shadow-md transition-shadow"
+                  className="border border-fog bg-snow rounded-card p-16 hover:shadow-e02 transition-shadow duration-micro"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{task.name}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{task.definitionOfDone}</p>
-                      <div className="flex items-center space-x-3 mt-2">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            task.priority === 'MUST'
-                              ? 'bg-red-100 text-red-800'
-                              : task.priority === 'SHOULD'
-                              ? 'bg-orange-100 text-orange-800'
-                              : task.priority === 'COULD'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
+                      <h3 className="font-semibold text-ink">{task.name}</h3>
+                      <p className="text-small text-slate mt-4">{task.definitionOfDone}</p>
+                      <div className="flex items-center space-x-12 mt-8">
+                        <Badge variant={task.priority === 'MUST' ? 'danger' : task.priority === 'SHOULD' ? 'warn' : task.priority === 'COULD' ? 'sun' : 'neutral'} size="small">
                           {task.priority}
-                        </span>
-                        <span className="text-xs text-gray-500">{task.duration} min</span>
-                        <span className="text-xs text-gray-500">{task.category}</span>
-                        <span className="text-xs text-gray-500">
+                        </Badge>
+                        <span className="text-micro text-slate">{task.duration} min</span>
+                        <span className="text-micro text-slate">{task.category}</span>
+                        <span className="text-micro text-slate">
                           Energy: {task.energyRequired}
                         </span>
                       </div>
@@ -306,12 +305,12 @@ const TodayPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-4">
-              <p className="text-gray-600">No tasks in the queue</p>
+            <div className="text-center py-16">
+              <p className="text-slate">No tasks in the queue</p>
             </div>
           )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 };

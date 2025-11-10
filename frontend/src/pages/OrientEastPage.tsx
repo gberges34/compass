@@ -4,6 +4,10 @@ import { getTodayPlan, createDailyPlan } from '../lib/api';
 import type { DailyPlan, Energy, DeepWorkBlock, TimeBlock, CreateDailyPlanRequest } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSkeleton from '../components/LoadingSkeleton';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
+import Button from '../components/Button';
+import Input from '../components/Input';
 
 const OrientEastPage: React.FC = () => {
   const navigate = useNavigate();
@@ -163,7 +167,7 @@ const OrientEastPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="space-y-24">
         <LoadingSkeleton variant="card" count={1} />
         <LoadingSkeleton variant="card" count={5} />
       </div>
@@ -173,66 +177,55 @@ const OrientEastPage: React.FC = () => {
   // Show existing plan if it exists and not editing
   if (existingPlan && !isEditing) {
     return (
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="space-y-24">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <h1 className="text-3xl font-bold text-gray-900">Orient East</h1>
-          <p className="text-gray-600 mt-1">{today}</p>
-        </div>
+        <Card padding="large">
+          <h1 className="text-h1 text-ink">Orient East</h1>
+          <p className="text-slate mt-4">{today}</p>
+        </Card>
 
         {/* Existing Plan Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Today's Plan Already Set</h2>
-            <button
-              onClick={() => setIsEditing(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
+        <Card padding="large">
+          <div className="flex items-center justify-between mb-16">
+            <h2 className="text-h2 text-ink">Today's Plan Already Set</h2>
+            <Button variant="primary" onClick={() => setIsEditing(true)}>
               Edit Plan
-            </button>
+            </Button>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-16">
             {/* Energy Level */}
-            <div className="flex items-center space-x-3">
-              <span className="text-gray-600 font-medium">Energy Level:</span>
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  existingPlan.energyLevel === 'HIGH'
-                    ? 'bg-green-100 text-green-800'
-                    : existingPlan.energyLevel === 'MEDIUM'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
+            <div className="flex items-center space-x-12">
+              <span className="text-slate font-medium">Energy Level:</span>
+              <Badge variant={existingPlan.energyLevel === 'HIGH' ? 'mint' : existingPlan.energyLevel === 'MEDIUM' ? 'sun' : 'blush'}>
                 {existingPlan.energyLevel === 'HIGH' && '⚡ '}
                 {existingPlan.energyLevel === 'MEDIUM' && '⚖️ '}
                 {existingPlan.energyLevel === 'LOW' && '🔋 '}
                 {existingPlan.energyLevel}
-              </span>
+              </Badge>
             </div>
 
             {/* Deep Work Blocks */}
             <div>
-              <h3 className="font-medium text-gray-900 mb-2">Deep Work Blocks</h3>
-              <div className="space-y-2">
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+              <h3 className="text-h3 text-ink mb-8">Deep Work Blocks</h3>
+              <div className="space-y-8">
+                <div className="bg-sky border border-sky rounded-default p-12">
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-blue-900">
                       {existingPlan.deepWorkBlock1.focus}
                     </span>
-                    <span className="text-sm text-blue-700">
+                    <span className="text-small text-blue-700">
                       {existingPlan.deepWorkBlock1.start} - {existingPlan.deepWorkBlock1.end}
                     </span>
                   </div>
                 </div>
                 {existingPlan.deepWorkBlock2 && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <div className="bg-sky border border-sky rounded-default p-12">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-blue-900">
                         {existingPlan.deepWorkBlock2.focus}
                       </span>
-                      <span className="text-sm text-blue-700">
+                      <span className="text-small text-blue-700">
                         {existingPlan.deepWorkBlock2.start} - {existingPlan.deepWorkBlock2.end}
                       </span>
                     </div>
@@ -243,12 +236,12 @@ const OrientEastPage: React.FC = () => {
 
             {/* Top 3 Outcomes */}
             <div>
-              <h3 className="font-medium text-gray-900 mb-2">Top 3 Outcomes</h3>
-              <ul className="space-y-1">
+              <h3 className="text-h3 text-ink mb-8">Top 3 Outcomes</h3>
+              <ul className="space-y-4">
                 {existingPlan.topOutcomes.map((outcome, index) => (
                   <li key={index} className="flex items-start">
-                    <span className="text-blue-600 font-bold mr-2">{index + 1}.</span>
-                    <span className="text-gray-700">{outcome}</span>
+                    <span className="text-action font-bold mr-8">{index + 1}.</span>
+                    <span className="text-ink">{outcome}</span>
                   </li>
                 ))}
               </ul>
@@ -256,9 +249,9 @@ const OrientEastPage: React.FC = () => {
 
             {/* Reward */}
             {existingPlan.reward && (
-              <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
+              <div className="bg-sun border border-sun rounded-default p-12">
                 <div className="flex items-center">
-                  <span className="text-2xl mr-2">🎁</span>
+                  <span className="text-2xl mr-8">🎁</span>
                   <div>
                     <span className="font-medium text-amber-900">Reward: </span>
                     <span className="text-amber-800">{existingPlan.reward}</span>
@@ -267,296 +260,244 @@ const OrientEastPage: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
 
   // Show form for creating/editing plan
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="space-y-24">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-        <h1 className="text-3xl font-bold text-gray-900">Orient East</h1>
-        <p className="text-gray-600 mt-1">{today}</p>
-        <p className="text-sm text-gray-500 mt-2">
+      <Card padding="large">
+        <h1 className="text-h1 text-ink">Orient East</h1>
+        <p className="text-slate mt-4">{today}</p>
+        <p className="text-small text-slate mt-8">
           Morning planning: Set your intentions and structure for the day ahead
         </p>
-      </div>
+      </Card>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-24">
         {/* Energy Level */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Energy Level</h2>
+        <Card padding="large">
+          <h2 className="text-h2 text-ink mb-16">Energy Level</h2>
           <select
             value={energyLevel}
             onChange={(e) => setEnergyLevel(e.target.value as Energy)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
           >
             <option value="HIGH">⚡ HIGH - Fully energized and ready</option>
             <option value="MEDIUM">⚖️ MEDIUM - Normal energy levels</option>
             <option value="LOW">🔋 LOW - Running on reserve</option>
           </select>
-        </div>
+        </Card>
 
         {/* Deep Work Block #1 (Required) */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Deep Work Block #1 <span className="text-red-500">*</span>
+        <Card padding="large">
+          <h2 className="text-h2 text-ink mb-16">
+            Deep Work Block #1 <span className="text-danger">*</span>
           </h2>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Time
-                </label>
-                <input
-                  type="time"
-                  value={dwb1Start}
-                  onChange={(e) => setDwb1Start(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Time
-                </label>
-                <input
-                  type="time"
-                  value={dwb1End}
-                  onChange={(e) => setDwb1End(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Focus
-              </label>
-              <input
-                type="text"
-                value={dwb1Focus}
-                onChange={(e) => setDwb1Focus(e.target.value)}
-                placeholder="What will you work on during this block?"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          <div className="space-y-16">
+            <div className="grid grid-cols-2 gap-16">
+              <Input
+                type="time"
+                label="Start Time"
+                value={dwb1Start}
+                onChange={(e) => setDwb1Start(e.target.value)}
                 required
+                fullWidth
+              />
+              <Input
+                type="time"
+                label="End Time"
+                value={dwb1End}
+                onChange={(e) => setDwb1End(e.target.value)}
+                required
+                fullWidth
               />
             </div>
+            <Input
+              type="text"
+              label="Focus"
+              value={dwb1Focus}
+              onChange={(e) => setDwb1Focus(e.target.value)}
+              placeholder="What will you work on during this block?"
+              required
+              fullWidth
+            />
           </div>
-        </div>
+        </Card>
 
         {/* Deep Work Block #2 (Optional) */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Deep Work Block #2</h2>
-            <label className="flex items-center space-x-2 cursor-pointer">
+        <Card padding="large">
+          <div className="flex items-center justify-between mb-16">
+            <h2 className="text-h2 text-ink">Deep Work Block #2</h2>
+            <label className="flex items-center space-x-8 cursor-pointer">
               <input
                 type="checkbox"
                 checked={enableDwb2}
                 onChange={(e) => setEnableDwb2(e.target.checked)}
-                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                className="w-20 h-20 text-action rounded focus:ring-2 focus:ring-action"
               />
-              <span className="text-sm font-medium text-gray-700">Enable</span>
+              <span className="text-small font-medium text-ink">Enable</span>
             </label>
           </div>
           {enableDwb2 && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Start Time
-                  </label>
-                  <input
-                    type="time"
-                    value={dwb2Start}
-                    onChange={(e) => setDwb2Start(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    End Time
-                  </label>
-                  <input
-                    type="time"
-                    value={dwb2End}
-                    onChange={(e) => setDwb2End(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Focus
-                </label>
-                <input
-                  type="text"
-                  value={dwb2Focus}
-                  onChange={(e) => setDwb2Focus(e.target.value)}
-                  placeholder="What will you work on during this block?"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            <div className="space-y-16">
+              <div className="grid grid-cols-2 gap-16">
+                <Input
+                  type="time"
+                  label="Start Time"
+                  value={dwb2Start}
+                  onChange={(e) => setDwb2Start(e.target.value)}
+                  fullWidth
+                />
+                <Input
+                  type="time"
+                  label="End Time"
+                  value={dwb2End}
+                  onChange={(e) => setDwb2End(e.target.value)}
+                  fullWidth
                 />
               </div>
+              <Input
+                type="text"
+                label="Focus"
+                value={dwb2Focus}
+                onChange={(e) => setDwb2Focus(e.target.value)}
+                placeholder="What will you work on during this block?"
+                fullWidth
+              />
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Admin Block (Optional) */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Admin Block</h2>
-            <label className="flex items-center space-x-2 cursor-pointer">
+        <Card padding="large">
+          <div className="flex items-center justify-between mb-16">
+            <h2 className="text-h2 text-ink">Admin Block</h2>
+            <label className="flex items-center space-x-8 cursor-pointer">
               <input
                 type="checkbox"
                 checked={enableAdmin}
                 onChange={(e) => setEnableAdmin(e.target.checked)}
-                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                className="w-20 h-20 text-action rounded focus:ring-2 focus:ring-action"
               />
-              <span className="text-sm font-medium text-gray-700">Enable</span>
+              <span className="text-small font-medium text-ink">Enable</span>
             </label>
           </div>
           {enableAdmin && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Time
-                </label>
-                <input
-                  type="time"
-                  value={adminStart}
-                  onChange={(e) => setAdminStart(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Time
-                </label>
-                <input
-                  type="time"
-                  value={adminEnd}
-                  onChange={(e) => setAdminEnd(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-16">
+              <Input
+                type="time"
+                label="Start Time"
+                value={adminStart}
+                onChange={(e) => setAdminStart(e.target.value)}
+                fullWidth
+              />
+              <Input
+                type="time"
+                label="End Time"
+                value={adminEnd}
+                onChange={(e) => setAdminEnd(e.target.value)}
+                fullWidth
+              />
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Buffer Block (Optional) */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Buffer Block</h2>
-            <label className="flex items-center space-x-2 cursor-pointer">
+        <Card padding="large">
+          <div className="flex items-center justify-between mb-16">
+            <h2 className="text-h2 text-ink">Buffer Block</h2>
+            <label className="flex items-center space-x-8 cursor-pointer">
               <input
                 type="checkbox"
                 checked={enableBuffer}
                 onChange={(e) => setEnableBuffer(e.target.checked)}
-                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                className="w-20 h-20 text-action rounded focus:ring-2 focus:ring-action"
               />
-              <span className="text-sm font-medium text-gray-700">Enable</span>
+              <span className="text-small font-medium text-ink">Enable</span>
             </label>
           </div>
           {enableBuffer && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Time
-                </label>
-                <input
-                  type="time"
-                  value={bufferStart}
-                  onChange={(e) => setBufferStart(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Time
-                </label>
-                <input
-                  type="time"
-                  value={bufferEnd}
-                  onChange={(e) => setBufferEnd(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-16">
+              <Input
+                type="time"
+                label="Start Time"
+                value={bufferStart}
+                onChange={(e) => setBufferStart(e.target.value)}
+                fullWidth
+              />
+              <Input
+                type="time"
+                label="End Time"
+                value={bufferEnd}
+                onChange={(e) => setBufferEnd(e.target.value)}
+                fullWidth
+              />
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Top 3 Outcomes (Required) */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Top 3 Outcomes <span className="text-red-500">*</span>
+        <Card padding="large">
+          <h2 className="text-h2 text-ink mb-16">
+            Top 3 Outcomes <span className="text-danger">*</span>
           </h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Outcome #1 (Most Important)
-              </label>
-              <input
-                type="text"
-                value={outcome1}
-                onChange={(e) => setOutcome1(e.target.value)}
-                placeholder="What's the most important outcome for today?"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Outcome #2
-              </label>
-              <input
-                type="text"
-                value={outcome2}
-                onChange={(e) => setOutcome2(e.target.value)}
-                placeholder="Second most important outcome"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Outcome #3
-              </label>
-              <input
-                type="text"
-                value={outcome3}
-                onChange={(e) => setOutcome3(e.target.value)}
-                placeholder="Third most important outcome"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
+          <div className="space-y-16">
+            <Input
+              type="text"
+              label="Outcome #1 (Most Important)"
+              value={outcome1}
+              onChange={(e) => setOutcome1(e.target.value)}
+              placeholder="What's the most important outcome for today?"
+              required
+              fullWidth
+            />
+            <Input
+              type="text"
+              label="Outcome #2"
+              value={outcome2}
+              onChange={(e) => setOutcome2(e.target.value)}
+              placeholder="Second most important outcome"
+              required
+              fullWidth
+            />
+            <Input
+              type="text"
+              label="Outcome #3"
+              value={outcome3}
+              onChange={(e) => setOutcome3(e.target.value)}
+              placeholder="Third most important outcome"
+              required
+              fullWidth
+            />
           </div>
-        </div>
+        </Card>
 
         {/* Reward (Optional) */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Reward</h2>
-          <input
+        <Card padding="large">
+          <h2 className="text-h2 text-ink mb-16">Reward</h2>
+          <Input
             type="text"
             value={reward}
             onChange={(e) => setReward(e.target.value)}
             placeholder="How will you celebrate completing today's plan?"
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            fullWidth
           />
-        </div>
+        </Card>
 
         {/* Submit Button */}
-        <div className="flex justify-end space-x-4">
-          <button
+        <div className="flex justify-end">
+          <Button
             type="submit"
+            variant="primary"
             disabled={submitting}
-            className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
           >
             {submitting ? 'Creating Plan...' : 'Create Daily Plan'}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

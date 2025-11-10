@@ -4,6 +4,9 @@ import { getTodayPlan, updateDailyPlanReflection } from '../lib/api';
 import type { DailyPlan, EnergyMatch, UpdateDailyPlanRequest } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSkeleton from '../components/LoadingSkeleton';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
+import Button from '../components/Button';
 
 const OrientWestPage: React.FC = () => {
   const navigate = useNavigate();
@@ -28,22 +31,35 @@ const OrientWestPage: React.FC = () => {
   });
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchPlan = async () => {
       try {
         setLoading(true);
         const todayPlan = await getTodayPlan();
-        setPlan(todayPlan);
-        setNoPlanFound(false);
+        if (isMounted) {
+          setPlan(todayPlan);
+          setNoPlanFound(false);
+        }
       } catch (err) {
-        setNoPlanFound(true);
-        toast.showWarning('No plan found for today. Please create a plan first with Orient East.');
+        if (isMounted) {
+          setNoPlanFound(true);
+          toast.showWarning('No plan found for today. Please create a plan first with Orient East.');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchPlan();
-  }, [toast]);
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // toast removed - context functions are stable
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +100,7 @@ const OrientWestPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="space-y-24">
         <LoadingSkeleton variant="card" count={1} />
         <LoadingSkeleton variant="card" count={3} />
       </div>
@@ -93,24 +109,23 @@ const OrientWestPage: React.FC = () => {
 
   if (!plan || noPlanFound) {
     return (
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <h1 className="text-3xl font-bold text-gray-900">Orient West</h1>
-          <p className="text-gray-600 mt-1">{today}</p>
-        </div>
+      <div className="space-y-24">
+        <Card padding="large">
+          <h1 className="text-h1 text-ink">Orient West</h1>
+          <p className="text-slate mt-4">{today}</p>
+        </Card>
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-yellow-900 mb-2">No Plan Found</h2>
-          <p className="text-yellow-800 mb-4">
+        <Card padding="large" className="bg-sun border-sun">
+          <h2 className="text-h2 text-amber-900 mb-8">No Plan Found</h2>
+          <p className="text-amber-800 mb-16">
             You need to create a morning plan before you can reflect on it.
           </p>
-          <Link
-            to="/orient/east"
-            className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Create Morning Plan
+          <Link to="/orient/east">
+            <Button variant="primary">
+              Create Morning Plan
+            </Button>
           </Link>
-        </div>
+        </Card>
       </div>
     );
   }
@@ -118,76 +133,69 @@ const OrientWestPage: React.FC = () => {
   // Check if already reflected
   if (plan.reflection) {
     return (
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <h1 className="text-3xl font-bold text-gray-900">Orient West</h1>
-          <p className="text-gray-600 mt-1">{today}</p>
-        </div>
+      <div className="space-y-24">
+        <Card padding="large">
+          <h1 className="text-h1 text-ink">Orient West</h1>
+          <p className="text-slate mt-4">{today}</p>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <Card padding="large">
+          <h2 className="text-h2 text-ink mb-16">
             Evening Reflection Already Completed
           </h2>
 
-          <div className="space-y-4">
+          <div className="space-y-16">
             {/* Actual Outcomes */}
             <div>
-              <span className="text-gray-600 font-medium">Outcomes Completed:</span>
-              <span className="ml-2 text-lg font-bold text-blue-600">
+              <span className="text-slate font-medium">Outcomes Completed:</span>
+              <span className="ml-8 text-body font-bold text-action">
                 {plan.actualOutcomes} / 3
               </span>
             </div>
 
             {/* Energy Match */}
-            <div>
-              <span className="text-gray-600 font-medium">Energy Match:</span>
-              <span
-                className={`ml-2 px-3 py-1 rounded-full text-sm font-medium ${
-                  plan.energyMatch === 'PERFECT'
-                    ? 'bg-green-100 text-green-800'
-                    : plan.energyMatch === 'MOSTLY_ALIGNED'
-                    ? 'bg-blue-100 text-blue-800'
-                    : plan.energyMatch === 'SOME_MISMATCH'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
+            <div className="flex items-center space-x-8">
+              <span className="text-slate font-medium">Energy Match:</span>
+              <Badge variant={
+                plan.energyMatch === 'PERFECT' ? 'success' :
+                plan.energyMatch === 'MOSTLY_ALIGNED' ? 'sky' :
+                plan.energyMatch === 'SOME_MISMATCH' ? 'warn' : 'danger'
+              }>
                 {plan.energyMatch}
-              </span>
+              </Badge>
             </div>
 
             {/* Reflection */}
             <div>
-              <h3 className="font-medium text-gray-900 mb-2">Reflection:</h3>
-              <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
-                <p className="text-gray-700 whitespace-pre-wrap">{plan.reflection}</p>
+              <h3 className="text-h3 text-ink mb-8">Reflection:</h3>
+              <div className="bg-fog border border-stone rounded-default p-16">
+                <p className="text-ink whitespace-pre-wrap">{plan.reflection}</p>
               </div>
             </div>
           </div>
 
-          <div className="mt-6">
-            <Link
-              to="/reviews"
-              className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              View Reviews
+          <div className="mt-24">
+            <Link to="/reviews">
+              <Button variant="primary">
+                View Reviews
+              </Button>
             </Link>
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="space-y-24">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-        <h1 className="text-3xl font-bold text-gray-900">Orient West</h1>
-        <p className="text-gray-600 mt-1">{today}</p>
-        <p className="text-sm text-gray-500 mt-2">
+      <Card padding="large">
+        <h1 className="text-h1 text-ink">Orient West</h1>
+        <p className="text-slate mt-4">{today}</p>
+        <p className="text-small text-slate mt-8">
           Evening reflection: Review your day and capture learnings
         </p>
-      </div>
+      </Card>
 
       {/* Morning Plan Review */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

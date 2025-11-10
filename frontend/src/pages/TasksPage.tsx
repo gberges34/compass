@@ -5,6 +5,10 @@ import { useToast } from '../contexts/ToastContext';
 import TaskModal from '../components/TaskModal';
 import CompleteTaskModal from '../components/CompleteTaskModal';
 import TaskActions from '../components/TaskActions';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
+import Button from '../components/Button';
+import { getPriorityStyle, getCategoryStyle, getEnergyStyle } from '../lib/designTokens';
 
 const TasksPage: React.FC = () => {
   const toast = useToast();
@@ -41,39 +45,6 @@ const TasksPage: React.FC = () => {
       console.error('Error fetching tasks:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getPriorityColor = (priority: Priority) => {
-    switch (priority) {
-      case 'MUST': return 'bg-red-100 text-red-800';
-      case 'SHOULD': return 'bg-orange-100 text-orange-800';
-      case 'COULD': return 'bg-yellow-100 text-yellow-800';
-      case 'MAYBE': return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getCategoryColor = (category: Category) => {
-    const colors: Record<Category, string> = {
-      SCHOOL: 'bg-blue-100 text-blue-800',
-      MUSIC: 'bg-purple-100 text-purple-800',
-      FITNESS: 'bg-green-100 text-green-800',
-      GAMING: 'bg-indigo-100 text-indigo-800',
-      NUTRITION: 'bg-lime-100 text-lime-800',
-      HYGIENE: 'bg-cyan-100 text-cyan-800',
-      PET: 'bg-pink-100 text-pink-800',
-      SOCIAL: 'bg-fuchsia-100 text-fuchsia-800',
-      PERSONAL: 'bg-violet-100 text-violet-800',
-      ADMIN: 'bg-slate-100 text-slate-800',
-    };
-    return colors[category];
-  };
-
-  const getEnergyColor = (energy: Energy) => {
-    switch (energy) {
-      case 'HIGH': return 'bg-red-50 text-red-700 border border-red-200';
-      case 'MEDIUM': return 'bg-yellow-50 text-yellow-700 border border-yellow-200';
-      case 'LOW': return 'bg-green-50 text-green-700 border border-green-200';
     }
   };
 
@@ -151,44 +122,40 @@ const TasksPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-24">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
+      <Card padding="large">
+        <div className="flex justify-between items-center">
+          <h1 className="text-h1 text-ink">Tasks</h1>
+          <Button variant="primary" onClick={() => setShowNewTaskModal(true)}>
+            New Task
+          </Button>
+        </div>
+
+        {/* Tabs */}
+        <div className="mt-24 flex space-x-4 border-b border-fog">
+          {(['NEXT', 'WAITING', 'ACTIVE', 'DONE'] as TaskStatus[]).map((status) => (
             <button
-              onClick={() => setShowNewTaskModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              key={status}
+              onClick={() => setSelectedTab(status)}
+              className={`px-16 py-8 font-medium text-body transition-standard border-b-2 ${
+                selectedTab === status
+                  ? 'border-action text-action'
+                  : 'border-transparent text-slate hover:text-ink'
+              }`}
             >
-              New Task
+              {status}
             </button>
-          </div>
+          ))}
+        </div>
 
-          {/* Tabs */}
-          <div className="mt-4 flex space-x-1 border-b">
-            {(['NEXT', 'WAITING', 'ACTIVE', 'DONE'] as TaskStatus[]).map((status) => (
-              <button
-                key={status}
-                onClick={() => setSelectedTab(status)}
-                className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
-                  selectedTab === status
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {status}
-              </button>
-            ))}
-          </div>
-
-          {/* Filters */}
-          <div className="mt-4 flex flex-wrap gap-3">
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value as Category | '')}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
+        {/* Filters */}
+        <div className="mt-16 flex flex-wrap gap-12">
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value as Category | '')}
+            className="px-12 py-8 border border-stone rounded-default text-small bg-snow focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
+          >
               <option value="">All Categories</option>
               <option value="SCHOOL">School</option>
               <option value="MUSIC">Music</option>
@@ -202,164 +169,164 @@ const TasksPage: React.FC = () => {
               <option value="ADMIN">Admin</option>
             </select>
 
-            <select
-              value={energyFilter}
-              onChange={(e) => setEnergyFilter(e.target.value as Energy | '')}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Energy Levels</option>
-              <option value="HIGH">High</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="LOW">Low</option>
-            </select>
+          <select
+            value={energyFilter}
+            onChange={(e) => setEnergyFilter(e.target.value as Energy | '')}
+            className="px-12 py-8 border border-stone rounded-default text-small bg-snow focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
+          >
+            <option value="">All Energy Levels</option>
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+          </select>
 
-            <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value as Priority | '')}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Priorities</option>
-              <option value="MUST">Must</option>
-              <option value="SHOULD">Should</option>
-              <option value="COULD">Could</option>
-              <option value="MAYBE">Maybe</option>
-            </select>
-          </div>
+          <select
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value as Priority | '')}
+            className="px-12 py-8 border border-stone rounded-default text-small bg-snow focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
+          >
+            <option value="">All Priorities</option>
+            <option value="MUST">Must</option>
+            <option value="SHOULD">Should</option>
+            <option value="COULD">Could</option>
+            <option value="MAYBE">Maybe</option>
+          </select>
         </div>
-      </div>
+      </Card>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      {loading ? (
+        <div className="flex justify-center items-center py-64">
+          <div className="animate-spin rounded-full h-48 w-48 border-b-4 border-action"></div>
+        </div>
+      ) : tasks.length === 0 ? (
+        <Card padding="large">
+          <div className="text-center py-32">
+            <p className="text-slate text-body mb-8">No tasks found</p>
+            <p className="text-slate text-small">Try adjusting your filters or create a new task</p>
           </div>
-        ) : tasks.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No tasks found</p>
-            <p className="text-gray-400 text-sm mt-2">Try adjusting your filters or create a new task</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
+          {tasks.map((task) => (
+            <Card
+              key={task.id}
+              padding="medium"
+              className="hover:shadow-e02 transition-shadow duration-micro"
+            >
+              <h3
+                className="font-semibold text-ink mb-12 cursor-pointer hover:text-action transition-colors duration-micro"
+                onClick={() => setSelectedTask(task)}
               >
-                <h3
-                  className="font-semibold text-gray-900 mb-3 cursor-pointer hover:text-blue-600"
-                  onClick={() => setSelectedTask(task)}
-                >
-                  {task.name}
-                </h3>
+                {task.name}
+              </h3>
 
-                <div className="flex flex-wrap gap-2 mb-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(task.category)}`}>
-                    {task.category}
-                  </span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getEnergyColor(task.energyRequired)}`}>
-                    {task.energyRequired}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-                  <div className="flex items-center space-x-4">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(task.priority)}`}>
-                      {task.priority}
-                    </span>
-                    <span className="flex items-center">
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      {formatDuration(task.duration)}
-                    </span>
-                  </div>
-                </div>
-
-                {task.dueDate && (
-                  <div className="mb-3 text-xs text-gray-500">
-                    Due: {new Date(task.dueDate).toLocaleDateString()}
-                  </div>
-                )}
-
-                <TaskActions
-                  task={task}
-                  onActivate={() => handleActivateTask(task)}
-                  onComplete={() => setTaskToComplete(task)}
-                  onEdit={() => setTaskToEdit(task)}
-                  onDelete={() => handleDeleteTask(task.id)}
-                  compact
-                  loading={actionLoading}
-                />
+              <div className="flex flex-wrap gap-8 mb-12">
+                <Badge variant={getCategoryStyle(task.category).bg === 'bg-sky' ? 'sky' : getCategoryStyle(task.category).bg === 'bg-lavender' ? 'lavender' : getCategoryStyle(task.category).bg === 'bg-mint' ? 'mint' : getCategoryStyle(task.category).bg === 'bg-blush' ? 'blush' : getCategoryStyle(task.category).bg === 'bg-sun' ? 'sun' : 'neutral'} size="small">
+                  {task.category}
+                </Badge>
+                <Badge variant={task.energyRequired === 'HIGH' ? 'mint' : task.energyRequired === 'MEDIUM' ? 'sun' : 'blush'} size="small">
+                  {task.energyRequired}
+                </Badge>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+
+              <div className="flex items-center justify-between text-small text-slate mb-12">
+                <div className="flex items-center space-x-12">
+                  <Badge variant={task.priority === 'MUST' ? 'danger' : task.priority === 'SHOULD' ? 'warn' : task.priority === 'COULD' ? 'sun' : 'neutral'} size="small">
+                    {task.priority}
+                  </Badge>
+                  <span className="flex items-center text-micro">
+                    <svg className="w-12 h-12 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {formatDuration(task.duration)}
+                  </span>
+                </div>
+              </div>
+
+              {task.dueDate && (
+                <div className="mb-12 text-micro text-slate">
+                  Due: {new Date(task.dueDate).toLocaleDateString()}
+                </div>
+              )}
+
+              <TaskActions
+                task={task}
+                onActivate={() => handleActivateTask(task)}
+                onComplete={() => setTaskToComplete(task)}
+                onEdit={() => setTaskToEdit(task)}
+                onDelete={() => handleDeleteTask(task.id)}
+                compact
+                loading={actionLoading}
+              />
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Task Detail Modal */}
       {selectedTask && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">{selectedTask.name}</h2>
+        <div className="fixed inset-0 bg-ink/50 backdrop-blur-sm flex items-center justify-center p-24 z-50">
+          <div className="bg-cloud rounded-modal max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-eglass border border-fog">
+            <div className="p-32">
+              <div className="flex justify-between items-start mb-16">
+                <h2 className="text-h2 text-ink">{selectedTask.name}</h2>
                 <button
                   onClick={() => setSelectedTask(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-slate hover:text-ink transition-colors duration-micro"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(selectedTask.category)}`}>
+              <div className="space-y-16">
+                <div className="flex flex-wrap gap-8">
+                  <Badge variant={getCategoryStyle(selectedTask.category).bg === 'bg-sky' ? 'sky' : getCategoryStyle(selectedTask.category).bg === 'bg-lavender' ? 'lavender' : getCategoryStyle(selectedTask.category).bg === 'bg-mint' ? 'mint' : getCategoryStyle(selectedTask.category).bg === 'bg-blush' ? 'blush' : getCategoryStyle(selectedTask.category).bg === 'bg-sun' ? 'sun' : 'neutral'}>
                     {selectedTask.category}
-                  </span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getEnergyColor(selectedTask.energyRequired)}`}>
+                  </Badge>
+                  <Badge variant={selectedTask.energyRequired === 'HIGH' ? 'mint' : selectedTask.energyRequired === 'MEDIUM' ? 'sun' : 'blush'}>
                     {selectedTask.energyRequired} Energy
-                  </span>
-                  <span className={`px-3 py-1 rounded text-sm font-medium ${getPriorityColor(selectedTask.priority)}`}>
+                  </Badge>
+                  <Badge variant={selectedTask.priority === 'MUST' ? 'danger' : selectedTask.priority === 'SHOULD' ? 'warn' : selectedTask.priority === 'COULD' ? 'sun' : 'neutral'}>
                     {selectedTask.priority}
-                  </span>
+                  </Badge>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-16 text-body">
                   <div>
-                    <span className="font-medium text-gray-700">Duration:</span>
-                    <span className="ml-2 text-gray-600">{formatDuration(selectedTask.duration)}</span>
+                    <span className="font-medium text-ink">Duration:</span>
+                    <span className="ml-8 text-slate">{formatDuration(selectedTask.duration)}</span>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-700">Context:</span>
-                    <span className="ml-2 text-gray-600">{selectedTask.context}</span>
+                    <span className="font-medium text-ink">Context:</span>
+                    <span className="ml-8 text-slate">{selectedTask.context}</span>
                   </div>
                   {selectedTask.dueDate && (
                     <div>
-                      <span className="font-medium text-gray-700">Due Date:</span>
-                      <span className="ml-2 text-gray-600">
+                      <span className="font-medium text-ink">Due Date:</span>
+                      <span className="ml-8 text-slate">
                         {new Date(selectedTask.dueDate).toLocaleDateString()}
                       </span>
                     </div>
                   )}
                   {selectedTask.scheduledStart && (
                     <div>
-                      <span className="font-medium text-gray-700">Scheduled:</span>
-                      <span className="ml-2 text-gray-600">
+                      <span className="font-medium text-ink">Scheduled:</span>
+                      <span className="ml-8 text-slate">
                         {new Date(selectedTask.scheduledStart).toLocaleString()}
                       </span>
                     </div>
                   )}
                 </div>
 
-                <div className="border-t pt-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">Definition of Done</h3>
-                  <p className="text-gray-700 whitespace-pre-wrap">{selectedTask.definitionOfDone}</p>
+                <div className="border-t border-fog pt-16">
+                  <h3 className="text-h3 text-ink mb-8">Definition of Done</h3>
+                  <p className="text-body text-ink whitespace-pre-wrap">{selectedTask.definitionOfDone}</p>
                 </div>
 
-                <div className="border-t pt-4 text-xs text-gray-500">
+                <div className="border-t border-fog pt-16 text-micro text-slate">
                   <div>Created: {new Date(selectedTask.createdAt).toLocaleString()}</div>
                   <div>Updated: {new Date(selectedTask.updatedAt).toLocaleString()}</div>
                   {selectedTask.activatedAt && (

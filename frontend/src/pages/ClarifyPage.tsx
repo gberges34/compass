@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { getTodoistPending, enrichTask, createTask } from '../lib/api';
 import type { TempCapturedTask, Priority, Energy } from '../types';
 import { useToast } from '../contexts/ToastContext';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import Input from '../components/Input';
 
 interface EnrichedTaskData {
   name: string;
@@ -121,211 +124,212 @@ const ClarifyPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-24">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Clarify Tasks</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Review and enrich tasks captured from Todoist
-          </p>
-        </div>
-      </div>
+      <Card padding="large">
+        <h1 className="text-h1 text-ink">Clarify Tasks</h1>
+        <p className="text-slate mt-4">
+          Review and enrich tasks captured from Todoist
+        </p>
+      </Card>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      {loading ? (
+        <div className="flex justify-center items-center py-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-48 w-48 border-b-4 border-action"></div>
+            <p className="mt-16 text-slate">Loading tasks...</p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Pending Tasks List */}
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Pending Tasks ({pendingTasks.length})
-              </h2>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-24">
+          {/* Pending Tasks List */}
+          <div>
+            <h2 className="text-h2 text-ink mb-16">
+              Pending Tasks ({pendingTasks.length})
+            </h2>
 
-              {pendingTasks.length === 0 ? (
-                <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-                  <p className="text-gray-500">No pending tasks to clarify</p>
-                  <p className="text-sm text-gray-400 mt-2">All caught up!</p>
+            {pendingTasks.length === 0 ? (
+              <Card padding="large">
+                <div className="text-center">
+                  <p className="text-slate">No pending tasks to clarify</p>
+                  <p className="text-small text-slate mt-8">All caught up!</p>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {pendingTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      onClick={() => handleSelectTask(task)}
-                      className={`bg-white rounded-lg border p-4 cursor-pointer transition-all ${
-                        selectedTask?.id === task.id
-                          ? 'border-blue-500 shadow-md'
-                          : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                      }`}
-                    >
-                      <h3 className="font-medium text-gray-900 mb-1">{task.name}</h3>
-                      <div className="flex items-center justify-between text-sm text-gray-500">
-                        <span className="capitalize">{task.source}</span>
-                        {task.dueDate && (
-                          <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Clarification Form */}
-            <div>
-              {selectedTask ? (
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    Clarify Task
-                  </h2>
-
-                  <div className="space-y-4">
-                    {/* Task Name (Read-only) */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Task Name
-                      </label>
-                      <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
-                        {selectedTask.name}
-                      </div>
-                    </div>
-
-                    {/* Priority */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Priority
-                      </label>
-                      <select
-                        value={priority}
-                        onChange={(e) => setPriority(Number(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={enriching || saving}
-                      >
-                        <option value={1}>1 - Must</option>
-                        <option value={2}>2 - Should</option>
-                        <option value={3}>3 - Could</option>
-                        <option value={4}>4 - Maybe</option>
-                      </select>
-                    </div>
-
-                    {/* Duration */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Duration (minutes)
-                      </label>
-                      <input
-                        type="number"
-                        value={duration}
-                        onChange={(e) => setDuration(Number(e.target.value))}
-                        min={5}
-                        step={5}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={enriching || saving}
-                      />
-                    </div>
-
-                    {/* Energy */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Energy Required
-                      </label>
-                      <select
-                        value={energy}
-                        onChange={(e) => setEnergy(e.target.value as Energy)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={enriching || saving}
-                      >
-                        <option value="HIGH">High</option>
-                        <option value="MEDIUM">Medium</option>
-                        <option value="LOW">Low</option>
-                      </select>
-                    </div>
-
-                    {/* Enrich Button */}
-                    <button
-                      onClick={handleEnrichTask}
-                      disabled={enriching || saving}
-                      className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-                    >
-                      {enriching ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Enriching with AI...
-                        </>
-                      ) : (
-                        'Enrich with AI'
+              </Card>
+            ) : (
+              <div className="space-y-12">
+                {pendingTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    onClick={() => handleSelectTask(task)}
+                    className={`bg-cloud rounded-card shadow-e01 border border-fog p-24 cursor-pointer transition-all duration-micro ${
+                      selectedTask?.id === task.id
+                        ? 'border-action shadow-e02'
+                        : 'hover:border-stone hover:shadow-e01'
+                    }`}
+                  >
+                    <h3 className="font-medium text-ink mb-4">{task.name}</h3>
+                    <div className="flex items-center justify-between text-small text-slate">
+                      <span className="capitalize">{task.source}</span>
+                      {task.dueDate && (
+                        <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
                       )}
-                    </button>
-
-                    {/* Enriched Data Display */}
-                    {enrichedData && (
-                      <div className="mt-6 pt-6 border-t space-y-4">
-                        <h3 className="font-semibold text-gray-900">Enriched Task Details</h3>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Enriched Name
-                          </label>
-                          <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-gray-700">
-                            {enrichedData.name}
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Category
-                          </label>
-                          <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-gray-700">
-                            {enrichedData.category}
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Context
-                          </label>
-                          <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-gray-700">
-                            {enrichedData.context}
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Definition of Done
-                          </label>
-                          <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-gray-700 whitespace-pre-wrap">
-                            {enrichedData.definitionOfDone}
-                          </div>
-                        </div>
-
-                        {/* Save Button */}
-                        <button
-                          onClick={handleSaveTask}
-                          disabled={saving}
-                          className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-                        >
-                          {saving ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              Saving Task...
-                            </>
-                          ) : (
-                            'Save Task'
-                          )}
-                        </button>
-                      </div>
-                    )}
+                    </div>
                   </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Clarification Form */}
+          <div>
+            {selectedTask ? (
+              <Card padding="large">
+                <h2 className="text-h2 text-ink mb-16">
+                  Clarify Task
+                </h2>
+
+                <div className="space-y-16">
+                  {/* Task Name (Read-only) */}
+                  <div>
+                    <label className="block text-small font-medium text-ink mb-4">
+                      Task Name
+                    </label>
+                    <div className="px-12 py-8 bg-fog border border-stone rounded-default text-ink">
+                      {selectedTask.name}
+                    </div>
+                  </div>
+
+                  {/* Priority */}
+                  <div>
+                    <label className="block text-small font-medium text-ink mb-4">
+                      Priority
+                    </label>
+                    <select
+                      value={priority}
+                      onChange={(e) => setPriority(Number(e.target.value))}
+                      className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
+                      disabled={enriching || saving}
+                    >
+                      <option value={1}>1 - Must</option>
+                      <option value={2}>2 - Should</option>
+                      <option value={3}>3 - Could</option>
+                      <option value={4}>4 - Maybe</option>
+                    </select>
+                  </div>
+
+                  {/* Duration */}
+                  <Input
+                    type="number"
+                    label="Duration (minutes)"
+                    value={duration}
+                    onChange={(e) => setDuration(Number(e.target.value))}
+                    min={5}
+                    step={5}
+                    disabled={enriching || saving}
+                    fullWidth
+                  />
+
+                  {/* Energy */}
+                  <div>
+                    <label className="block text-small font-medium text-ink mb-4">
+                      Energy Required
+                    </label>
+                    <select
+                      value={energy}
+                      onChange={(e) => setEnergy(e.target.value as Energy)}
+                      className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
+                      disabled={enriching || saving}
+                    >
+                      <option value="HIGH">High</option>
+                      <option value="MEDIUM">Medium</option>
+                      <option value="LOW">Low</option>
+                    </select>
+                  </div>
+
+                  {/* Enrich Button */}
+                  <Button
+                    variant="primary"
+                    onClick={handleEnrichTask}
+                    disabled={enriching || saving}
+                    className="w-full"
+                  >
+                    {enriching ? (
+                      <>
+                        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-snow mr-8 inline-block"></div>
+                        Enriching with AI...
+                      </>
+                    ) : (
+                      'Enrich with AI'
+                    )}
+                  </Button>
+
+                  {/* Enriched Data Display */}
+                  {enrichedData && (
+                    <div className="mt-24 pt-16 border-t border-fog space-y-16">
+                      <h3 className="text-h3 text-ink">Enriched Task Details</h3>
+
+                      <div>
+                        <label className="block text-small font-medium text-ink mb-4">
+                          Enriched Name
+                        </label>
+                        <div className="px-12 py-8 bg-sky border border-sky rounded-default text-ink">
+                          {enrichedData.name}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-small font-medium text-ink mb-4">
+                          Category
+                        </label>
+                        <div className="px-12 py-8 bg-sky border border-sky rounded-default text-ink">
+                          {enrichedData.category}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-small font-medium text-ink mb-4">
+                          Context
+                        </label>
+                        <div className="px-12 py-8 bg-sky border border-sky rounded-default text-ink">
+                          {enrichedData.context}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-small font-medium text-ink mb-4">
+                          Definition of Done
+                        </label>
+                        <div className="px-12 py-8 bg-sky border border-sky rounded-default text-ink whitespace-pre-wrap">
+                          {enrichedData.definitionOfDone}
+                        </div>
+                      </div>
+
+                      {/* Save Button */}
+                      <Button
+                        variant="primary"
+                        onClick={handleSaveTask}
+                        disabled={saving}
+                        className="w-full"
+                      >
+                        {saving ? (
+                          <>
+                            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-snow mr-8 inline-block"></div>
+                            Saving Task...
+                          </>
+                        ) : (
+                          'Save Task'
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+              </Card>
+            ) : (
+              <Card padding="large">
+                <div className="text-center">
                   <svg
-                    className="mx-auto h-12 w-12 text-gray-400 mb-4"
+                    className="mx-auto h-48 w-48 text-slate mb-16"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -337,13 +341,13 @@ const ClarifyPage: React.FC = () => {
                       d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                     />
                   </svg>
-                  <p className="text-gray-500">Select a task to clarify</p>
+                  <p className="text-slate">Select a task to clarify</p>
                 </div>
-              )}
-            </div>
+              </Card>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

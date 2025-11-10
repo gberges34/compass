@@ -2,16 +2,105 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Compass Design System - Base Styles */
+@layer base {
+  * {
+    @apply border-stone;
+  }
+
+  body {
+    @apply bg-snow text-ink font-sans antialiased;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Typography baseline */
+  h1 {
+    @apply text-h1;
+  }
+
+  h2 {
+    @apply text-h2;
+  }
+
+  h3 {
+    @apply text-h3;
+  }
+
+  p {
+    @apply text-body;
+  }
+
+  /* Link styles */
+  a {
+    @apply text-action transition-colors duration-micro;
+  }
+
+  a:hover {
+    @apply text-action-hover;
+  }
+
+  /* Focus ring */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-action ring-offset-2;
+  }
+
+  /* Code blocks */
+  code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+    @apply text-small bg-cloud px-1 py-0.5 rounded;
+  }
+
+  pre code {
+    @apply px-0 py-0;
+  }
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+/* Compass Design System - Component Utilities */
+@layer components {
+  /* Card base */
+  .card {
+    @apply bg-cloud rounded-card shadow-e02 border border-fog;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-white/72 backdrop-blur-glass shadow-eglass;
+  }
+
+  /* Gradient backgrounds */
+  .gradient-dawn {
+    background: linear-gradient(180deg, #CFE9FF 0%, #E1D9FF 100%);
+  }
+
+  .gradient-aurora {
+    background: linear-gradient(180deg, #C9F0DE 0%, #CFE9FF 100%);
+  }
+
+  .gradient-blush-sun {
+    background: linear-gradient(180deg, #FFDDE6 0%, #FFEFC6 100%);
+  }
+}
+
+/* Compass Design System - Utility Classes */
+@layer utilities {
+  /* Text color utilities */
+  .text-secondary {
+    @apply text-slate;
+  }
+
+  /* Smooth transitions */
+  .transition-standard {
+    @apply transition-all duration-standard;
+  }
+
+  /* Elevation utilities */
+  .elevation-01 {
+    @apply shadow-e01;
+  }
+
+  .elevation-02 {
+    @apply shadow-e02;
+  }
 }
