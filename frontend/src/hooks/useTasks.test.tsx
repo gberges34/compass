@@ -347,14 +347,14 @@ describe('Task Scheduling', () => {
     });
   });
 
-  describe('Cache Invalidation Integration', () => {
-    it('should invalidate all task queries after successful schedule', async () => {
+  describe('Cache Refetch Integration', () => {
+    it('should refetch all task queries after successful schedule', async () => {
       // Setup
       const scheduledStart = '2025-12-25T10:00:00.000Z';
       jest.mocked(api.scheduleTask).mockResolvedValueOnce(mockScheduledTask);
 
-      // Spy on invalidateQueries
-      const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
+      // Spy on refetchQueries
+      const refetchSpy = jest.spyOn(queryClient, 'refetchQueries');
 
       // Pre-populate cache
       queryClient.setQueryData(taskKeys.list({ status: 'NEXT' }), [mockTask]);
@@ -368,13 +368,13 @@ describe('Task Scheduling', () => {
       // Wait for mutation to complete
       await waitFor(() => expect(result.current.isPending).toBe(false));
 
-      // Verify invalidation was called
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: taskKeys.lists() });
+      // Verify refetch was called
+      expect(refetchSpy).toHaveBeenCalledWith({ queryKey: taskKeys.lists() });
 
-      invalidateSpy.mockRestore();
+      refetchSpy.mockRestore();
     });
 
-    it('should invalidate all task queries after successful unschedule', async () => {
+    it('should refetch all task queries after successful unschedule', async () => {
       // Setup
       const unscheduledTask: Task = {
         ...mockTask,
@@ -383,8 +383,8 @@ describe('Task Scheduling', () => {
       };
       jest.mocked(api.unscheduleTask).mockResolvedValueOnce(unscheduledTask);
 
-      // Spy on invalidateQueries
-      const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
+      // Spy on refetchQueries
+      const refetchSpy = jest.spyOn(queryClient, 'refetchQueries');
 
       // Pre-populate cache
       queryClient.setQueryData(taskKeys.list({ status: 'NEXT' }), [mockScheduledTask]);
@@ -398,10 +398,10 @@ describe('Task Scheduling', () => {
       // Wait for mutation to complete
       await waitFor(() => expect(result.current.isPending).toBe(false));
 
-      // Verify invalidation was called
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: taskKeys.lists() });
+      // Verify refetch was called
+      expect(refetchSpy).toHaveBeenCalledWith({ queryKey: taskKeys.lists() });
 
-      invalidateSpy.mockRestore();
+      refetchSpy.mockRestore();
     });
   });
 });

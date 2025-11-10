@@ -37,11 +37,66 @@ export function useTask(id: string) {
 
 export function useCreateTask() {
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   return useMutation({
     mutationFn: (task: Partial<Task>) => api.createTask(task),
+    onMutate: async (newTask) => {
+      log('[useCreateTask] onMutate called:', newTask);
+
+      // Cancel ongoing queries
+      await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
+
+      // Snapshot current state
+      const allCachedQueries = queryClient.getQueriesData({ queryKey: taskKeys.lists() });
+
+      // Optimistically add the new task (with temporary ID)
+      const optimisticTask: Task = {
+        id: `temp-${Date.now()}`,
+        name: newTask.name || 'New Task',
+        status: newTask.status || 'NEXT',
+        priority: newTask.priority || 'COULD',
+        category: newTask.category || 'PERSONAL',
+        duration: newTask.duration || 30,
+        energyRequired: newTask.energyRequired || 'MEDIUM',
+        context: newTask.context || 'ANYWHERE',
+        definitionOfDone: newTask.definitionOfDone || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        ...newTask,
+      } as Task;
+
+      // Add to ALL cached lists that match the task's filters
+      allCachedQueries.forEach(([queryKey, data]) => {
+        if (Array.isArray(data)) {
+          // Check if this cache entry would include the new task
+          const filters = (queryKey as any[])[2]?.filters;
+          const shouldInclude = !filters ||
+            ((!filters.status || filters.status === optimisticTask.status) &&
+            (!filters.category || filters.category === optimisticTask.category) &&
+            (!filters.priority || filters.priority === optimisticTask.priority) &&
+            (!filters.energyRequired || filters.energyRequired === optimisticTask.energyRequired));
+
+          if (shouldInclude) {
+            queryClient.setQueryData(queryKey, (old: Task[] = []) => [...old, optimisticTask]);
+          }
+        }
+      });
+
+      return { allCachedQueries };
+    },
+    onError: (err, variables, context) => {
+      console.error('[useCreateTask] Error:', err);
+      if (context?.allCachedQueries) {
+        context.allCachedQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      toast.showError('Failed to create task');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      log('[useCreateTask] Success, refetching queries');
+      queryClient.refetchQueries({ queryKey: taskKeys.lists() });
     },
   });
 }
@@ -97,11 +152,40 @@ export function useUpdateTask() {
 
 export function useDeleteTask() {
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   return useMutation({
     mutationFn: (id: string) => api.deleteTask(id),
+    onMutate: async (id) => {
+      log('[useDeleteTask] onMutate called:', { id });
+
+      await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
+
+      const allCachedQueries = queryClient.getQueriesData({ queryKey: taskKeys.lists() });
+
+      // Remove task from ALL cached lists
+      allCachedQueries.forEach(([queryKey, data]) => {
+        if (Array.isArray(data)) {
+          queryClient.setQueryData(queryKey, (old: Task[] = []) =>
+            old.filter((task) => task.id !== id)
+          );
+        }
+      });
+
+      return { allCachedQueries };
+    },
+    onError: (err, variables, context) => {
+      console.error('[useDeleteTask] Error:', err);
+      if (context?.allCachedQueries) {
+        context.allCachedQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      toast.showError('Failed to delete task');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      log('[useDeleteTask] Success, refetching queries');
+      queryClient.refetchQueries({ queryKey: taskKeys.lists() });
     },
   });
 }
@@ -222,8 +306,8 @@ export function useActivateTask() {
   return useMutation({
     mutationFn: (id: string) => api.activateTask(id),
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      queryClient.refetchQueries({ queryKey: taskKeys.detail(id) });
+      queryClient.refetchQueries({ queryKey: taskKeys.lists() });
     },
   });
 }
@@ -235,7 +319,7 @@ export function useCompleteTask() {
     mutationFn: ({ id, request }: { id: string; request: CompleteTaskRequest }) =>
       api.completeTask(id, request),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      queryClient.refetchQueries({ queryKey: taskKeys.lists() });
     },
   });
 }
