@@ -47,19 +47,44 @@ const CalendarPage: React.FC = () => {
 
   // Generate calendar events from query data
   const events = useMemo(() => {
-    // Convert scheduled tasks to calendar events
-    const taskEvents: CalendarEvent[] = scheduledTasks.map((task) => {
-      const start = new Date(task.scheduledStart!);
-      const end = new Date(start.getTime() + task.duration * 60000);
-      return {
-        id: task.id,
-        title: task.name,
-        start,
-        end,
-        task,
-        type: 'task',
-      };
-    });
+    console.log('[Calendar] Generating events from tasks:', scheduledTasks.length);
+
+    // Convert scheduled tasks to calendar events with defensive null checks
+    const taskEvents: CalendarEvent[] = scheduledTasks
+      .filter((task) => {
+        // Defensive: ensure scheduledStart exists and is valid
+        if (!task.scheduledStart) {
+          console.warn('[Calendar] Task missing scheduledStart:', task.id);
+          return false;
+        }
+
+        try {
+          const start = new Date(task.scheduledStart);
+          if (isNaN(start.getTime())) {
+            console.warn('[Calendar] Invalid scheduledStart date:', task.scheduledStart);
+            return false;
+          }
+          return true;
+        } catch (error) {
+          console.error('[Calendar] Error parsing scheduledStart:', error);
+          return false;
+        }
+      })
+      .map((task) => {
+        const start = new Date(task.scheduledStart!);
+        const end = new Date(start.getTime() + task.duration * 60000);
+
+        return {
+          id: task.id,
+          title: task.name,
+          start,
+          end,
+          task,
+          type: 'task' as const,
+        };
+      });
+
+    console.log('[Calendar] Generated task events:', taskEvents.length);
 
     // Generate plan events if today's plan exists
     const planEvents: CalendarEvent[] = [];
