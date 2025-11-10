@@ -15,6 +15,10 @@ import Badge from '../components/Badge';
 import Button from '../components/Button';
 import { getCategoryStyle } from '../lib/designTokens';
 
+// Development-only logging
+const DEBUG = process.env.NODE_ENV === 'development';
+const log = DEBUG ? console.log : () => {};
+
 const localizer = momentLocalizer(moment);
 const DnDCalendar = withDragAndDrop(Calendar);
 
@@ -47,21 +51,21 @@ const CalendarPage: React.FC = () => {
 
   // Generate calendar events from query data
   const events = useMemo(() => {
-    console.log('[Calendar] Generating events from tasks:', scheduledTasks.length);
+    log('[Calendar] Generating events from tasks:', scheduledTasks.length);
 
     // Convert scheduled tasks to calendar events with defensive null checks
     const taskEvents: CalendarEvent[] = scheduledTasks
       .filter((task) => {
         // Defensive: ensure scheduledStart exists and is valid
         if (!task.scheduledStart) {
-          console.warn('[Calendar] Task missing scheduledStart:', task.id);
+          log('[Calendar] Task missing scheduledStart:', task.id);
           return false;
         }
 
         try {
           const start = new Date(task.scheduledStart);
           if (isNaN(start.getTime())) {
-            console.warn('[Calendar] Invalid scheduledStart date:', task.scheduledStart);
+            log('[Calendar] Invalid scheduledStart date:', task.scheduledStart);
             return false;
           }
           return true;
@@ -84,7 +88,7 @@ const CalendarPage: React.FC = () => {
         };
       });
 
-    console.log('[Calendar] Generated task events:', taskEvents.length);
+    log('[Calendar] Generated task events:', taskEvents.length);
 
     // Generate plan events if today's plan exists
     const planEvents: CalendarEvent[] = [];
@@ -197,7 +201,7 @@ const CalendarPage: React.FC = () => {
   };
 
   const handleEventDrop = async ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
-    console.log('[handleEventDrop] Dropping event:', { event, start, end });
+    log('[handleEventDrop] Dropping event:', { event, start, end });
 
     // Only allow rescheduling task events, not time blocks
     if (event.type !== 'task' || !event.task) {
@@ -218,7 +222,7 @@ const CalendarPage: React.FC = () => {
       // Convert local Date to UTC ISO string
       const scheduledStartUTC = start.toISOString();
 
-      console.log('[handleEventDrop] Scheduling task:', {
+      log('[handleEventDrop] Scheduling task:', {
         taskId: event.task.id,
         scheduledStartUTC,
         localTime: start.toString(),
@@ -236,7 +240,7 @@ const CalendarPage: React.FC = () => {
   };
 
   const handleEventResize = async ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
-    console.log('[handleEventResize] Resizing event:', { event, start, end });
+    log('[handleEventResize] Resizing event:', { event, start, end });
 
     // Only allow resizing task events
     if (event.type !== 'task' || !event.task) {
@@ -264,7 +268,7 @@ const CalendarPage: React.FC = () => {
         return;
       }
 
-      console.log('[handleEventResize] New duration:', { durationMinutes });
+      log('[handleEventResize] New duration:', { durationMinutes });
 
       // Update task with new scheduled time and duration
       await updateTaskMutation.mutateAsync({

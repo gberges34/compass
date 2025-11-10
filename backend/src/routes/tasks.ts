@@ -5,6 +5,10 @@ import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { enrichTask } from '../services/llm';
 import { calculateTimeOfDay, getDayOfWeek } from '../utils/timeUtils';
 
+// Development-only logging
+const DEBUG = process.env.NODE_ENV === 'development';
+const log = DEBUG ? console.log : () => {};
+
 const router = Router();
 
 // Validation schemas
@@ -52,7 +56,7 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const { status, priority, category, scheduledDate } = req.query;
 
-    console.log('[GET /tasks] Query params:', { status, priority, category, scheduledDate });
+    log('[GET /tasks] Query params:', { status, priority, category, scheduledDate });
 
     const where: any = {};
 
@@ -67,7 +71,7 @@ router.get('/', async (req: Request, res: Response) => {
       };
     }
 
-    console.log('[GET /tasks] Query where clause:', JSON.stringify(where));
+    log('[GET /tasks] Query where clause:', JSON.stringify(where));
 
     const tasks = await prisma.task.findMany({
       where,
@@ -78,7 +82,7 @@ router.get('/', async (req: Request, res: Response) => {
       ],
     });
 
-    console.log('[GET /tasks] Found tasks:', tasks.length);
+    log('[GET /tasks] Found tasks:', tasks.length);
     res.json(tasks);
   } catch (error: any) {
     console.error('[GET /tasks] Error:', error);
@@ -253,7 +257,7 @@ router.patch('/:id/schedule', async (req: Request, res: Response) => {
     const { id } = req.params;
     const { scheduledStart } = scheduleTaskSchema.parse(req.body);
 
-    console.log('[PATCH /schedule] Request for task:', { id, scheduledStart });
+    log('[PATCH /schedule] Request for task:', { id, scheduledStart });
 
     // Get task BEFORE update for logging
     const taskBefore = await prisma.task.findUnique({
@@ -261,11 +265,11 @@ router.patch('/:id/schedule', async (req: Request, res: Response) => {
     });
 
     if (!taskBefore) {
-      console.log('[PATCH /schedule] Task not found:', id);
+      log('[PATCH /schedule] Task not found:', id);
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    console.log('[PATCH /schedule] Task state BEFORE:', {
+    log('[PATCH /schedule] Task state BEFORE:', {
       id: taskBefore.id,
       name: taskBefore.name,
       scheduledStart: taskBefore.scheduledStart,
@@ -277,7 +281,7 @@ router.patch('/:id/schedule', async (req: Request, res: Response) => {
     const now = new Date();
 
     if (scheduledDate < now) {
-      console.log('[PATCH /schedule] Validation failed - past date:', {
+      log('[PATCH /schedule] Validation failed - past date:', {
         requestedDate: scheduledDate.toISOString(),
         currentTime: now.toISOString(),
       });
@@ -296,14 +300,14 @@ router.patch('/:id/schedule', async (req: Request, res: Response) => {
       },
     });
 
-    console.log('[PATCH /schedule] Task state AFTER:', {
+    log('[PATCH /schedule] Task state AFTER:', {
       id: task.id,
       name: task.name,
       scheduledStart: task.scheduledStart,
       updatedAt: task.updatedAt,
     });
 
-    console.log('[PATCH /schedule] Success - task scheduled:', {
+    log('[PATCH /schedule] Success - task scheduled:', {
       taskId: id,
       previousScheduledStart: taskBefore.scheduledStart,
       newScheduledStart: task.scheduledStart,
@@ -332,7 +336,7 @@ router.patch('/:id/unschedule', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    console.log('[PATCH /unschedule] Request for task:', { id });
+    log('[PATCH /unschedule] Request for task:', { id });
 
     // Get task BEFORE update for logging
     const taskBefore = await prisma.task.findUnique({
@@ -340,11 +344,11 @@ router.patch('/:id/unschedule', async (req: Request, res: Response) => {
     });
 
     if (!taskBefore) {
-      console.log('[PATCH /unschedule] Task not found:', id);
+      log('[PATCH /unschedule] Task not found:', id);
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    console.log('[PATCH /unschedule] Task state BEFORE:', {
+    log('[PATCH /unschedule] Task state BEFORE:', {
       id: taskBefore.id,
       name: taskBefore.name,
       scheduledStart: taskBefore.scheduledStart,
@@ -359,14 +363,14 @@ router.patch('/:id/unschedule', async (req: Request, res: Response) => {
       },
     });
 
-    console.log('[PATCH /unschedule] Task state AFTER:', {
+    log('[PATCH /unschedule] Task state AFTER:', {
       id: task.id,
       name: task.name,
       scheduledStart: task.scheduledStart,
       updatedAt: task.updatedAt,
     });
 
-    console.log('[PATCH /unschedule] Success - task unscheduled:', {
+    log('[PATCH /unschedule] Success - task unscheduled:', {
       taskId: id,
       previousScheduledStart: taskBefore.scheduledStart,
       newScheduledStart: task.scheduledStart,

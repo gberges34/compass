@@ -17,6 +17,10 @@ import type {
   TaskFilters,
 } from '../types';
 
+// Development-only logging
+const DEBUG = process.env.NODE_ENV === 'development';
+const log = DEBUG ? console.log : () => {};
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 const api = axios.create({
@@ -78,11 +82,11 @@ export const completeTask = async (
 };
 
 export const scheduleTask = async (id: string, scheduledStart: string): Promise<Task> => {
-  console.log('[API] scheduleTask called:', { id, scheduledStart });
+  log('[API] scheduleTask called:', { id, scheduledStart });
 
   try {
     const response = await api.patch<Task>(`/tasks/${id}/schedule`, { scheduledStart });
-    console.log('[API] scheduleTask success:', response.data);
+    log('[API] scheduleTask success:', response.data);
     return response.data;
   } catch (error: any) {
     console.error('[API] scheduleTask failed:', {
@@ -96,11 +100,11 @@ export const scheduleTask = async (id: string, scheduledStart: string): Promise<
 };
 
 export const unscheduleTask = async (id: string): Promise<Task> => {
-  console.log('[API] unscheduleTask called:', { id });
+  log('[API] unscheduleTask called:', { id });
 
   try {
     const response = await api.patch<Task>(`/tasks/${id}/unschedule`);
-    console.log('[API] unscheduleTask success:', response.data);
+    log('[API] unscheduleTask success:', response.data);
     return response.data;
   } catch (error: any) {
     console.error('[API] unscheduleTask failed:', {

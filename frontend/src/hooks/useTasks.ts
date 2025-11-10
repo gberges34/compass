@@ -3,6 +3,10 @@ import * as api from '../lib/api';
 import type { Task, TaskFilters, EnrichTaskRequest, CompleteTaskRequest } from '../types';
 import { useToast } from '../contexts/ToastContext';
 
+// Development-only logging
+const DEBUG = process.env.NODE_ENV === 'development';
+const log = DEBUG ? console.log : () => {};
+
 // Query Keys
 export const taskKeys = {
   all: ['tasks'] as const,
@@ -74,7 +78,7 @@ export function useScheduleTask() {
     mutationFn: ({ id, scheduledStart }: { id: string; scheduledStart: string }) =>
       api.scheduleTask(id, scheduledStart),
     onMutate: async ({ id, scheduledStart }) => {
-      console.log('[useScheduleTask] onMutate called:', { id, scheduledStart });
+      log('[useScheduleTask] onMutate called:', { id, scheduledStart });
 
       // Cancel all task queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
@@ -108,10 +112,10 @@ export function useScheduleTask() {
       toast.showError('Failed to schedule task');
     },
     onSuccess: (data) => {
-      console.log('[useScheduleTask] Success response:', data);
+      log('[useScheduleTask] Success response:', data);
     },
     onSettled: () => {
-      console.log('[useScheduleTask] Invalidating all task queries');
+      log('[useScheduleTask] Invalidating all task queries');
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
@@ -124,7 +128,7 @@ export function useUnscheduleTask() {
   return useMutation({
     mutationFn: (id: string) => api.unscheduleTask(id),
     onMutate: async (id) => {
-      console.log('[useUnscheduleTask] onMutate called:', { id });
+      log('[useUnscheduleTask] onMutate called:', { id });
 
       await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
 
@@ -154,10 +158,10 @@ export function useUnscheduleTask() {
       toast.showError('Failed to unschedule task');
     },
     onSuccess: (data) => {
-      console.log('[useUnscheduleTask] Success response:', data);
+      log('[useUnscheduleTask] Success response:', data);
     },
     onSettled: () => {
-      console.log('[useUnscheduleTask] Invalidating all task queries');
+      log('[useUnscheduleTask] Invalidating all task queries');
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
