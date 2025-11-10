@@ -266,6 +266,27 @@ router.patch('/:id/schedule', async (req: Request, res: Response) => {
   }
 });
 
+// PATCH /api/tasks/:id/unschedule - Unschedule task
+router.patch('/:id/unschedule', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const task = await prisma.task.update({
+      where: { id },
+      data: {
+        scheduledStart: null,
+      },
+    });
+
+    res.json(task);
+  } catch (error: any) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // DELETE /api/tasks/:id - Delete task
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
