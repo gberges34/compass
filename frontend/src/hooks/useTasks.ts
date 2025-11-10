@@ -302,9 +302,14 @@ export function useEnrichTask() {
 
 export function useActivateTask() {
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   return useMutation({
     mutationFn: (id: string) => api.activateTask(id),
+    onError: (err) => {
+      console.error('[useActivateTask] Error:', err);
+      toast.showError('Failed to activate task');
+    },
     onSuccess: (_, id) => {
       queryClient.refetchQueries({ queryKey: taskKeys.detail(id) });
       queryClient.refetchQueries({ queryKey: taskKeys.lists() });
@@ -314,10 +319,15 @@ export function useActivateTask() {
 
 export function useCompleteTask() {
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   return useMutation({
     mutationFn: ({ id, request }: { id: string; request: CompleteTaskRequest }) =>
       api.completeTask(id, request),
+    onError: (err) => {
+      console.error('[useCompleteTask] Error:', err);
+      toast.showError('Failed to complete task');
+    },
     onSuccess: () => {
       queryClient.refetchQueries({ queryKey: taskKeys.lists() });
     },
