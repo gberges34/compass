@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, momentLocalizer, Event as BigCalendarEvent, View } from 'react-big-calendar';
+import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import CalendarToolbar from '../components/CalendarToolbar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import { getTasks, scheduleTask, unscheduleTask, getTodayPlan } from '../lib/api';
 import type { Task, CalendarEvent, DailyPlan } from '../types';
 import { useToast } from '../contexts/ToastContext';
@@ -12,6 +14,7 @@ import Button from '../components/Button';
 import { getCategoryStyle } from '../lib/designTokens';
 
 const localizer = momentLocalizer(moment);
+const DnDCalendar = withDragAndDrop(Calendar);
 
 const CalendarPage: React.FC = () => {
   const toast = useToast();
