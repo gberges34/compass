@@ -78,13 +78,38 @@ export const completeTask = async (
 };
 
 export const scheduleTask = async (id: string, scheduledStart: string): Promise<Task> => {
-  const response = await api.patch<Task>(`/tasks/${id}/schedule`, { scheduledStart });
-  return response.data;
+  console.log('[API] scheduleTask called:', { id, scheduledStart });
+
+  try {
+    const response = await api.patch<Task>(`/tasks/${id}/schedule`, { scheduledStart });
+    console.log('[API] scheduleTask success:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('[API] scheduleTask failed:', {
+      id,
+      scheduledStart,
+      error: error.response?.data || error.message,
+      status: error.response?.status,
+    });
+    throw error;
+  }
 };
 
 export const unscheduleTask = async (id: string): Promise<Task> => {
-  const response = await api.patch<Task>(`/tasks/${id}/unschedule`);
-  return response.data;
+  console.log('[API] unscheduleTask called:', { id });
+
+  try {
+    const response = await api.patch<Task>(`/tasks/${id}/unschedule`);
+    console.log('[API] unscheduleTask success:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('[API] unscheduleTask failed:', {
+      id,
+      error: error.response?.data || error.message,
+      status: error.response?.status,
+    });
+    throw error;
+  }
 };
 
 // Todoist API
