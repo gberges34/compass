@@ -227,6 +227,13 @@ const CalendarPage: React.FC = () => {
       return;
     }
 
+    // Prevent scheduling in the past
+    const now = new Date();
+    if (start < now) {
+      toast.showError('Cannot schedule tasks in the past');
+      return;
+    }
+
     if (rescheduling) return; // Prevent concurrent operations
 
     try {
@@ -276,6 +283,13 @@ const CalendarPage: React.FC = () => {
       return;
     }
 
+    // Prevent scheduling in the past
+    const now = new Date();
+    if (start < now) {
+      toast.showError('Cannot schedule tasks in the past');
+      return;
+    }
+
     if (rescheduling) return;
 
     try {
@@ -283,6 +297,13 @@ const CalendarPage: React.FC = () => {
 
       // Calculate new duration in minutes
       const newDuration = Math.round((end.getTime() - start.getTime()) / 60000);
+
+      // Validate minimum duration
+      if (newDuration < 1) {
+        toast.showError('Task duration must be at least 1 minute');
+        setRescheduling(false);
+        return;
+      }
 
       // Update task with new scheduled time
       const scheduledStart = start.toISOString();
