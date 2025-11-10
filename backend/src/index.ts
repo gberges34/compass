@@ -71,6 +71,15 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Compass API is running' });
 });
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    service: 'compass-backend'
+  });
+});
+
 // Routes
 app.use('/api/tasks', tasksRouter);
 app.use('/api/todoist', todoistRouter);
