@@ -10,25 +10,18 @@ const localizer = momentLocalizer(moment);
 
 const CalendarPage: React.FC = () => {
   const toast = useToast();
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [unscheduledTasks, setUnscheduledTasks] = useState<Task[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [todayPlan, setTodayPlan] = useState<DailyPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
 
       // Fetch all NEXT tasks
       const allTasks = await getTasks({ status: 'NEXT' });
-      setTasks(allTasks);
 
       // Separate scheduled and unscheduled tasks
       const scheduled = allTasks.filter((task) => task.scheduledStart);
@@ -53,8 +46,6 @@ const CalendarPage: React.FC = () => {
       let planEvents: CalendarEvent[] = [];
       try {
         const plan = await getTodayPlan();
-        setTodayPlan(plan);
-
         const today = new Date().toISOString().split('T')[0];
 
         // Deep Work Block 1
@@ -102,7 +93,6 @@ const CalendarPage: React.FC = () => {
         }
       } catch (err) {
         // No plan for today, that's okay
-        setTodayPlan(null);
       }
 
       setEvents([...taskEvents, ...planEvents]);
@@ -112,7 +102,37 @@ const CalendarPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleScheduleTask = useCallback(async (task: Task, scheduledStart: Date) => {
+    try {
+      const isoString = scheduledStart.toISOString();
+      const updatedTask = await scheduleTask(task.id, isoString);
+
+      // Update local state
+      setUnscheduledTasks((prev) => prev.filter((t) => t.id !== task.id));
+
+      // Add to calendar
+      const end = new Date(scheduledStart.getTime() + task.duration * 60000);
+      const newEvent: CalendarEvent = {
+        id: task.id,
+        title: task.name,
+        start: scheduledStart,
+        end,
+        task: updatedTask,
+        type: 'task',
+      };
+      setEvents((prev) => [...prev, newEvent]);
+      toast.showSuccess(`Task scheduled for ${moment(scheduledStart).format('MMM D, h:mm A')}`);
+    } catch (err) {
+      toast.showError('Failed to schedule task. Please try again.');
+      console.error('Error scheduling task:', err);
+    }
+  }, [toast]);
 
   const handleSelectSlot = useCallback(
     ({ start, end }: { start: Date; end: Date }) => {
@@ -135,7 +155,7 @@ const CalendarPage: React.FC = () => {
         }
       }
     },
-    [unscheduledTasks, toast]
+    [unscheduledTasks, toast, handleScheduleTask]
   );
 
   const handleSelectEvent = useCallback((event: BigCalendarEvent) => {
@@ -146,35 +166,6 @@ const CalendarPage: React.FC = () => {
       toast.showInfo(`${calendarEvent.title}\nType: ${calendarEvent.type}`);
     }
   }, [toast]);
-
-  const handleScheduleTask = async (task: Task, scheduledStart: Date) => {
-    try {
-      const isoString = scheduledStart.toISOString();
-      const updatedTask = await scheduleTask(task.id, isoString);
-
-      // Update local state
-      setUnscheduledTasks((prev) => prev.filter((t) => t.id !== task.id));
-      setTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? { ...t, scheduledStart: isoString } : t))
-      );
-
-      // Add to calendar
-      const end = new Date(scheduledStart.getTime() + task.duration * 60000);
-      const newEvent: CalendarEvent = {
-        id: task.id,
-        title: task.name,
-        start: scheduledStart,
-        end,
-        task: updatedTask,
-        type: 'task',
-      };
-      setEvents((prev) => [...prev, newEvent]);
-      toast.showSuccess(`Task scheduled for ${moment(scheduledStart).format('MMM D, h:mm A')}`);
-    } catch (err) {
-      toast.showError('Failed to schedule task. Please try again.');
-      console.error('Error scheduling task:', err);
-    }
-  };
 
   const getCategoryColor = (category: string): string => {
     const colors: Record<string, string> = {
