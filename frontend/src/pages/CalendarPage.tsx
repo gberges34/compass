@@ -9,12 +9,11 @@ import type { Task, CalendarEvent } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useTasks } from '../hooks/useTasks';
 import { useTodayPlan } from '../hooks/useDailyPlans';
-import { useScheduleTask, useUnscheduleTask } from '../hooks/useTasks';
+import { useScheduleTask, useUnscheduleTask, useUpdateTask } from '../hooks/useTasks';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import { getCategoryStyle } from '../lib/designTokens';
-import { format, parseISO, startOfDay, addMinutes } from 'date-fns';
 
 const localizer = momentLocalizer(moment);
 const DnDCalendar = withDragAndDrop(Calendar);
@@ -27,6 +26,7 @@ const CalendarPage: React.FC = () => {
   const { data: todayPlan, isLoading: planLoading } = useTodayPlan();
   const scheduleTaskMutation = useScheduleTask();
   const unscheduleTaskMutation = useUnscheduleTask();
+  const updateTaskMutation = useUpdateTask();
 
   // Local UI state only
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -241,10 +241,13 @@ const CalendarPage: React.FC = () => {
 
       console.log('[handleEventResize] New duration:', { durationMinutes });
 
-      // Update task with new scheduled time
-      await scheduleTaskMutation.mutateAsync({
+      // Update task with new scheduled time and duration
+      await updateTaskMutation.mutateAsync({
         id: event.task.id,
-        scheduledStart: start.toISOString(),
+        updates: {
+          duration: durationMinutes,
+          scheduledStart: start.toISOString(),
+        },
       });
 
       toast.showSuccess('Task duration updated');
