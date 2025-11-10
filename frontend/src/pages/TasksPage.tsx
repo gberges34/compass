@@ -7,7 +7,7 @@ import CompleteTaskModal from '../components/CompleteTaskModal';
 import TaskActions from '../components/TaskActions';
 
 const TasksPage: React.FC = () => {
-  const toast = useToast();
+  const { showError, showSuccess } = useToast();
   const [selectedTab, setSelectedTab] = useState<TaskStatus>('NEXT');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,12 +37,12 @@ const TasksPage: React.FC = () => {
       const data = await getTasks(filters);
       setTasks(data);
     } catch (err) {
-      toast.showError('Failed to load tasks. Please try again.');
+      showError('Failed to load tasks. Please try again.');
       console.error('Error fetching tasks:', err);
     } finally {
       setLoading(false);
     }
-  }, [selectedTab, categoryFilter, energyFilter, priorityFilter, toast]);
+  }, [selectedTab, categoryFilter, energyFilter, priorityFilter, showError]);
 
   const getPriorityColor = (priority: Priority) => {
     switch (priority) {
@@ -89,11 +89,11 @@ const TasksPage: React.FC = () => {
     try {
       setActionLoading(true);
       const response = await activateTask(task.id);
-      toast.showSuccess(`Task activated!\nFocus Mode: ${response.focusMode}\nTimer: ${response.timeryProject}`);
+      showSuccess(`Task activated!\nFocus Mode: ${response.focusMode}\nTimer: ${response.timeryProject}`);
       await fetchTasks();
       setSelectedTask(null);
     } catch (err) {
-      toast.showError('Failed to activate task');
+      showError('Failed to activate task');
       console.error('Error activating task:', err);
     } finally {
       setActionLoading(false);
@@ -105,12 +105,12 @@ const TasksPage: React.FC = () => {
     try {
       setActionLoading(true);
       await completeTask(taskToComplete.id, completionData);
-      toast.showSuccess('Task completed successfully!');
+      showSuccess('Task completed successfully!');
       setTaskToComplete(null);
       await fetchTasks();
       setSelectedTask(null);
     } catch (err) {
-      toast.showError('Failed to complete task');
+      showError('Failed to complete task');
       console.error('Error completing task:', err);
     } finally {
       setActionLoading(false);
@@ -122,12 +122,12 @@ const TasksPage: React.FC = () => {
     try {
       setActionLoading(true);
       await updateTask(taskToEdit.id, taskData);
-      toast.showSuccess('Task updated successfully!');
+      showSuccess('Task updated successfully!');
       setTaskToEdit(null);
       await fetchTasks();
       setSelectedTask(null);
     } catch (err) {
-      toast.showError('Failed to update task');
+      showError('Failed to update task');
       console.error('Error updating task:', err);
     } finally {
       setActionLoading(false);
@@ -139,11 +139,11 @@ const TasksPage: React.FC = () => {
     try {
       setActionLoading(true);
       await deleteTask(taskId);
-      toast.showSuccess('Task deleted successfully!');
+      showSuccess('Task deleted successfully!');
       await fetchTasks();
       setSelectedTask(null);
     } catch (err) {
-      toast.showError('Failed to delete task');
+      showError('Failed to delete task');
       console.error('Error deleting task:', err);
     } finally {
       setActionLoading(false);
