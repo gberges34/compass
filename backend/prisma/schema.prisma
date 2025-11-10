@@ -90,6 +90,7 @@ model PostDoLog {
 
   @@index([completionDate])
   @@index([timeOfDay])
+  @@index([taskId])
 }
 
 // Reviews Database
