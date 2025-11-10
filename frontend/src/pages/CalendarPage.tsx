@@ -543,7 +543,15 @@ const CalendarPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-24 flex justify-end">
+            <div className="mt-24 flex justify-end space-x-12">
+              {selectedTask.scheduledStart && (
+                <Button
+                  variant="danger"
+                  onClick={() => handleUnscheduleTask(selectedTask)}
+                >
+                  Unschedule
+                </Button>
+              )}
               <Button
                 variant="secondary"
                 onClick={() => setSelectedTask(null)}
