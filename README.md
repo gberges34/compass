@@ -30,64 +30,53 @@ A full-stack productivity application built with React, TypeScript, Express, and
 
 ## Getting Started
 
-### Prerequisites
-- Node.js 18+
-- PostgreSQL database (or Railway account)
+### Quick Start (Recommended)
 
-### Installation
-
-1. Clone the repository:
 ```bash
+# 1. Clone and setup
 git clone <your-repo-url>
 cd compass
-```
+npm run setup
 
-2. Install backend dependencies:
-```bash
-cd backend
-npm install
-```
+# 2. Configure backend/.env with your database credentials
 
-3. Install frontend dependencies:
-```bash
-cd ../frontend
-npm install
-```
+# 3. Initialize database
+npm run db:migrate
 
-4. Set up environment variables:
-
-Backend `.env`:
-```env
-DATABASE_URL="your-postgresql-connection-string"
-PORT=3001
-```
-
-Frontend `.env` (optional):
-```env
-REACT_APP_API_URL=http://localhost:3001
-```
-
-5. Run database migrations:
-```bash
-cd backend
-npx prisma migrate dev
-```
-
-6. Start the development servers:
-
-Backend:
-```bash
-cd backend
+# 4. Start development
 npm run dev
 ```
 
-Frontend:
+**🎉 That's it!** Frontend at http://localhost:3000, Backend at http://localhost:3001
+
+For detailed instructions, see [Quick Start Guide](docs/QUICK_START.md).
+
+### npm Scripts
+
+Development:
+- `npm run dev` - Start both servers with health checks
+- `npm run start:backend` - Backend only
+- `npm run start:frontend` - Frontend only
+
+Database:
+- `npm run db:migrate` - Run migrations
+- `npm run db:generate` - Generate Prisma client
+- `npm run db:studio` - Open Prisma Studio
+- `npm run db:reset` - Reset database
+
+Utilities:
+- `npm run setup` - Initial setup
+- `npm run verify` - Environment health check
+- `npm run build` - Production build
+
+### Troubleshooting
+
+Run environment diagnostics:
 ```bash
-cd frontend
-npm start
+npm run verify
 ```
 
-The frontend will be available at `http://localhost:3000` and the backend at `http://localhost:3001`.
+For common issues and solutions, see [Quick Start Guide](docs/QUICK_START.md#troubleshooting).
 
 ## Project Structure
 
