@@ -302,43 +302,46 @@ const CalendarPage: React.FC = () => {
     return colors[category] || '#6b7280';
   };
 
-  const eventStyleGetter = (event: BigCalendarEvent) => {
-    const calendarEvent = event as unknown as CalendarEvent;
-    let backgroundColor = '#6b7280';
-    let borderColor = '#4b5563';
+  const eventStyleGetter = useCallback(
+    (event: BigCalendarEvent) => {
+      const calendarEvent = event as unknown as CalendarEvent;
+      let backgroundColor = '#6b7280';
+      let borderColor = '#4b5563';
 
-    if (calendarEvent.type === 'task' && calendarEvent.task) {
-      backgroundColor = getCategoryColor(calendarEvent.task.category);
-      borderColor = backgroundColor;
-    } else if (calendarEvent.type === 'deepWork') {
-      backgroundColor = '#3b82f6';
-      borderColor = '#2563eb';
-    } else if (calendarEvent.type === 'admin') {
-      backgroundColor = '#8b5cf6';
-      borderColor = '#7c3aed';
-    } else if (calendarEvent.type === 'buffer') {
-      backgroundColor = '#6b7280';
-      borderColor = '#4b5563';
-    }
+      if (calendarEvent.type === 'task' && calendarEvent.task) {
+        backgroundColor = getCategoryColor(calendarEvent.task.category);
+        borderColor = backgroundColor;
+      } else if (calendarEvent.type === 'deepWork') {
+        backgroundColor = '#3b82f6';
+        borderColor = '#2563eb';
+      } else if (calendarEvent.type === 'admin') {
+        backgroundColor = '#8b5cf6';
+        borderColor = '#7c3aed';
+      } else if (calendarEvent.type === 'buffer') {
+        backgroundColor = '#6b7280';
+        borderColor = '#4b5563';
+      }
 
-    // Add visual feedback for draggable events
-    const isDraggable = calendarEvent.type === 'task';
+      // Add visual feedback for draggable events
+      const isDraggable = calendarEvent.type === 'task';
 
-    return {
-      style: {
-        backgroundColor,
-        borderColor,
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        borderRadius: '4px',
-        opacity: scheduleTaskMutation.isPending ? 0.6 : 0.9,
-        color: 'white',
-        display: 'block',
-        cursor: isDraggable ? (scheduleTaskMutation.isPending ? 'wait' : 'move') : 'default',
-        transition: 'opacity 0.2s ease, transform 0.1s ease',
-      },
-    };
-  };
+      return {
+        style: {
+          backgroundColor,
+          borderColor,
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          borderRadius: '4px',
+          opacity: scheduleTaskMutation.isPending ? 0.6 : 0.9,
+          color: 'white',
+          display: 'block',
+          cursor: isDraggable ? (scheduleTaskMutation.isPending ? 'wait' : 'move') : 'default',
+          transition: 'opacity 0.2s ease, transform 0.1s ease',
+        },
+      };
+    },
+    [scheduleTaskMutation.isPending]
+  );
 
   // Drag and drop handlers
   const handleDragStart = (task: Task) => {
