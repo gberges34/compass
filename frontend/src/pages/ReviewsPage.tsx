@@ -18,7 +18,7 @@ import {
 import { useToast } from '../contexts/ToastContext';
 
 const ReviewsPage: React.FC = () => {
-  const toast = useToast();
+  const { showError } = useToast();
   const [activeTab, setActiveTab] = useState<ReviewType>('DAILY');
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,12 +39,12 @@ const ReviewsPage: React.FC = () => {
       const data = await getReviews(activeTab, limit);
       setReviews(data);
     } catch (err) {
-      toast.showError('Failed to load reviews. Please try again.');
+      showError('Failed to load reviews. Please try again.');
       console.error('Error fetching reviews:', err);
     } finally {
       setLoading(false);
     }
-  }, [activeTab, toast]);
+  }, [activeTab, showError]);
 
   useEffect(() => {
     fetchReviews();
