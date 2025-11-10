@@ -50,7 +50,6 @@ interface UnscheduledTaskCardProps {
 const UnscheduledTaskCard = React.memo<UnscheduledTaskCardProps>(({ task, index, onDragStart, onSchedule }) => {
   return (
     <div
-      key={task.id}
       draggable
       onDragStart={() => onDragStart(task)}
       className="border border-stone rounded-card p-12 cursor-move hover:shadow-e02 transition-shadow duration-micro bg-snow"
