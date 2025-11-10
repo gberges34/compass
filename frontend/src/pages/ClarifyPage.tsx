@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getTodoistPending, enrichTask, createTask } from '../lib/api';
 import type { TempCapturedTask, Priority, Energy } from '../types';
 import { useToast } from '../contexts/ToastContext';
@@ -28,11 +28,7 @@ const ClarifyPage: React.FC = () => {
   // Save state
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    fetchPendingTasks();
-  }, []);
-
-  const fetchPendingTasks = async () => {
+  const fetchPendingTasks = useCallback(async () => {
     setLoading(true);
     try {
       const response = await getTodoistPending();
@@ -43,7 +39,11 @@ const ClarifyPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchPendingTasks();
+  }, [fetchPendingTasks]);
 
   const handleSelectTask = (task: TempCapturedTask) => {
     setSelectedTask(task);
