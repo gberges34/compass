@@ -93,14 +93,14 @@ export function useCreateTask() {
 
       return { allCachedQueries };
     },
-    onError: (err, variables, context) => {
+    onError: (err: any, variables, context) => {
       console.error('[useCreateTask] Error:', err);
       if (context?.allCachedQueries) {
         context.allCachedQueries.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data);
         });
       }
-      toast.showError('Failed to create task');
+      toast.showError(err.userMessage || 'Failed to create task');
     },
     onSuccess: () => {
       log('[useCreateTask] Success, refetching queries');
@@ -140,7 +140,7 @@ export function useUpdateTask() {
 
       return { allCachedQueries };
     },
-    onError: (err, variables, context) => {
+    onError: (err: any, variables, context) => {
       console.error('[useUpdateTask] Error:', err);
       // Rollback ALL cache entries
       if (context?.allCachedQueries) {
@@ -148,7 +148,7 @@ export function useUpdateTask() {
           queryClient.setQueryData(queryKey, data);
         });
       }
-      toast.showError('Failed to update task');
+      toast.showError(err.userMessage || 'Failed to update task');
     },
     onSuccess: (_, variables) => {
       log('[useUpdateTask] Success, refetching queries');
@@ -182,14 +182,14 @@ export function useDeleteTask() {
 
       return { allCachedQueries };
     },
-    onError: (err, variables, context) => {
+    onError: (err: any, variables, context) => {
       console.error('[useDeleteTask] Error:', err);
       if (context?.allCachedQueries) {
         context.allCachedQueries.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data);
         });
       }
-      toast.showError('Failed to delete task');
+      toast.showError(err.userMessage || 'Failed to delete task');
     },
     onSuccess: () => {
       log('[useDeleteTask] Success, refetching queries');
@@ -229,7 +229,7 @@ export function useScheduleTask() {
 
       return { allCachedQueries };
     },
-    onError: (err, variables, context) => {
+    onError: (err: any, variables, context) => {
       console.error('[useScheduleTask] Error:', err);
       // Rollback ALL cache entries
       if (context?.allCachedQueries) {
@@ -237,7 +237,7 @@ export function useScheduleTask() {
           queryClient.setQueryData(queryKey, data);
         });
       }
-      toast.showError('Failed to schedule task');
+      toast.showError(err.userMessage || 'Failed to schedule task');
     },
     onSuccess: (data) => {
       log('[useScheduleTask] Success response:', data);
@@ -277,14 +277,14 @@ export function useUnscheduleTask() {
 
       return { allCachedQueries };
     },
-    onError: (err, variables, context) => {
+    onError: (err: any, variables, context) => {
       console.error('[useUnscheduleTask] Error:', err);
       if (context?.allCachedQueries) {
         context.allCachedQueries.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data);
         });
       }
-      toast.showError('Failed to unschedule task');
+      toast.showError(err.userMessage || 'Failed to unschedule task');
     },
     onSuccess: (data) => {
       log('[useUnscheduleTask] Success response:', data);
@@ -314,9 +314,9 @@ export function useActivateTask() {
 
   return useMutation({
     mutationFn: (id: string) => api.activateTask(id),
-    onError: (err) => {
+    onError: (err: any) => {
       console.error('[useActivateTask] Error:', err);
-      toast.showError('Failed to activate task');
+      toast.showError(err.userMessage || 'Failed to activate task');
     },
     onSuccess: (_, id) => {
       queryClient.refetchQueries({ queryKey: taskKeys.detail(id) });
@@ -332,9 +332,9 @@ export function useCompleteTask() {
   return useMutation({
     mutationFn: ({ id, request }: { id: string; request: CompleteTaskRequest }) =>
       api.completeTask(id, request),
-    onError: (err) => {
+    onError: (err: any) => {
       console.error('[useCompleteTask] Error:', err);
-      toast.showError('Failed to complete task');
+      toast.showError(err.userMessage || 'Failed to complete task');
     },
     onSuccess: () => {
       queryClient.refetchQueries({ queryKey: taskKeys.lists() });

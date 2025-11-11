@@ -30,6 +30,48 @@ const api = axios.create({
   },
 });
 
+// User-friendly error message mapping
+const getUserFriendlyError = (status: number): string => {
+  switch (status) {
+    case 400:
+      return 'Invalid request. Please check your input.';
+    case 401:
+      return 'Unauthorized. Please log in.';
+    case 403:
+      return 'You do not have permission to perform this action.';
+    case 404:
+      return 'Resource not found.';
+    case 409:
+      return 'Conflict. This operation conflicts with existing data.';
+    case 422:
+      return 'Validation error. Please check your input.';
+    case 500:
+      return 'Server error. Please try again later.';
+    case 502:
+      return 'Bad gateway. The server is temporarily unavailable.';
+    case 503:
+      return 'Service unavailable. Please try again later.';
+    default:
+      return 'An error occurred. Please try again.';
+  }
+};
+
+// Add response interceptor for user-friendly error messages
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Add user-friendly message to error object
+    if (error.response) {
+      error.userMessage = getUserFriendlyError(error.response.status);
+    } else if (error.request) {
+      error.userMessage = 'Network error. Please check your connection.';
+    } else {
+      error.userMessage = 'An unexpected error occurred.';
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Tasks API
 
 export const getTasks = async (filters?: TaskFilters): Promise<Task[]> => {
