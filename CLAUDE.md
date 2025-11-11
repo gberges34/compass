@@ -444,12 +444,16 @@ See [Claude Code Hooks Documentation](https://docs.claude.com/en/docs/claude-cod
 
 #### Testing Hooks
 
-After configuring hooks, test by triggering a user input scenario:
-- Ask Claude to use `AskUserQuestion` tool
-- Wait 60+ seconds (triggers idle prompt)
-- Approve a permission prompt
+After configuring hooks, test them to ensure they work correctly. See [Hook Testing Procedures](docs/testing-hooks.md) for detailed testing methods.
 
-You should hear the configured notification sound.
+Quick test:
+```bash
+# Test notification script directly
+./scripts/notify-input-needed.sh
+
+# Or ask Claude to use AskUserQuestion tool
+# Expected: notification sound plays and macOS notification appears
+```
 
 #### Troubleshooting Hooks
 
