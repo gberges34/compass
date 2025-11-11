@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as api from '../lib/api';
 import type { Review, CreateReviewRequest } from '../types';
 
@@ -9,6 +9,18 @@ export const reviewKeys = {
     [...reviewKeys.lists(), { type, limit }] as const,
   details: () => [...reviewKeys.all, 'detail'] as const,
   detail: (id: string) => [...reviewKeys.details(), id] as const,
+};
+
+// Prefetch Helpers
+export const prefetchReviews = (
+  queryClient: QueryClient,
+  type?: 'DAILY' | 'WEEKLY',
+  limit?: number
+) => {
+  return queryClient.prefetchQuery({
+    queryKey: reviewKeys.list(type, limit),
+    queryFn: () => api.getReviews(type, limit),
+  });
 };
 
 export function useReviews(type?: 'DAILY' | 'WEEKLY', limit?: number) {

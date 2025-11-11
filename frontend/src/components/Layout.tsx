@@ -1,11 +1,10 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { taskKeys } from '../hooks/useTasks';
-import { dailyPlanKeys } from '../hooks/useDailyPlans';
-import { reviewKeys } from '../hooks/useReviews';
-import { todoistKeys } from '../hooks/useTodoist';
-import * as api from '../lib/api';
+import { prefetchTasks } from '../hooks/useTasks';
+import { prefetchTodayPlan } from '../hooks/useDailyPlans';
+import { prefetchReviews } from '../hooks/useReviews';
+import { prefetchTodoistPending } from '../hooks/useTodoist';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,60 +17,33 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const prefetchHandlers: Record<string, () => void> = {
     '/': () => {
       // Today page: prefetch active tasks + today's plan
-      queryClient.prefetchQuery({
-        queryKey: taskKeys.list({ status: 'ACTIVE' }),
-        queryFn: () => api.getTasks({ status: 'ACTIVE' }),
-      });
-      queryClient.prefetchQuery({
-        queryKey: dailyPlanKeys.today(),
-        queryFn: () => api.getTodayPlan(),
-      });
+      prefetchTasks(queryClient, { status: 'ACTIVE' });
+      prefetchTodayPlan(queryClient);
     },
     '/tasks': () => {
       // Tasks page: prefetch NEXT tasks
-      queryClient.prefetchQuery({
-        queryKey: taskKeys.list({ status: 'NEXT' }),
-        queryFn: () => api.getTasks({ status: 'NEXT' }),
-      });
+      prefetchTasks(queryClient, { status: 'NEXT' });
     },
     '/calendar': () => {
       // Calendar page: prefetch NEXT tasks + today's plan
-      queryClient.prefetchQuery({
-        queryKey: taskKeys.list({ status: 'NEXT' }),
-        queryFn: () => api.getTasks({ status: 'NEXT' }),
-      });
-      queryClient.prefetchQuery({
-        queryKey: dailyPlanKeys.today(),
-        queryFn: () => api.getTodayPlan(),
-      });
+      prefetchTasks(queryClient, { status: 'NEXT' });
+      prefetchTodayPlan(queryClient);
     },
     '/reviews': () => {
       // Reviews page: prefetch recent reviews
-      queryClient.prefetchQuery({
-        queryKey: reviewKeys.list(),
-        queryFn: () => api.getReviews(),
-      });
+      prefetchReviews(queryClient);
     },
     '/clarify': () => {
       // Clarify page: prefetch pending Todoist tasks
-      queryClient.prefetchQuery({
-        queryKey: todoistKeys.pending(),
-        queryFn: () => api.getTodoistPending(),
-      });
+      prefetchTodoistPending(queryClient);
     },
     '/orient/east': () => {
       // Orient East: prefetch today's plan
-      queryClient.prefetchQuery({
-        queryKey: dailyPlanKeys.today(),
-        queryFn: () => api.getTodayPlan(),
-      });
+      prefetchTodayPlan(queryClient);
     },
     '/orient/west': () => {
       // Orient West: prefetch today's plan
-      queryClient.prefetchQuery({
-        queryKey: dailyPlanKeys.today(),
-        queryFn: () => api.getTodayPlan(),
-      });
+      prefetchTodayPlan(queryClient);
     },
   };
 

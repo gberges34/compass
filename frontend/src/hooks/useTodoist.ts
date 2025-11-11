@@ -1,9 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as api from '../lib/api';
 
 export const todoistKeys = {
   all: ['todoist'] as const,
   pending: () => [...todoistKeys.all, 'pending'] as const,
+};
+
+// Prefetch Helpers
+export const prefetchTodoistPending = (queryClient: QueryClient) => {
+  return queryClient.prefetchQuery({
+    queryKey: todoistKeys.pending(),
+    queryFn: () => api.getTodoistPending(),
+  });
 };
 
 export function useTodoistPending() {

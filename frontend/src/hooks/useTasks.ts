@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as api from '../lib/api';
 import type { Task, TaskFilters, EnrichTaskRequest, CompleteTaskRequest } from '../types';
 import { useToast } from '../contexts/ToastContext';
@@ -14,6 +14,14 @@ export const taskKeys = {
   list: (filters?: TaskFilters) => [...taskKeys.lists(), { filters }] as const,
   details: () => [...taskKeys.all, 'detail'] as const,
   detail: (id: string) => [...taskKeys.details(), id] as const,
+};
+
+// Prefetch Helpers
+export const prefetchTasks = (queryClient: QueryClient, filters?: TaskFilters) => {
+  return queryClient.prefetchQuery({
+    queryKey: taskKeys.list(filters),
+    queryFn: () => api.getTasks(filters),
+  });
 };
 
 // Queries

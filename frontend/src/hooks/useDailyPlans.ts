@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as api from '../lib/api';
 import type { DailyPlan, CreateDailyPlanRequest, UpdateDailyPlanRequest } from '../types';
 
@@ -7,6 +7,21 @@ export const dailyPlanKeys = {
   all: ['dailyPlans'] as const,
   today: () => [...dailyPlanKeys.all, 'today'] as const,
   byDate: (date: string) => [...dailyPlanKeys.all, 'date', date] as const,
+};
+
+// Prefetch Helpers
+export const prefetchTodayPlan = (queryClient: QueryClient) => {
+  return queryClient.prefetchQuery({
+    queryKey: dailyPlanKeys.today(),
+    queryFn: () => api.getTodayPlan(),
+  });
+};
+
+export const prefetchDailyPlan = (queryClient: QueryClient, date: string) => {
+  return queryClient.prefetchQuery({
+    queryKey: dailyPlanKeys.byDate(date),
+    queryFn: () => api.getPlanByDate(date),
+  });
 };
 
 // Queries
