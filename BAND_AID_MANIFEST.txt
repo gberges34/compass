@@ -1,0 +1,306 @@
+================================================================================
+                    BAND-AID ANALYSIS - MANIFEST
+================================================================================
+
+PROJECT: Compass
+ANALYSIS DATE: November 10, 2025
+SCOPE: Frontend React codebase - pages and components
+
+================================================================================
+                         DELIVERABLES
+================================================================================
+
+4 COMPREHENSIVE DOCUMENTS:
+
+  1. BAND_AID_ANALYSIS.md
+     Purpose: Complete technical analysis
+     Size: 662 lines
+     Contents:
+       - Executive summary
+       - Detailed pattern breakdown (5 patterns)
+       - Code examples with line numbers
+       - React Query replacements
+       - Comparison of good vs band-aid patterns
+       - Specific recommendations
+     Best For: Understanding the problems deeply
+
+  2. BAND_AID_SUMMARY.txt
+     Purpose: Quick reference guide
+     Size: 204 lines
+     Contents:
+       - Pattern quick reference
+       - Location summary with line numbers
+       - Migration priority
+       - Good vs band-aid comparison
+       - Checklist format
+     Best For: Quick lookup during implementation
+
+  3. BAND_AID_FIXES.md
+     Purpose: Implementation guide with code
+     Size: 647 lines
+     Contents:
+       - Before/after code for each fix
+       - Complete working examples
+       - New hook templates
+       - Benefits of each fix
+       - Summary table
+     Best For: Actually implementing the fixes
+
+  4. BAND_AID_INDEX.md
+     Purpose: Navigation and roadmap
+     Size: 318 lines
+     Contents:
+       - Document overview
+       - Pattern summary with statistics
+       - Implementation priority
+       - Checklist with phases
+       - Files to create/modify
+       - Testing strategy
+       - Success criteria
+     Best For: Planning and organizing the work
+
+  5. BAND_AID_MANIFEST.txt
+     Purpose: This file - inventory
+     Contents: Overview of all deliverables
+
+================================================================================
+                         FINDINGS SUMMARY
+================================================================================
+
+PATTERNS IDENTIFIED: 5 types
+  1. Manual State Management (5 pages)
+  2. isMounted Checks (8 instances)
+  3. Manual Cache Invalidation (1 pattern)
+  4. Race Conditions (2 instances)
+  5. Duplicate Error Handling (5+ instances)
+
+TOTAL AFFECTED: 25+ instances
+PAGES AFFECTED: 5 out of 7 pages
+BOILERPLATE CODE: ~145 lines to remove
+MEMORY LEAK RISKS: 2 critical
+FRAGILE PATTERNS: 3 critical
+
+PAGES ANALYZED:
+  - ReviewsPage.tsx (Band-Aid)
+  - TodayPage.tsx (Band-Aid - Critical)
+  - ClarifyPage.tsx (Band-Aid - Manual cache)
+  - OrientWestPage.tsx (Band-Aid - setTimeout)
+  - OrientEastPage.tsx (Band-Aid - No cleanup)
+  - CalendarPage.tsx (Good - No changes)
+  - TasksPage.tsx (Good - No changes)
+
+================================================================================
+                         USAGE INSTRUCTIONS
+================================================================================
+
+STEP 1: UNDERSTAND THE PROBLEM
+  Read: BAND_AID_ANALYSIS.md
+  Focus: Find your page's specific issues
+  Time: 20-30 minutes
+
+STEP 2: PLAN THE WORK
+  Read: BAND_AID_INDEX.md
+  Do: Create implementation roadmap
+  Time: 15-20 minutes
+
+STEP 3: IMPLEMENT FIXES
+  Read: BAND_AID_FIXES.md
+  Do: Follow before/after examples
+  Use: Copy code templates from hooks section
+  Time: 2-3 hours per page
+
+STEP 4: QUICK REFERENCE
+  Use: BAND_AID_SUMMARY.txt
+  When: During implementation for quick lookups
+  Time: As needed
+
+================================================================================
+                    SPECIFIC LOCATIONS & LINE NUMBERS
+================================================================================
+
+FILE: ReviewsPage.tsx
+  Issue: Manual state management
+  Lines: 1-40 (useEffect + useState)
+  Fix: Create useReviews() hook
+  Priority: HIGH
+
+FILE: TodayPage.tsx
+  Issue 1: Manual state (lines 28-90)
+  Issue 2: 5 isMounted checks (lines 39, 44, 51, 61, 70, 78)
+  Fix: Use existing hooks + remove isMounted
+  Priority: CRITICAL
+
+FILE: ClarifyPage.tsx
+  Issue 1: Manual state (lines 34-49)
+  Issue 2: Manual cache invalidation (line 113)
+  Fix: Create usePendingTasks + use invalidateQueries
+  Priority: HIGH
+
+FILE: OrientWestPage.tsx
+  Issue 1: isMounted checks (lines 40, 45, 50)
+  Issue 2: setTimeout (lines 87-92)
+  Fix: Use hooks + mutation onSuccess callback
+  Priority: MEDIUM
+
+FILE: OrientEastPage.tsx
+  Issue 1: Manual state (lines 61-77)
+  Issue 2: No cleanup function
+  Fix: Use useTodayPlan() hook
+  Priority: CRITICAL
+
+FILE: CalendarPage.tsx
+  Status: ALREADY GOOD
+  Action: No changes needed
+
+FILE: TasksPage.tsx
+  Status: ALREADY GOOD
+  Action: No changes needed
+
+================================================================================
+                      IMPLEMENTATION ROADMAP
+================================================================================
+
+PHASE 1: SETUP
+  Time: 1-2 hours
+  Tasks:
+    - Review all 4 documents
+    - Create implementation plan
+    - Set up new hook files
+
+PHASE 2: CRITICAL FIXES (Do First)
+  Time: 4-6 hours
+  Files:
+    - TodayPage.tsx (remove isMounted)
+    - OrientEastPage.tsx (fix cleanup)
+
+PHASE 3: HIGH PRIORITY FIXES
+  Time: 4-6 hours
+  Files:
+    - ReviewsPage.tsx (create useReviews)
+    - ClarifyPage.tsx (fix cache invalidation)
+
+PHASE 4: MEDIUM PRIORITY FIXES
+  Time: 2-3 hours
+  Files:
+    - OrientWestPage.tsx (remove setTimeout)
+
+PHASE 5: GLOBAL IMPROVEMENTS
+  Time: 3-4 hours
+  Tasks:
+    - Centralize error handling
+    - Update all hooks with onError
+
+PHASE 6: TESTING & VERIFICATION
+  Time: 2-3 hours
+  Tasks:
+    - Run all tests
+    - Check for warnings
+    - Verify no memory leaks
+
+TOTAL ESTIMATED TIME: 16-24 hours
+
+================================================================================
+                         KEY METRICS
+================================================================================
+
+CODE REDUCTION:
+  ReviewsPage: -40 lines
+  TodayPage: -60 lines
+  ClarifyPage: -20 lines
+  OrientWestPage: -15 lines
+  OrientEastPage: -10 lines
+  Total: -145 lines
+
+IMPROVEMENTS:
+  Memory leaks fixed: 2
+  Fragile patterns fixed: 3
+  Boilerplate removed: 145 lines
+  New hooks created: 3-4
+  Error handling centralized: 5+ instances
+
+EXPECTED BENEFITS:
+  - Automatic caching
+  - Built-in retry logic
+  - No memory leak warnings
+  - Consistent error handling
+  - Better performance
+  - Cleaner code
+  - Faster navigation
+  - Better maintainability
+
+================================================================================
+                      DOCUMENT CROSS-REFERENCES
+================================================================================
+
+For pattern details, see:
+  - BAND_AID_ANALYSIS.md (Comprehensive)
+  - BAND_AID_SUMMARY.txt (Quick Reference)
+
+For specific page fixes, see:
+  - BAND_AID_FIXES.md (Before/After Code)
+
+For implementation planning, see:
+  - BAND_AID_INDEX.md (Roadmap & Checklist)
+
+For quick lookups during work, see:
+  - BAND_AID_SUMMARY.txt (Pattern Locations)
+
+================================================================================
+                        QUALITY ASSURANCE
+================================================================================
+
+SUCCESS CRITERIA:
+  [ ] All pages render without warnings
+  [ ] No "setState on unmounted component" warnings
+  [ ] No memory leaks in DevTools
+  [ ] Tab switching doesn't trigger new API calls
+  [ ] Error handling is consistent
+  [ ] Navigation after forms works smoothly
+  [ ] All tests pass
+  [ ] Code review approved
+
+TESTING REQUIRED:
+  - Unit tests for new hooks
+  - Integration tests for page flows
+  - E2E tests for user scenarios
+  - Memory leak testing with DevTools
+  - Performance testing
+
+================================================================================
+                         FILE LOCATIONS
+================================================================================
+
+All analysis documents located at project root:
+  /Users/gberges/compass/BAND_AID_ANALYSIS.md
+  /Users/gberges/compass/BAND_AID_SUMMARY.txt
+  /Users/gberges/compass/BAND_AID_FIXES.md
+  /Users/gberges/compass/BAND_AID_INDEX.md
+  /Users/gberges/compass/BAND_AID_MANIFEST.txt
+
+Source files analyzed in:
+  /Users/gberges/compass/frontend/src/pages/
+  /Users/gberges/compass/frontend/src/components/
+
+================================================================================
+                      ANALYSIS COMPLETION
+================================================================================
+
+ANALYSIS COMPLETE: Yes
+DOCUMENTS GENERATED: 5
+PATTERNS IDENTIFIED: 5 types, 25+ instances
+CODE QUALITY ISSUES: CRITICAL (2), HIGH (2), MEDIUM (1)
+
+NEXT STEPS:
+  1. Review BAND_AID_INDEX.md for overview
+  2. Read BAND_AID_ANALYSIS.md for details
+  3. Reference BAND_AID_FIXES.md during implementation
+  4. Use BAND_AID_SUMMARY.txt for quick lookups
+
+ESTIMATED COMPLETION TIME: 16-24 hours
+ESTIMATED CODE REDUCTION: 145 lines
+ESTIMATED IMPROVEMENTS: 5+ major improvements
+
+Generated: November 10, 2025
+By: Claude Code Analysis System
+
+================================================================================

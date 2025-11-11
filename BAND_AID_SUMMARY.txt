@@ -1,0 +1,204 @@
+================================================================================
+                    BAND-AID PATTERNS - QUICK REFERENCE
+================================================================================
+
+PATTERN 1: MANUAL STATE MANAGEMENT (5 Pages)
+================================================================================
+
+ReviewsPage.tsx (Lines 1-40)
+  - useState: activeTab, reviews, loading
+  - useEffect: Re-fetches on tab change
+  - Problem: No caching, manual loading state
+  - Fix: Create useReviews(activeTab) hook
+
+TodayPage.tsx (Lines 28-90)
+  - useState: plan, activeTasks, nextTasks, todayLogs, loading
+  - useEffect: Sequential API calls with isMounted checks
+  - Problem: 5 isMounted checks, manual error handling
+  - Fix: Use useTodayPlan() + useTasks() + usePostDoLogs() hooks
+
+ClarifyPage.tsx (Lines 34-49, 112-117)
+  - useState: pendingTasks, loading
+  - useEffect: Fetches pending tasks
+  - Problem: Manual cache invalidation with setState filter (Line 113)
+  - Fix: Use usePendingTasks() + useCreateTask() with invalidation
+
+OrientWestPage.tsx (Lines 33-62)
+  - useState: plan, loading, noPlanFound
+  - useEffect: 3 isMounted checks
+  - Problem: Manual error state, memory leak prevention boilerplate
+  - Fix: Use useTodayPlan() hook directly
+
+OrientEastPage.tsx (Lines 61-77)
+  - useState: existingPlan, loading, isEditing
+  - useEffect: No isMounted check (memory leak risk)
+  - Problem: No cleanup function, manual state
+  - Fix: Use useTodayPlan() hook + useEffect for error handling
+
+================================================================================
+PATTERN 2: isMounted CHECKS (8 Total Instances)
+================================================================================
+
+TodayPage.tsx - 5 checks in single useEffect
+  Line 39: if (isMounted) { setPlan(dailyPlan); }
+  Line 44: if (isMounted) { setPlan(null); }
+  Line 51: if (!isMounted) return;
+  Line 61: if (!isMounted) return;
+  Line 70: if (!isMounted) return;
+  Line 78: if (isMounted) { setLoading(false); }
+
+OrientWestPage.tsx - 3 checks in single useEffect
+  Line 40: if (isMounted) { setPlan(todayPlan); }
+  Line 45: if (isMounted) { setNoPlanFound(true); }
+  Line 50: if (isMounted) { setLoading(false); }
+
+Why it's a Band-Aid:
+  - Boilerplate repeated across pages
+  - React Query handles this automatically
+  - AbortController provides better solution
+  - Cleanup function: return () => { isMounted = false; }
+
+================================================================================
+PATTERN 3: MANUAL CACHE INVALIDATION
+================================================================================
+
+ClarifyPage.tsx (Line 113)
+  Code: setPendingTasks(prev => prev.filter(t => t.id !== selectedTask.id));
+  
+  Problem:
+    1. Mutates local state instead of invalidating server cache
+    2. If API succeeds but filter fails, UI out of sync
+    3. Page refresh loses the filter
+    4. Race conditions with multiple mutations
+  
+  Fix: Use React Query's invalidateQueries
+    queryClient.invalidateQueries({ queryKey: ['pendingTasks'] });
+
+================================================================================
+PATTERN 4: RACE CONDITIONS & TIMING HACKS
+================================================================================
+
+OrientWestPage.tsx (Lines 87-92)
+  Code: 
+    await updateDailyPlanReflection(plan.id, request);
+    toast.showSuccess('Evening reflection saved successfully!...');
+    setTimeout(() => { navigate('/reviews'); }, 1500);
+  
+  Problem:
+    - Hardcoded 1500ms delay (arbitrary)
+    - Toast duration varies
+    - Tight coupling to toast implementation
+    - What if API call takes longer?
+  
+  Fix: Use mutation's onSuccess callback
+    const mutation = useUpdateDailyPlanReflection({
+      onSuccess: () => {
+        toast.showSuccess('Evening reflection saved!');
+        navigate('/reviews');
+      }
+    });
+
+OrientEastPage.tsx (Lines 153-159)
+  Code: Same setTimeout pattern after createDailyPlan()
+
+================================================================================
+PATTERN 5: DUPLICATE ERROR HANDLING
+================================================================================
+
+Every page implements:
+  catch (err) {
+    toast.showError('Failed to load X. Please try again.');
+    console.error('Error loading X:', err);
+  }
+
+Instances:
+  ReviewsPage.tsx, Line 48
+  TodayPage.tsx, Line 74
+  ClarifyPage.tsx, Lines 44, 79, 119
+  (And similar in other pages)
+
+Fix: Centralize in hooks with onError callbacks
+  const useReviews = (type: ReviewType) => {
+    return useQuery({
+      queryKey: ['reviews', type],
+      queryFn: () => getReviews(type),
+      onError: (error) => {
+        toast.showError('Failed to load reviews');
+        console.error('Reviews error:', error);
+      }
+    });
+  };
+
+================================================================================
+COMPARISON: Good vs Band-Aid
+================================================================================
+
+GOOD (CalendarPage.tsx):
+  const { data: tasks, isLoading } = useTasks({ status: 'NEXT' });
+  const { data: todayPlan, isLoading: planLoading } = useTodayPlan();
+  const scheduleTaskMutation = useScheduleTask();
+  
+  - Clean, declarative
+  - Automatic caching
+  - No isMounted
+  - Proper error handling
+  - Automatic refetch on error
+
+BAND-AID (ReviewsPage.tsx):
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setLoading(true);
+        const data = await getReviews(activeTab);
+        setReviews(data);
+      } catch (err) {
+        toast.showError('Failed to load reviews');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReviews();
+  }, [activeTab]);
+  
+  - Verbose, imperative
+  - No caching
+  - Manual error handling
+  - Manual loading state
+  - No retry logic
+
+================================================================================
+MIGRATION PRIORITY
+================================================================================
+
+CRITICAL (Potential Memory Leaks):
+  1. TodayPage.tsx - 5 isMounted checks, high usage
+  2. OrientEastPage.tsx - No cleanup, navigation triggers
+
+HIGH (Heavy Usage):
+  3. ReviewsPage.tsx - Manual state, tab switching
+  4. ClarifyPage.tsx - Manual cache invalidation
+
+MEDIUM (Lower Priority):
+  5. OrientWestPage.tsx - 3 isMounted checks, less frequent
+
+ALREADY DONE:
+  - CalendarPage.tsx (Good pattern)
+  - TasksPage.tsx (Good pattern)
+
+================================================================================
+QUICK FIX CHECKLIST
+================================================================================
+
+[ ] ReviewsPage: Create useReviews(type) hook with caching
+[ ] TodayPage: Replace isMounted checks with React Query hooks
+[ ] ClarifyPage: Create usePendingTasks() and fix manual cache invalidation
+[ ] OrientWestPage: Remove isMounted, replace setTimeout with onSuccess
+[ ] OrientEastPage: Add cleanup or migrate to React Query
+[ ] All pages: Centralize error handling in hooks
+[ ] Global: Remove all isMounted patterns
+[ ] Global: Replace all setTimeout navigations with mutation callbacks
+
+================================================================================

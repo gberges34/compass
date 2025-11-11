@@ -56,3 +56,5 @@ backend/prisma/migrations/
 *.tmp
 *.temp
 .!*
+.codex/
+codex.log
