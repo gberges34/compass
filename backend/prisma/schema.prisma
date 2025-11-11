@@ -35,6 +35,9 @@ model Task {
   @@index([status, priority])
   @@index([scheduledStart])
   @@index([category])
+  @@index([createdAt])
+  @@index([dueDate])
+  @@index([status, scheduledStart])
 }
 
 // Orient Database (Daily Plans)
