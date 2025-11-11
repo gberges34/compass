@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { enrichTask, createTask } from '../lib/api';
+import { enrichTask } from '../lib/api';
 import type { TempCapturedTask, Priority, Energy } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useTodoistPending } from '../hooks/useTodoist';
+import { useCreateTask } from '../hooks/useTasks';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -20,6 +21,9 @@ const ClarifyPage: React.FC = () => {
   // Replace manual state with React Query hook
   const { data, isLoading, isError } = useTodoistPending();
   const pendingTasks = data?.tasks ?? [];
+
+  // Use mutation hook for automatic cache invalidation
+  const createTaskMutation = useCreateTask();
 
   const [selectedTask, setSelectedTask] = useState<TempCapturedTask | null>(null);
 
@@ -82,7 +86,7 @@ const ClarifyPage: React.FC = () => {
         4: 'MAYBE',
       };
 
-      await createTask({
+      await createTaskMutation.mutateAsync({
         name: enrichedData.name,
         priority: priorityMap[priority],
         category: enrichedData.category as any,
