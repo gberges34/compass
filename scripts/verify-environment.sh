@@ -116,6 +116,16 @@ else
 fi
 cd ..
 
+echo -n "Forbidden files (REQ-SEC-001): "
+FORBIDDEN_OUTPUT=$(bash scripts/check-forbidden-files.sh 2>&1)
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}None found ✓${NC}"
+else
+    echo -e "${RED}Detected ✗${NC}"
+    printf '%s\n' "$FORBIDDEN_OUTPUT" | sed 's/^/  /'
+    ((ERRORS++))
+fi
+
 echo ""
 echo "===================================="
 
