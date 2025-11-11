@@ -148,11 +148,40 @@ If moment.js is found as transitive dependency:
 - Evaluate react-big-calendar configuration options
 - Consider custom calendar implementation with date-fns
 
+## Audit Results
+
+### Moment.js Dependency Audit
+
+**Finding**: moment.js v2.30.1 is present as a transitive dependency:
+
+```
+frontend@0.1.0
+└─┬ react-big-calendar@1.19.4
+  ├─┬ moment-timezone@0.5.48
+  │ └── moment@2.30.1 deduped
+  └── moment@2.30.1
+```
+
+**Status**: moment.js is NOT a direct dependency (not in package.json). It's pulled in by `react-big-calendar` and `moment-timezone`.
+
+**Recommendation**: Accept this as transitive dependency. All application code uses `date-fns`. Replacing `react-big-calendar` would require significant effort and is beyond scope.
+
+**Future Consideration**: Evaluate alternative calendar libraries that don't depend on moment.js (e.g., FullCalendar, custom implementation with date-fns).
+
+### ESLint Cleanup
+
+**Result**: Build now compiles with zero warnings ✅
+
+**Files Fixed**:
+- `frontend/src/hooks/useTasks.ts` - Removed unused `getCurrentTimestamp` import
+- `frontend/src/lib/dateUtils.ts` - Removed unused `formatISO` import
+- `frontend/src/pages/TodayPage.tsx` - Removed unused type imports and `getPriorityStyle`
+
 ## Requirements Status
 
-After completion:
+Final status:
 
 - ✅ **REQ-FE-007**: Badge utilities - Complete
 - ✅ **REQ-FE-008**: Date utils consolidated - Complete (unused imports removed)
-- 🟡 **REQ-FE-009**: moment.js removed - Partially Complete or Complete (depends on audit)
+- 🟡 **REQ-FE-009**: moment.js removed - Partially Complete (no direct dependency, transitive via react-big-calendar)
 - ✅ **REQ-SEC-002**: ESLint violations fixed - Complete (zero warnings)
