@@ -71,10 +71,11 @@ export async function withRetry<T>(
 
       // Calculate exponential backoff delay
       const delayMs = opts.initialDelay * Math.pow(2, attempt);
+      const errorMsg = error instanceof Error ? error.message : (error as any)?.code || 'Unknown error';
       console.warn(
         `[Retry] Attempt ${attempt + 1}/${opts.maxRetries} failed. ` +
         `Retrying in ${delayMs}ms...`,
-        { error: error.message || error.code }
+        { error: errorMsg }
       );
 
       await delay(delayMs);

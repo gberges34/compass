@@ -20,7 +20,7 @@ export const prefetchReviews = (
   return queryClient.prefetchInfiniteQuery({
     queryKey: reviewKeys.list(type),
     queryFn: ({ pageParam }) => api.getReviews({ type, cursor: pageParam, limit: 30 }),
-    getNextPageParam: (lastPage: PaginatedResponse<Review>) => lastPage.nextCursor,
+    getNextPageParam: (lastPage: PaginatedResponse<Review>) => lastPage.pagination.nextCursor,
     initialPageParam: undefined as string | undefined,
   });
 };
@@ -29,7 +29,7 @@ export function useReviews(type?: 'DAILY' | 'WEEKLY') {
   return useInfiniteQuery({
     queryKey: reviewKeys.list(type),
     queryFn: ({ pageParam }) => api.getReviews({ type, cursor: pageParam, limit: 30 }),
-    getNextPageParam: (lastPage: PaginatedResponse<Review>) => lastPage.nextCursor,
+    getNextPageParam: (lastPage: PaginatedResponse<Review>) => lastPage.pagination.nextCursor,
     initialPageParam: undefined as string | undefined,
   });
 }
@@ -39,7 +39,7 @@ export function useFlatReviews(type?: 'DAILY' | 'WEEKLY') {
   const { data, ...rest } = useReviews(type);
 
   const reviews = useMemo(() => {
-    return data?.pages.flatMap(page => page.items) ?? [];
+    return data?.pages.flatMap(page => page.data) ?? [];
   }, [data]);
 
   return { reviews, ...rest };
