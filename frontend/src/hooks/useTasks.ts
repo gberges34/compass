@@ -1,9 +1,10 @@
-import { useQuery, useMutation, useQueryClient, QueryClient, type UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient, QueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import * as api from '../lib/api';
 import type { Task, TaskFilters, EnrichTaskRequest, CompleteTaskRequest } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { getCurrentTimestamp } from '../lib/dateUtils';
+import { useMemo } from 'react';
 
 // Development-only logging
 const DEBUG = process.env.NODE_ENV === 'development';
@@ -20,22 +21,34 @@ export const taskKeys = {
 
 // Prefetch Helpers
 export const prefetchTasks = (queryClient: QueryClient, filters?: TaskFilters) => {
-  return queryClient.prefetchQuery({
+  return queryClient.prefetchInfiniteQuery({
     queryKey: taskKeys.list(filters),
-    queryFn: () => api.getTasks(filters),
+    queryFn: ({ pageParam }) => api.getTasks({ ...filters, cursor: pageParam, limit: 30 }),
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: undefined as string | undefined,
   });
 };
 
 // Queries
 
-type TasksQueryOptions = Omit<UseQueryOptions<Task[], Error>, 'queryKey' | 'queryFn'>;
-
-export function useTasks(filters?: TaskFilters, options?: TasksQueryOptions) {
-  return useQuery({
+export function useTasks(filters?: TaskFilters) {
+  return useInfiniteQuery({
     queryKey: taskKeys.list(filters),
-    queryFn: () => api.getTasks(filters),
-    ...options,
+    queryFn: ({ pageParam }) => api.getTasks({ ...filters, cursor: pageParam, limit: 30 }),
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: undefined as string | undefined,
   });
+}
+
+// Helper to flatten pages for components that need a simple array
+export function useFlatTasks(filters?: TaskFilters) {
+  const { data, ...rest } = useTasks(filters);
+
+  const tasks = useMemo(() => {
+    return data?.pages.flatMap(page => page.items) ?? [];
+  }, [data]);
+
+  return { tasks, ...rest };
 }
 
 export function useTask(id: string) {
@@ -54,62 +67,13 @@ export function useCreateTask() {
 
   return useMutation({
     mutationFn: (task: Partial<Task>) => api.createTask(task),
-    onMutate: async (newTask) => {
-      log('[useCreateTask] onMutate called:', newTask);
-
-      // Cancel ongoing queries
-      await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
-
-      // Snapshot current state
-      const allCachedQueries = queryClient.getQueriesData({ queryKey: taskKeys.lists() });
-
-      // Optimistically add the new task (with temporary ID)
-      const optimisticTask: Task = {
-        id: `temp-${Date.now()}`,
-        name: newTask.name || 'New Task',
-        status: newTask.status || 'NEXT',
-        priority: newTask.priority || 'COULD',
-        category: newTask.category || 'PERSONAL',
-        duration: newTask.duration || 30,
-        energyRequired: newTask.energyRequired || 'MEDIUM',
-        context: newTask.context || 'ANYWHERE',
-        definitionOfDone: newTask.definitionOfDone || '',
-        createdAt: getCurrentTimestamp(),
-        updatedAt: getCurrentTimestamp(),
-        ...newTask,
-      } as Task;
-
-      // Add to ALL cached lists that match the task's filters
-      allCachedQueries.forEach(([queryKey, data]) => {
-        if (Array.isArray(data)) {
-          // Check if this cache entry would include the new task
-          const filters = (queryKey as any[])[2]?.filters;
-          const shouldInclude = !filters ||
-            ((!filters.status || filters.status === optimisticTask.status) &&
-            (!filters.category || filters.category === optimisticTask.category) &&
-            (!filters.priority || filters.priority === optimisticTask.priority) &&
-            (!filters.energyRequired || filters.energyRequired === optimisticTask.energyRequired));
-
-          if (shouldInclude) {
-            queryClient.setQueryData(queryKey, (old: Task[] = []) => [...old, optimisticTask]);
-          }
-        }
-      });
-
-      return { allCachedQueries };
-    },
-    onError: (err: AxiosError, variables, context) => {
+    onError: (err: AxiosError) => {
       console.error('[useCreateTask] Error:', err);
-      if (context?.allCachedQueries) {
-        context.allCachedQueries.forEach(([queryKey, data]) => {
-          queryClient.setQueryData(queryKey, data);
-        });
-      }
       toast.showError(err.userMessage || 'Failed to create task');
     },
     onSuccess: () => {
-      log('[useCreateTask] Success, refetching queries');
-      queryClient.refetchQueries({ queryKey: taskKeys.lists() });
+      log('[useCreateTask] Success, invalidating queries');
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 }
@@ -121,44 +85,14 @@ export function useUpdateTask() {
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Task> }) =>
       api.updateTask(id, updates),
-    onMutate: async ({ id, updates }) => {
-      log('[useUpdateTask] onMutate called:', { id, updates });
-
-      // Cancel all task queries to prevent race conditions
-      await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
-
-      // Get ALL cached task lists
-      const allCachedQueries = queryClient.getQueriesData({ queryKey: taskKeys.lists() });
-
-      // Update task in ALL cached lists
-      allCachedQueries.forEach(([queryKey, data]) => {
-        if (Array.isArray(data)) {
-          queryClient.setQueryData(queryKey, (old: Task[] = []) =>
-            old.map((task) =>
-              task.id === id
-                ? { ...task, ...updates, updatedAt: getCurrentTimestamp() }
-                : task
-            )
-          );
-        }
-      });
-
-      return { allCachedQueries };
-    },
-    onError: (err: AxiosError, variables, context) => {
+    onError: (err: AxiosError) => {
       console.error('[useUpdateTask] Error:', err);
-      // Rollback ALL cache entries
-      if (context?.allCachedQueries) {
-        context.allCachedQueries.forEach(([queryKey, data]) => {
-          queryClient.setQueryData(queryKey, data);
-        });
-      }
       toast.showError(err.userMessage || 'Failed to update task');
     },
     onSuccess: (_, variables) => {
-      log('[useUpdateTask] Success, refetching queries');
-      queryClient.refetchQueries({ queryKey: taskKeys.detail(variables.id) });
-      queryClient.refetchQueries({ queryKey: taskKeys.lists() });
+      log('[useUpdateTask] Success, invalidating queries');
+      queryClient.invalidateQueries({ queryKey: taskKeys.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 }
@@ -169,36 +103,13 @@ export function useDeleteTask() {
 
   return useMutation({
     mutationFn: (id: string) => api.deleteTask(id),
-    onMutate: async (id) => {
-      log('[useDeleteTask] onMutate called:', { id });
-
-      await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
-
-      const allCachedQueries = queryClient.getQueriesData({ queryKey: taskKeys.lists() });
-
-      // Remove task from ALL cached lists
-      allCachedQueries.forEach(([queryKey, data]) => {
-        if (Array.isArray(data)) {
-          queryClient.setQueryData(queryKey, (old: Task[] = []) =>
-            old.filter((task) => task.id !== id)
-          );
-        }
-      });
-
-      return { allCachedQueries };
-    },
-    onError: (err: AxiosError, variables, context) => {
+    onError: (err: AxiosError) => {
       console.error('[useDeleteTask] Error:', err);
-      if (context?.allCachedQueries) {
-        context.allCachedQueries.forEach(([queryKey, data]) => {
-          queryClient.setQueryData(queryKey, data);
-        });
-      }
       toast.showError(err.userMessage || 'Failed to delete task');
     },
     onSuccess: () => {
-      log('[useDeleteTask] Success, refetching queries');
-      queryClient.refetchQueries({ queryKey: taskKeys.lists() });
+      log('[useDeleteTask] Success, invalidating queries');
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 }
@@ -210,47 +121,13 @@ export function useScheduleTask() {
   return useMutation({
     mutationFn: ({ id, scheduledStart }: { id: string; scheduledStart: string }) =>
       api.scheduleTask(id, scheduledStart),
-    onMutate: async ({ id, scheduledStart }) => {
-      log('[useScheduleTask] onMutate called:', { id, scheduledStart });
-
-      // Cancel all task queries to prevent race conditions
-      await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
-
-      // Get ALL cached task lists (not just status: NEXT)
-      const allCachedQueries = queryClient.getQueriesData({ queryKey: taskKeys.lists() });
-
-      // Update task in ALL cached lists
-      allCachedQueries.forEach(([queryKey, data]) => {
-        if (Array.isArray(data)) {
-          queryClient.setQueryData(queryKey, (old: Task[] = []) =>
-            old.map((task) =>
-              task.id === id
-                ? { ...task, scheduledStart, updatedAt: getCurrentTimestamp() }
-                : task
-            )
-          );
-        }
-      });
-
-      return { allCachedQueries };
-    },
-    onError: (err: AxiosError, variables, context) => {
+    onError: (err: AxiosError) => {
       console.error('[useScheduleTask] Error:', err);
-      // Rollback ALL cache entries
-      if (context?.allCachedQueries) {
-        context.allCachedQueries.forEach(([queryKey, data]) => {
-          queryClient.setQueryData(queryKey, data);
-        });
-      }
       toast.showError(err.userMessage || 'Failed to schedule task');
     },
     onSuccess: (data) => {
       log('[useScheduleTask] Success response:', data);
-      // Explicitly refetch all task queries to ensure immediate UI update
-      queryClient.refetchQueries({ queryKey: taskKeys.lists() });
-    },
-    onSettled: () => {
-      log('[useScheduleTask] Mutation settled');
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 }
@@ -261,43 +138,13 @@ export function useUnscheduleTask() {
 
   return useMutation({
     mutationFn: (id: string) => api.unscheduleTask(id),
-    onMutate: async (id) => {
-      log('[useUnscheduleTask] onMutate called:', { id });
-
-      await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
-
-      const allCachedQueries = queryClient.getQueriesData({ queryKey: taskKeys.lists() });
-
-      allCachedQueries.forEach(([queryKey, data]) => {
-        if (Array.isArray(data)) {
-          queryClient.setQueryData(queryKey, (old: Task[] = []) =>
-            old.map((task) =>
-              task.id === id
-                ? { ...task, scheduledStart: null, updatedAt: getCurrentTimestamp() }
-                : task
-            )
-          );
-        }
-      });
-
-      return { allCachedQueries };
-    },
-    onError: (err: AxiosError, variables, context) => {
+    onError: (err: AxiosError) => {
       console.error('[useUnscheduleTask] Error:', err);
-      if (context?.allCachedQueries) {
-        context.allCachedQueries.forEach(([queryKey, data]) => {
-          queryClient.setQueryData(queryKey, data);
-        });
-      }
       toast.showError(err.userMessage || 'Failed to unschedule task');
     },
     onSuccess: (data) => {
       log('[useUnscheduleTask] Success response:', data);
-      // Explicitly refetch all task queries to ensure immediate UI update
-      queryClient.refetchQueries({ queryKey: taskKeys.lists() });
-    },
-    onSettled: () => {
-      log('[useUnscheduleTask] Mutation settled');
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 }
@@ -324,8 +171,8 @@ export function useActivateTask() {
       toast.showError(err.userMessage || 'Failed to activate task');
     },
     onSuccess: (_, id) => {
-      queryClient.refetchQueries({ queryKey: taskKeys.detail(id) });
-      queryClient.refetchQueries({ queryKey: taskKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: taskKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 }
@@ -342,7 +189,7 @@ export function useCompleteTask() {
       toast.showError(err.userMessage || 'Failed to complete task');
     },
     onSuccess: () => {
-      queryClient.refetchQueries({ queryKey: taskKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 }
