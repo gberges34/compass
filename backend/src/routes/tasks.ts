@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { enrichTask } from '../services/llm';
 import { calculateTimeOfDay, getDayOfWeek } from '../utils/timeUtils';
+import { getCurrentTimestamp, dateToISO } from '../utils/dateHelpers';
 
 // Development-only logging
 const DEBUG = process.env.NODE_ENV === 'development';
@@ -282,13 +283,13 @@ router.patch('/:id/schedule', async (req: Request, res: Response) => {
 
     if (scheduledDate < now) {
       log('[PATCH /schedule] Validation failed - past date:', {
-        requestedDate: scheduledDate.toISOString(),
-        currentTime: now.toISOString(),
+        requestedDate: dateToISO(scheduledDate),
+        currentTime: dateToISO(now),
       });
       return res.status(400).json({
         error: 'Cannot schedule task in the past',
         scheduledStart,
-        now: now.toISOString(),
+        now: dateToISO(now),
       });
     }
 

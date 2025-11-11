@@ -3,6 +3,7 @@ import type { AxiosError } from 'axios';
 import * as api from '../lib/api';
 import type { Task, TaskFilters, EnrichTaskRequest, CompleteTaskRequest } from '../types';
 import { useToast } from '../contexts/ToastContext';
+import { getCurrentTimestamp } from '../lib/dateUtils';
 
 // Development-only logging
 const DEBUG = process.env.NODE_ENV === 'development';
@@ -70,8 +71,8 @@ export function useCreateTask() {
         energyRequired: newTask.energyRequired || 'MEDIUM',
         context: newTask.context || 'ANYWHERE',
         definitionOfDone: newTask.definitionOfDone || '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: getCurrentTimestamp(),
+        updatedAt: getCurrentTimestamp(),
         ...newTask,
       } as Task;
 
@@ -132,7 +133,7 @@ export function useUpdateTask() {
           queryClient.setQueryData(queryKey, (old: Task[] = []) =>
             old.map((task) =>
               task.id === id
-                ? { ...task, ...updates, updatedAt: new Date().toISOString() }
+                ? { ...task, ...updates, updatedAt: getCurrentTimestamp() }
                 : task
             )
           );
@@ -221,7 +222,7 @@ export function useScheduleTask() {
           queryClient.setQueryData(queryKey, (old: Task[] = []) =>
             old.map((task) =>
               task.id === id
-                ? { ...task, scheduledStart, updatedAt: new Date().toISOString() }
+                ? { ...task, scheduledStart, updatedAt: getCurrentTimestamp() }
                 : task
             )
           );
@@ -269,7 +270,7 @@ export function useUnscheduleTask() {
           queryClient.setQueryData(queryKey, (old: Task[] = []) =>
             old.map((task) =>
               task.id === id
-                ? { ...task, scheduledStart: null, updatedAt: new Date().toISOString() }
+                ? { ...task, scheduledStart: null, updatedAt: getCurrentTimestamp() }
                 : task
             )
           );

@@ -6,6 +6,7 @@ import todoistRouter from './routes/todoist';
 import orientRouter from './routes/orient';
 import reviewsRouter from './routes/reviews';
 import postdoRouter from './routes/postdo';
+import { getCurrentTimestamp } from './utils/dateHelpers';
 
 dotenv.config();
 
@@ -75,7 +76,7 @@ app.get('/health', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    timestamp: new Date().toISOString(),
+    timestamp: getCurrentTimestamp(),
     service: 'compass-backend'
   });
 });
