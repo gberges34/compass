@@ -1,4 +1,12 @@
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient, QueryClient, type UseQueryOptions } from '@tanstack/react-query';
+import {
+  useQuery,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+  QueryClient,
+  type UseQueryOptions,
+  type UseInfiniteQueryOptions,
+} from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import * as api from '../lib/api';
 import type { Task, TaskFilters, EnrichTaskRequest, CompleteTaskRequest, PaginatedResponse } from '../types';
@@ -31,12 +39,47 @@ export const prefetchTasks = (queryClient: QueryClient, filters?: TaskFilters) =
 
 // Queries
 
-export function useTasks(filters?: TaskFilters) {
-  return useInfiniteQuery({
+type TasksQueryOptions = Omit<UseQueryOptions<Task[], Error>, 'queryKey' | 'queryFn'>;
+type InfiniteTasksQueryKey = [...ReturnType<typeof taskKeys.list>, 'infinite'];
+type InfiniteTasksQueryOptions = Omit<
+  UseInfiniteQueryOptions<
+    PaginatedResponse<Task>,
+    Error,
+    PaginatedResponse<Task>,
+    InfiniteTasksQueryKey,
+    string | undefined
+  >,
+  'queryKey' | 'queryFn' | 'initialPageParam'
+>;
+
+// Keep useTasks backwards compatible (returns just data array)
+export function useTasks(filters?: TaskFilters, options?: TasksQueryOptions) {
+  return useQuery({
     queryKey: taskKeys.list(filters),
-    queryFn: ({ pageParam }) => api.getTasks({ ...filters, cursor: pageParam, limit: 30 }),
-    getNextPageParam: (lastPage: PaginatedResponse<Task>) => lastPage.nextCursor,
-    initialPageParam: undefined as string | undefined,
+    queryFn: async () => {
+      const response = await api.getTasks(filters);
+      return response.data; // Return just the data array for backwards compatibility
+    },
+    ...options,
+  });
+}
+
+// New hook for infinite scroll with pagination
+export function useTasksInfinite(filters?: TaskFilters, options?: InfiniteTasksQueryOptions) {
+  const queryKey = [...taskKeys.list(filters), 'infinite'] as InfiniteTasksQueryKey;
+
+  return useInfiniteQuery<
+    PaginatedResponse<Task>,
+    Error,
+    PaginatedResponse<Task>,
+    InfiniteTasksQueryKey,
+    string | undefined
+  >({
+    queryKey,
+    queryFn: ({ pageParam = undefined }) => api.getTasks(filters, { cursor: pageParam, limit: 50 }),
+    getNextPageParam: (lastPage) => lastPage.pagination.nextCursor,
+    initialPageParam: undefined,
+    ...options,
   });
 }
 

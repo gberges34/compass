@@ -106,13 +106,12 @@ export interface Review {
 // API Request/Response types
 
 export interface PaginatedResponse<T> {
-  items: T[];
-  nextCursor: string | null;
-}
-
-export interface PaginationParams {
-  cursor?: string;
-  limit?: number;
+  data: T[];
+  pagination: {
+    nextCursor: string | null;
+    hasMore: boolean;
+    limit: number;
+  };
 }
 
 export interface EnrichTaskRequest {

@@ -16,9 +16,6 @@ import type {
   CreateReviewRequest,
   TaskFilters,
   PaginatedResponse,
-  TaskStatus,
-  Priority,
-  Category,
 } from '../types';
 
 // Augment Axios error with user-friendly message and error code
@@ -37,6 +34,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -72,23 +70,22 @@ api.interceptors.response.use(
 
 // Tasks API
 
-export const getTasks = async (params?: {
-  status?: TaskStatus;
-  priority?: Priority;
-  category?: Category;
-  scheduledDate?: string;
-  cursor?: string;
-  limit?: number;
-}): Promise<PaginatedResponse<Task>> => {
-  const queryParams = new URLSearchParams();
-  if (params?.status) queryParams.append('status', params.status);
-  if (params?.priority) queryParams.append('priority', params.priority);
-  if (params?.category) queryParams.append('category', params.category);
-  if (params?.scheduledDate) queryParams.append('scheduledDate', params.scheduledDate);
-  if (params?.cursor) queryParams.append('cursor', params.cursor);
-  if (params?.limit) queryParams.append('limit', params.limit.toString());
+export const getTasks = async (
+  filters?: TaskFilters,
+  pagination?: { cursor?: string; limit?: number }
+): Promise<PaginatedResponse<Task>> => {
+  const params = new URLSearchParams();
+  if (filters?.status) params.append('status', filters.status);
+  if (filters?.category) params.append('category', filters.category);
+  if (filters?.context) params.append('context', filters.context);
+  if (filters?.priority) params.append('priority', filters.priority);
+  if (filters?.energyRequired) params.append('energyRequired', filters.energyRequired);
 
-  const response = await api.get<PaginatedResponse<Task>>(`/tasks?${queryParams}`);
+  // Add pagination params
+  if (pagination?.cursor) params.append('cursor', pagination.cursor);
+  if (pagination?.limit) params.append('limit', pagination.limit.toString());
+
+  const response = await api.get<PaginatedResponse<Task>>(`/tasks?${params.toString()}`);
   return response.data;
 };
 
