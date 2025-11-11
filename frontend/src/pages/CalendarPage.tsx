@@ -10,11 +10,11 @@ import type { Task, CalendarEvent } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useTasks } from '../hooks/useTasks';
 import { useTodayPlan } from '../hooks/useDailyPlans';
+import { useDocumentVisibility } from '../hooks/useDocumentVisibility';
 import { useScheduleTask, useUnscheduleTask, useUpdateTask } from '../hooks/useTasks';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
-import { getCategoryStyle } from '../lib/designTokens';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
 import {
   getTodayDateString,
@@ -110,10 +110,24 @@ UnscheduledTaskCard.displayName = 'UnscheduledTaskCard';
 
 const CalendarPage: React.FC = () => {
   const toast = useToast();
+  const isDocumentVisible = useDocumentVisibility();
+  // Keep passive refresh active only while the calendar tab is visible.
+  const refetchInterval = isDocumentVisible ? 60_000 : false;
 
   // React Query hooks - replace manual state management
-  const { data: tasks = [], isLoading: tasksLoading } = useTasks({ status: 'NEXT' });
-  const { data: todayPlan, isLoading: planLoading } = useTodayPlan();
+  const { data: tasks = [], isLoading: tasksLoading } = useTasks(
+    { status: 'NEXT' },
+    {
+      refetchInterval,
+      refetchIntervalInBackground: false,
+      refetchOnWindowFocus: false,
+    }
+  );
+  const { data: todayPlan, isLoading: planLoading } = useTodayPlan({
+    refetchInterval,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
+  });
   const scheduleTaskMutation = useScheduleTask();
   const unscheduleTaskMutation = useUnscheduleTask();
   const updateTaskMutation = useUpdateTask();
