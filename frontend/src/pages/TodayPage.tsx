@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { getTodayPlan, getTasks, getPostDoLogs } from '../lib/api';
+import { useTasks } from '../hooks/useTasks';
+import { useTodayPlan } from '../hooks/useDailyPlans';
+import { usePostDoLogs } from '../hooks/usePostDoLogs';
 import type { DailyPlan, Task, PostDoLog } from '../types';
-import { useToast } from '../contexts/ToastContext';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
@@ -11,13 +12,6 @@ import { getPriorityStyle, getEnergyStyle } from '../lib/designTokens';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
 
 const TodayPage: React.FC = () => {
-  const toast = useToast();
-  const [plan, setPlan] = useState<DailyPlan | null>(null);
-  const [activeTasks, setActiveTasks] = useState<Task[]>([]);
-  const [nextTasks, setNextTasks] = useState<Task[]>([]);
-  const [todayLogs, setTodayLogs] = useState<PostDoLog[]>([]);
-  const [loading, setLoading] = useState(true);
-
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -25,69 +19,33 @@ const TodayPage: React.FC = () => {
     day: 'numeric',
   });
 
-  useEffect(() => {
-    let isMounted = true;
+  // Replace ALL manual state with React Query hooks - parallel fetching
+  const { data: plan = null, isLoading: planLoading } = useTodayPlan();
+  const { data: activeTasks = [], isLoading: activeLoading } = useTasks({ status: 'ACTIVE' });
+  const { data: allNextTasks = [], isLoading: nextLoading } = useTasks({ status: 'NEXT' });
 
-    const fetchData = async () => {
-      try {
-        setLoading(true);
+  const todayDate = new Date().toISOString().split('T')[0];
+  const { data: todayLogs = [], isLoading: logsLoading } = usePostDoLogs({
+    startDate: todayDate,
+    endDate: todayDate,
+  });
 
-        // Fetch today's plan
-        let dailyPlan: DailyPlan | null = null;
-        try {
-          dailyPlan = await getTodayPlan();
-          if (isMounted) {
-            setPlan(dailyPlan);
-          }
-        } catch (err) {
-          // No plan yet, that's okay
-          if (isMounted) {
-            setPlan(null);
-          }
-        }
+  // No isMounted checks needed - React Query handles cleanup
+  // No useEffect needed - React Query handles data fetching
+  // No manual error handling needed - handled by axios interceptor
+  // No cleanup function needed - React Query handles it
+  // Parallel API calls automatically
 
-        // Fetch active tasks
-        const active = await getTasks({ status: 'ACTIVE' });
-        if (!isMounted) return;
-        setActiveTasks(active);
+  // Sort and limit next tasks
+  const nextTasks = useMemo(() => {
+    const priorityOrder = { MUST: 0, SHOULD: 1, COULD: 2, MAYBE: 3 };
+    const sorted = [...allNextTasks].sort(
+      (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
+    );
+    return sorted.slice(0, 5);
+  }, [allNextTasks]);
 
-        // Fetch next tasks (limit to 5 most important)
-        const next = await getTasks({ status: 'NEXT' });
-        // Sort by priority: MUST > SHOULD > COULD > MAYBE
-        const priorityOrder = { MUST: 0, SHOULD: 1, COULD: 2, MAYBE: 3 };
-        const sortedNext = next.sort(
-          (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
-        );
-        if (!isMounted) return;
-        setNextTasks(sortedNext.slice(0, 5));
-
-        // Fetch today's completed tasks
-        const todayDate = new Date().toISOString().split('T')[0];
-        const logs = await getPostDoLogs({
-          startDate: todayDate,
-          endDate: todayDate,
-        });
-        if (!isMounted) return;
-        setTodayLogs(logs);
-      } catch (err) {
-        if (isMounted) {
-          toast.showError(err instanceof Error ? err.message : 'Failed to load data');
-          console.error('Error loading today page data:', err);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchData();
-
-    return () => {
-      isMounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // toast removed - context functions are stable
+  const loading = planLoading || activeLoading || nextLoading || logsLoading;
 
   // Calculate stats
   const tasksCompletedToday = todayLogs.length;
