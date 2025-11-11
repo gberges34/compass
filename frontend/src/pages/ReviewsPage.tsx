@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useReviews, useCreateDailyReview, useCreateWeeklyReview } from '../hooks/useReviews';
+import { useFlatReviews, useCreateDailyReview, useCreateWeeklyReview } from '../hooks/useReviews';
 import type { Review, ReviewType, CreateReviewRequest } from '../types';
 import {
   LineChart,
@@ -35,8 +35,7 @@ const ReviewsPage: React.FC = () => {
   }>({});
 
   // Replace all manual state with React Query hook
-  const limit = activeTab === 'DAILY' ? 30 : 12;
-  const { data: reviews = [], isLoading: loading, isError } = useReviews(activeTab, limit);
+  const { reviews = [], isLoading: loading, isError } = useFlatReviews(activeTab);
 
   const createDailyReview = useCreateDailyReview();
   const createWeeklyReview = useCreateWeeklyReview();

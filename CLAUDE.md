@@ -191,6 +191,68 @@ External integrations are in `src/services/`:
 
 Services handle failures gracefully and provide sensible defaults.
 
+#### Retry Logic
+
+All external API calls (LLM, Todoist, Timery) are wrapped with `withRetry()` utility:
+
+```typescript
+import { withRetry } from '../utils/retry';
+
+const result = await withRetry(() => externalAPI.call());
+```
+
+**Configuration:**
+- 4 retries with exponential backoff: 1s, 2s, 4s, 8s
+- Retries on: Network errors, 5xx server errors, 429 rate limits
+- Fails immediately on: 4xx client errors
+
+**Custom retry logic:**
+```typescript
+await withRetry(() => someAPI.call(), {
+  maxRetries: 2,
+  initialDelay: 500,
+  shouldRetry: (error) => error.code === 'CUSTOM_ERROR'
+});
+```
+
+#### LLM Response Validation
+
+LLM responses are validated with Zod schemas:
+- Strict type checking for enums (category, context)
+- Partial recovery: valid fields used, invalid fields get defaults
+- Validation failures logged for monitoring
+
+**Example validation with recovery:**
+```typescript
+const enrichmentSchema = z.object({
+  category: z.enum(['SCHOOL', 'MUSIC', 'FITNESS', ...]),
+  context: z.enum(['HOME', 'OFFICE', 'COMPUTER', ...]),
+  rephrasedName: z.string().min(1),
+  definitionOfDone: z.string().min(1),
+});
+
+// If LLM returns invalid category, fall back to 'PERSONAL'
+// If valid fields exist, they are preserved
+```
+
+#### Pagination
+
+**Backend:**
+- All list endpoints support cursor-based pagination
+- Default page size: 30, max: 100
+- Response format: `{ items: T[], nextCursor: string | null }`
+- Implementation in: `routes/tasks.ts`, `routes/reviews.ts`
+
+**Frontend:**
+- Use `useInfiniteQuery` for cursor-based pagination
+- Use `useFlatTasks()` or `useFlatReviews()` for simple array access
+- Example:
+```typescript
+const { data, fetchNextPage, hasNextPage } = useTasks(filters);
+// OR
+const { tasks, fetchNextPage, hasNextPage } = useFlatTasks(filters);
+```
+
 ### Frontend Architecture
 
 #### State Management

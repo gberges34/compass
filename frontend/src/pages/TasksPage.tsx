@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { Task, TaskStatus, Category, Energy, Priority } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import {
-  useTasks,
+  useFlatTasks,
   useCreateTask,
   useActivateTask,
   useCompleteTask,
@@ -34,7 +34,7 @@ const TasksPage: React.FC = () => {
   if (priorityFilter) filters.priority = priorityFilter;
 
   // React Query hooks
-  const { data: tasks = [], isLoading: loading } = useTasks(filters);
+  const { tasks = [], isLoading: loading } = useFlatTasks(filters);
   const createTaskMutation = useCreateTask();
   const activateTaskMutation = useActivateTask();
   const completeTaskMutation = useCompleteTask();

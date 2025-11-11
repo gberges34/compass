@@ -1,12 +1,13 @@
-import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import * as api from '../lib/api';
-import type { Review, CreateReviewRequest } from '../types';
+import type { Review, CreateReviewRequest, PaginatedResponse } from '../types';
+import { useMemo } from 'react';
 
 export const reviewKeys = {
   all: ['reviews'] as const,
   lists: () => [...reviewKeys.all, 'list'] as const,
-  list: (type?: 'DAILY' | 'WEEKLY', limit?: number) =>
-    [...reviewKeys.lists(), { type, limit }] as const,
+  list: (type?: 'DAILY' | 'WEEKLY') =>
+    [...reviewKeys.lists(), { type }] as const,
   details: () => [...reviewKeys.all, 'detail'] as const,
   detail: (id: string) => [...reviewKeys.details(), id] as const,
 };
@@ -14,20 +15,34 @@ export const reviewKeys = {
 // Prefetch Helpers
 export const prefetchReviews = (
   queryClient: QueryClient,
-  type?: 'DAILY' | 'WEEKLY',
-  limit?: number
+  type?: 'DAILY' | 'WEEKLY'
 ) => {
-  return queryClient.prefetchQuery({
-    queryKey: reviewKeys.list(type, limit),
-    queryFn: () => api.getReviews(type, limit),
+  return queryClient.prefetchInfiniteQuery({
+    queryKey: reviewKeys.list(type),
+    queryFn: ({ pageParam }) => api.getReviews({ type, cursor: pageParam, limit: 30 }),
+    getNextPageParam: (lastPage: PaginatedResponse<Review>) => lastPage.nextCursor,
+    initialPageParam: undefined as string | undefined,
   });
 };
 
-export function useReviews(type?: 'DAILY' | 'WEEKLY', limit?: number) {
-  return useQuery({
-    queryKey: reviewKeys.list(type, limit),
-    queryFn: () => api.getReviews(type, limit),
+export function useReviews(type?: 'DAILY' | 'WEEKLY') {
+  return useInfiniteQuery({
+    queryKey: reviewKeys.list(type),
+    queryFn: ({ pageParam }) => api.getReviews({ type, cursor: pageParam, limit: 30 }),
+    getNextPageParam: (lastPage: PaginatedResponse<Review>) => lastPage.nextCursor,
+    initialPageParam: undefined as string | undefined,
   });
+}
+
+// Helper to flatten pages for components that need a simple array
+export function useFlatReviews(type?: 'DAILY' | 'WEEKLY') {
+  const { data, ...rest } = useReviews(type);
+
+  const reviews = useMemo(() => {
+    return data?.pages.flatMap(page => page.items) ?? [];
+  }, [data]);
+
+  return { reviews, ...rest };
 }
 
 export function useReview(id: string) {

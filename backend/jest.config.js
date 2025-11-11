@@ -1,14 +1,18 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/tests'],
-  testMatch: ['**/*.test.ts'],
+  roots: ['<rootDir>/src'],
+  testMatch: ['**/__tests__/**/*.test.ts'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   collectCoverageFrom: [
-    'src/**/*.ts',
+    'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
+    '!src/**/__tests__/**',
   ],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
+  globals: {
+    'ts-jest': {
+      isolatedModules: true,
+    },
   },
-  testTimeout: 30000,
 };

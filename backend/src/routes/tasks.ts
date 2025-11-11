@@ -90,6 +90,11 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
     };
   }
 
+  // Add cursor filter
+  if (cursor) {
+    where.id = { gt: cursor };
+  }
+
   log('[GET /tasks] Query where clause:', JSON.stringify(where));
 
   // Cursor-based pagination

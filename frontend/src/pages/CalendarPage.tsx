@@ -8,7 +8,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import type { Task, CalendarEvent } from '../types';
 import { useToast } from '../contexts/ToastContext';
-import { useTasks } from '../hooks/useTasks';
+import { useFlatTasks } from '../hooks/useTasks';
 import { useTodayPlan } from '../hooks/useDailyPlans';
 import { useDocumentVisibility } from '../hooks/useDocumentVisibility';
 import { useScheduleTask, useUnscheduleTask, useUpdateTask } from '../hooks/useTasks';
@@ -115,14 +115,8 @@ const CalendarPage: React.FC = () => {
   const refetchInterval = isDocumentVisible ? 60_000 : false;
 
   // React Query hooks - replace manual state management
-  const { data: tasks = [], isLoading: tasksLoading } = useTasks(
-    { status: 'NEXT' },
-    {
-      refetchInterval,
-      refetchIntervalInBackground: false,
-      refetchOnWindowFocus: false,
-    }
-  );
+  // TODO: Add back refetchInterval support for infinite queries
+  const { tasks = [], isLoading: tasksLoading } = useFlatTasks({ status: 'NEXT' });
   const { data: todayPlan, isLoading: planLoading } = useTodayPlan({
     refetchInterval,
     refetchIntervalInBackground: false,

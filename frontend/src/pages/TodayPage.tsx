@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useTasks } from '../hooks/useTasks';
+import { useFlatTasks } from '../hooks/useTasks';
 import { useTodayPlan } from '../hooks/useDailyPlans';
 import { usePostDoLogs } from '../hooks/usePostDoLogs';
 import type { DailyPlan, Task, PostDoLog } from '../types';
@@ -17,8 +17,8 @@ const TodayPage: React.FC = () => {
 
   // Replace ALL manual state with React Query hooks - parallel fetching
   const { data: plan = null, isLoading: planLoading } = useTodayPlan();
-  const { data: activeTasks = [], isLoading: activeLoading } = useTasks({ status: 'ACTIVE' });
-  const { data: allNextTasks = [], isLoading: nextLoading } = useTasks({ status: 'NEXT' });
+  const { tasks: activeTasks = [], isLoading: activeLoading } = useFlatTasks({ status: 'ACTIVE' });
+  const { tasks: allNextTasks = [], isLoading: nextLoading } = useFlatTasks({ status: 'NEXT' });
 
   const todayDate = getTodayDateString();
   const { data: todayLogs = [], isLoading: logsLoading } = usePostDoLogs({

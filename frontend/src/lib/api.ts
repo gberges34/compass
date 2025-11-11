@@ -207,12 +207,17 @@ export const updateDailyPlanReflection = async (
 
 // Reviews API
 
-export const getReviews = async (type?: 'DAILY' | 'WEEKLY', limit?: number): Promise<Review[]> => {
-  const params = new URLSearchParams();
-  if (type) params.append('type', type);
-  if (limit) params.append('limit', limit.toString());
+export const getReviews = async (params?: {
+  type?: 'DAILY' | 'WEEKLY';
+  cursor?: string;
+  limit?: number;
+}): Promise<PaginatedResponse<Review>> => {
+  const queryParams = new URLSearchParams();
+  if (params?.type) queryParams.append('type', params.type);
+  if (params?.cursor) queryParams.append('cursor', params.cursor);
+  if (params?.limit) queryParams.append('limit', params.limit.toString());
 
-  const response = await api.get<Review[]>(`/reviews?${params.toString()}`);
+  const response = await api.get<PaginatedResponse<Review>>(`/reviews?${queryParams}`);
   return response.data;
 };
 
