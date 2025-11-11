@@ -58,3 +58,4 @@ backend/prisma/migrations/
 .!*
 .codex/
 codex.log
+log/

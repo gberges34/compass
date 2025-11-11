@@ -106,7 +106,7 @@ fi
 # Database connectivity test
 echo -n "Database connection: "
 cd backend
-DB_TEST=$(npx prisma db execute --stdin <<< "SELECT 1;" 2>&1)
+DB_TEST=$(npx prisma db execute --schema=prisma/schema.prisma --stdin <<< "SELECT 1;" 2>&1)
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}Connected ✓${NC}"
 else
