@@ -45,3 +45,16 @@ GET /api/tasks?status=NEXT&priority=MUST&cursor=abc-123&limit=30
 - Ordered by: periodStart (desc), id (desc) - newest first
 - Cursor uses `id < cursor` for next page (DESC ordering)
 - Works with filter: type (DAILY/WEEKLY)
+
+## Anthropic Connectivity Check
+
+Use the workspace health script whenever you need to validate Anthropic access without exposing secrets in logs.
+
+1. Export your key as `COMPASS_ANTHROPIC_API_KEY` (preferred) or `ANTHROPIC_API_KEY` in `backend/.env`.
+2. Run the dedicated script:
+   ```bash
+   npm run check:anthropic
+   ```
+3. The script shells into `scripts/health-check.sh` with networking limited to a single message request and redacts sensitive data from stdout.
+
+The command exits non-zero if Anthropic is unreachable or the key is missing, making it safe to wire into CI.
