@@ -105,6 +105,16 @@ export interface Review {
 
 // API Request/Response types
 
+export interface PaginatedResponse<T> {
+  items: T[];
+  nextCursor: string | null;
+}
+
+export interface PaginationParams {
+  cursor?: string;
+  limit?: number;
+}
+
 export interface EnrichTaskRequest {
   tempTaskId: string;
   priority: number;

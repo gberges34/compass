@@ -15,6 +15,10 @@ import type {
   UpdateDailyPlanRequest,
   CreateReviewRequest,
   TaskFilters,
+  PaginatedResponse,
+  TaskStatus,
+  Priority,
+  Category,
 } from '../types';
 
 // Augment Axios error with user-friendly message and error code
@@ -68,15 +72,23 @@ api.interceptors.response.use(
 
 // Tasks API
 
-export const getTasks = async (filters?: TaskFilters): Promise<Task[]> => {
-  const params = new URLSearchParams();
-  if (filters?.status) params.append('status', filters.status);
-  if (filters?.category) params.append('category', filters.category);
-  if (filters?.context) params.append('context', filters.context);
-  if (filters?.priority) params.append('priority', filters.priority);
-  if (filters?.energyRequired) params.append('energyRequired', filters.energyRequired);
+export const getTasks = async (params?: {
+  status?: TaskStatus;
+  priority?: Priority;
+  category?: Category;
+  scheduledDate?: string;
+  cursor?: string;
+  limit?: number;
+}): Promise<PaginatedResponse<Task>> => {
+  const queryParams = new URLSearchParams();
+  if (params?.status) queryParams.append('status', params.status);
+  if (params?.priority) queryParams.append('priority', params.priority);
+  if (params?.category) queryParams.append('category', params.category);
+  if (params?.scheduledDate) queryParams.append('scheduledDate', params.scheduledDate);
+  if (params?.cursor) queryParams.append('cursor', params.cursor);
+  if (params?.limit) queryParams.append('limit', params.limit.toString());
 
-  const response = await api.get<Task[]>(`/tasks?${params.toString()}`);
+  const response = await api.get<PaginatedResponse<Task>>(`/tasks?${queryParams}`);
   return response.data;
 };
 
