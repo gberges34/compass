@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getTodayPlan, createDailyPlan } from '../lib/api';
-import type { DailyPlan, Energy, DeepWorkBlock, TimeBlock, CreateDailyPlanRequest } from '../types';
+import { useTodayPlan, useCreateDailyPlan } from '../hooks/useDailyPlans';
+import type { Energy, DeepWorkBlock, TimeBlock, CreateDailyPlanRequest } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import Card from '../components/Card';
@@ -13,11 +13,12 @@ const OrientEastPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
 
-  // State for existing plan
-  const [existingPlan, setExistingPlan] = useState<DailyPlan | null>(null);
+  // Replace manual state management with React Query
+  const { data: existingPlan, isLoading } = useTodayPlan();
+  const createPlan = useCreateDailyPlan();
+
+  // Local UI state
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
 
   // Form state
   const [energyLevel, setEnergyLevel] = useState<Energy>('MEDIUM');
@@ -58,23 +59,9 @@ const OrientEastPage: React.FC = () => {
     day: 'numeric',
   });
 
-  useEffect(() => {
-    const checkExistingPlan = async () => {
-      try {
-        setLoading(true);
-        const plan = await getTodayPlan();
-        setExistingPlan(plan);
-      } catch (err) {
-        // No plan exists yet, that's fine
-        setExistingPlan(null);
-        setIsEditing(true); // Show form if no plan exists
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkExistingPlan();
-  }, []);
+  // No useEffect needed - React Query handles data fetching
+  // No cleanup function needed - React Query handles component unmounting
+  // No isMounted checks needed - React Query prevents memory leaks
 
   const validateForm = (): string | null => {
     if (!dwb1Start || !dwb1End || !dwb1Focus.trim()) {
@@ -110,8 +97,6 @@ const OrientEastPage: React.FC = () => {
     }
 
     try {
-      setSubmitting(true);
-
       const deepWorkBlock1: DeepWorkBlock = {
         start: dwb1Start,
         end: dwb1End,
@@ -150,22 +135,20 @@ const OrientEastPage: React.FC = () => {
         reward: reward.trim() || undefined,
       };
 
-      await createDailyPlan(request);
-      toast.showSuccess('Daily plan created successfully! Navigating to Today page...');
+      await createPlan.mutateAsync(request);
+      toast.showSuccess('Daily plan created successfully!');
 
-      // Navigate to /today after a brief delay
-      setTimeout(() => {
-        navigate('/today');
-      }, 1500);
+      // No setTimeout hack needed!
+      // Cache is already updated by mutation
+      // Immediate navigation after plan creation
+      navigate('/today');
     } catch (err) {
       toast.showError(err instanceof Error ? err.message : 'Failed to create daily plan');
       console.error('Error creating daily plan:', err);
-    } finally {
-      setSubmitting(false);
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-24">
         <LoadingSkeleton variant="card" count={1} />
@@ -494,9 +477,9 @@ const OrientEastPage: React.FC = () => {
           <Button
             type="submit"
             variant="primary"
-            disabled={submitting}
+            disabled={createPlan.isPending}
           >
-            {submitting ? 'Creating Plan...' : 'Create Daily Plan'}
+            {createPlan.isPending ? 'Creating Plan...' : 'Create Daily Plan'}
           </Button>
         </div>
       </form>
