@@ -15,6 +15,7 @@ import type {
   UpdateDailyPlanRequest,
   CreateReviewRequest,
   TaskFilters,
+  PaginatedResponse,
 } from '../types';
 
 // Augment Axios error with user-friendly message and error code
@@ -33,6 +34,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -68,7 +70,10 @@ api.interceptors.response.use(
 
 // Tasks API
 
-export const getTasks = async (filters?: TaskFilters): Promise<Task[]> => {
+export const getTasks = async (
+  filters?: TaskFilters,
+  pagination?: { cursor?: string; limit?: number }
+): Promise<PaginatedResponse<Task>> => {
   const params = new URLSearchParams();
   if (filters?.status) params.append('status', filters.status);
   if (filters?.category) params.append('category', filters.category);
@@ -76,7 +81,11 @@ export const getTasks = async (filters?: TaskFilters): Promise<Task[]> => {
   if (filters?.priority) params.append('priority', filters.priority);
   if (filters?.energyRequired) params.append('energyRequired', filters.energyRequired);
 
-  const response = await api.get<Task[]>(`/tasks?${params.toString()}`);
+  // Add pagination params
+  if (pagination?.cursor) params.append('cursor', pagination.cursor);
+  if (pagination?.limit) params.append('limit', pagination.limit.toString());
+
+  const response = await api.get<PaginatedResponse<Task>>(`/tasks?${params.toString()}`);
   return response.data;
 };
 

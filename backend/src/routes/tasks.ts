@@ -55,10 +55,27 @@ const completeTaskSchema = z.object({
 });
 
 // GET /api/tasks - List tasks with filters
-router.get('/', asyncHandler(async (req: Request, res: Response) => {
-  const { status, priority, category, scheduledDate } = req.query;
+// Pagination schema
+const paginationSchema = z.object({
+  cursor: z.string().uuid().optional(),
+  limit: z.coerce.number().min(1).max(100).default(50),
+});
 
-  log('[GET /tasks] Query params:', { status, priority, category, scheduledDate });
+// GET /api/tasks - List tasks with filters and pagination
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
+  const { status, priority, category, scheduledDate, cursor, limit } = req.query;
+
+  // Validate pagination params
+  const pagination = paginationSchema.parse({ cursor, limit });
+
+  log('[GET /tasks] Query params:', {
+    status,
+    priority,
+    category,
+    scheduledDate,
+    cursor: pagination.cursor,
+    limit: pagination.limit
+  });
 
   const where: any = {};
 
@@ -75,17 +92,34 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 
   log('[GET /tasks] Query where clause:', JSON.stringify(where));
 
+  // Cursor-based pagination
   const tasks = await prisma.task.findMany({
     where,
+    take: pagination.limit + 1, // Fetch one extra to determine if there's a next page
+    ...(pagination.cursor ? { cursor: { id: pagination.cursor }, skip: 1 } : {}),
     orderBy: [
       { status: 'asc' },
       { priority: 'asc' },
       { scheduledStart: 'asc' },
+      { createdAt: 'desc' }, // Tiebreaker for stable pagination
     ],
   });
 
-  log('[GET /tasks] Found tasks:', tasks.length);
-  res.json(tasks);
+  // Determine if there's a next page
+  const hasMore = tasks.length > pagination.limit;
+  const results = hasMore ? tasks.slice(0, pagination.limit) : tasks;
+  const nextCursor = hasMore ? results[results.length - 1].id : null;
+
+  log('[GET /tasks] Found tasks:', results.length, 'hasMore:', hasMore);
+
+  res.json({
+    data: results,
+    pagination: {
+      nextCursor,
+      hasMore,
+      limit: pagination.limit,
+    }
+  });
 }));
 
 // GET /api/tasks/:id - Get single task
@@ -144,7 +178,7 @@ router.post('/enrich', asyncHandler(async (req: Request, res: Response) => {
     4: 'MAYBE'
   };
 
-  // Enrich with LLM
+  // Enrich with LLM (outside transaction - external API call)
   const enrichment = await enrichTask({
     rawTaskName: tempTask.name,
     priority: validatedData.priority,
@@ -152,30 +186,35 @@ router.post('/enrich', asyncHandler(async (req: Request, res: Response) => {
     energy: validatedData.energy
   });
 
-  // Create full task
-  const task = await prisma.task.create({
-    data: {
-      name: enrichment.rephrasedName,
-      status: validatedData.priority <= 2 ? 'NEXT' : 'WAITING',
-      priority: priorityMap[validatedData.priority],
-      category: enrichment.category as any,
-      context: enrichment.context as any,
-      energyRequired: validatedData.energy,
-      duration: validatedData.duration,
-      definitionOfDone: enrichment.definitionOfDone,
-      dueDate: tempTask.dueDate
-    }
+  // TRANSACTION: Atomic task creation + temp task marking
+  const result = await prisma.$transaction(async (tx) => {
+    // Create full task
+    const task = await tx.task.create({
+      data: {
+        name: enrichment.rephrasedName,
+        status: validatedData.priority <= 2 ? 'NEXT' : 'WAITING',
+        priority: priorityMap[validatedData.priority],
+        category: enrichment.category as any,
+        context: enrichment.context as any,
+        energyRequired: validatedData.energy,
+        duration: validatedData.duration,
+        definitionOfDone: enrichment.definitionOfDone,
+        dueDate: tempTask.dueDate
+      }
+    });
+
+    // Mark temp task as processed
+    const updatedTempTask = await tx.tempCapturedTask.update({
+      where: { id: validatedData.tempTaskId },
+      data: { processed: true }
+    });
+
+    return { task, updatedTempTask };
   });
 
-  // Mark temp task as processed
-  await prisma.tempCapturedTask.update({
-    where: { id: validatedData.tempTaskId },
-    data: { processed: true }
-  });
-
-  log('[POST /tasks/enrich] Enriched and created task:', task.id);
+  log('[POST /tasks/enrich] Enriched and created task:', result.task.id);
   res.status(201).json({
-    task,
+    task: result.task,
     enrichment
   });
 }));
@@ -218,20 +257,16 @@ router.patch('/:id/schedule', asyncHandler(async (req: Request, res: Response) =
   log('[PATCH /schedule] Request for task:', { id, scheduledStart: validatedData.scheduledStart });
 
   // Get task BEFORE update for logging
+  // Note: No explicit existence check needed - the subsequent update will throw NotFoundError via Prisma extension
   const taskBefore = await prisma.task.findUnique({
     where: { id },
   });
 
-  if (!taskBefore) {
-    log('[PATCH /schedule] Task not found:', id);
-    throw new NotFoundError('Task');
-  }
-
   log('[PATCH /schedule] Task state BEFORE:', {
-    id: taskBefore.id,
-    name: taskBefore.name,
-    scheduledStart: taskBefore.scheduledStart,
-    updatedAt: taskBefore.updatedAt,
+    id: taskBefore?.id,
+    name: taskBefore?.name,
+    scheduledStart: taskBefore?.scheduledStart,
+    updatedAt: taskBefore?.updatedAt,
   });
 
   // Validate not scheduling in the past
@@ -263,7 +298,7 @@ router.patch('/:id/schedule', asyncHandler(async (req: Request, res: Response) =
 
   log('[PATCH /schedule] Success - task scheduled:', {
     taskId: id,
-    previousScheduledStart: taskBefore.scheduledStart,
+    previousScheduledStart: taskBefore?.scheduledStart,
     newScheduledStart: task.scheduledStart,
     durationMinutes: task.duration,
   });
@@ -278,20 +313,16 @@ router.patch('/:id/unschedule', asyncHandler(async (req: Request, res: Response)
   log('[PATCH /unschedule] Request for task:', { id });
 
   // Get task BEFORE update for logging
+  // Note: No explicit existence check needed - the subsequent update will throw NotFoundError via Prisma extension
   const taskBefore = await prisma.task.findUnique({
     where: { id },
   });
 
-  if (!taskBefore) {
-    log('[PATCH /unschedule] Task not found:', id);
-    throw new NotFoundError('Task');
-  }
-
   log('[PATCH /unschedule] Task state BEFORE:', {
-    id: taskBefore.id,
-    name: taskBefore.name,
-    scheduledStart: taskBefore.scheduledStart,
-    updatedAt: taskBefore.updatedAt,
+    id: taskBefore?.id,
+    name: taskBefore?.name,
+    scheduledStart: taskBefore?.scheduledStart,
+    updatedAt: taskBefore?.updatedAt,
   });
 
   // Update task
@@ -311,7 +342,7 @@ router.patch('/:id/unschedule', asyncHandler(async (req: Request, res: Response)
 
   log('[PATCH /unschedule] Success - task unscheduled:', {
     taskId: id,
-    previousScheduledStart: taskBefore.scheduledStart,
+    previousScheduledStart: taskBefore?.scheduledStart,
     newScheduledStart: task.scheduledStart,
   });
 
@@ -417,7 +448,9 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
   const { id } = req.params;
   const validatedData = completeTaskSchema.parse(req.body);
 
-  // Get task
+  // Get task for calculations
+  // Note: We still need findUnique here to get task data for metric calculations
+  // If task doesn't exist, the subsequent update in transaction will throw NotFoundError via Prisma extension
   const task = await prisma.task.findUnique({
     where: { id }
   });
@@ -434,35 +467,40 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
   const timeOfDay = calculateTimeOfDay(startTime);
   const dayOfWeek = getDayOfWeek(startTime);
 
-  // Create Post-Do Log
-  const postDoLog = await prisma.postDoLog.create({
-    data: {
-      taskId: task.id,
-      outcome: validatedData.outcome,
-      effortLevel: validatedData.effortLevel,
-      keyInsight: validatedData.keyInsight,
-      estimatedDuration: task.duration,
-      actualDuration: validatedData.actualDuration,
-      variance,
-      efficiency,
-      startTime,
-      endTime,
-      timeOfDay: timeOfDay as any,
-      dayOfWeek,
-      timeryEntryId: validatedData.timeryEntryId,
-    }
-  });
+  // TRANSACTION: Atomic task completion
+  const result = await prisma.$transaction(async (tx) => {
+    // Create Post-Do Log
+    const postDoLog = await tx.postDoLog.create({
+      data: {
+        taskId: task.id,
+        outcome: validatedData.outcome,
+        effortLevel: validatedData.effortLevel,
+        keyInsight: validatedData.keyInsight,
+        estimatedDuration: task.duration,
+        actualDuration: validatedData.actualDuration,
+        variance,
+        efficiency,
+        startTime,
+        endTime,
+        timeOfDay: timeOfDay as any,
+        dayOfWeek,
+        timeryEntryId: validatedData.timeryEntryId,
+      }
+    });
 
-  // Update task status
-  const updatedTask = await prisma.task.update({
-    where: { id },
-    data: { status: 'DONE' }
+    // Update task status
+    const updatedTask = await tx.task.update({
+      where: { id },
+      data: { status: 'DONE' }
+    });
+
+    return { updatedTask, postDoLog };
   });
 
   log('[POST /tasks/:id/complete] Completed task:', task.id);
   res.json({
-    task: updatedTask,
-    postDoLog,
+    task: result.updatedTask,
+    postDoLog: result.postDoLog,
     metrics: {
       variance,
       efficiency: Math.round(efficiency * 100) / 100,
