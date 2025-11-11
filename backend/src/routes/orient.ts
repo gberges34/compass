@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
 import { z } from 'zod';
 import { startOfDay } from 'date-fns';
+import { asyncHandler } from '../middleware/asyncHandler';
+import { NotFoundError, BadRequestError } from '../errors/AppError';
 
 const router = Router();
 
@@ -37,112 +39,84 @@ const orientWestSchema = z.object({
 });
 
 // POST /api/orient/east - Create morning daily plan (Orient East)
-router.post('/east', async (req: Request, res: Response) => {
-  try {
-    const validatedData = orientEastSchema.parse(req.body);
-    const today = startOfDay(new Date());
+router.post('/east', asyncHandler(async (req: Request, res: Response) => {
+  const validatedData = orientEastSchema.parse(req.body);
+  const today = startOfDay(new Date());
 
-    // Check if plan already exists for today
-    const existing = await prisma.dailyPlan.findUnique({
-      where: { date: today }
+  // Check if plan already exists for today
+  const existing = await prisma.dailyPlan.findUnique({
+    where: { date: today }
+  });
+
+  if (existing) {
+    res.status(409).json({
+      error: 'Daily plan already exists for today',
+      plan: existing
     });
-
-    if (existing) {
-      return res.status(409).json({
-        error: 'Daily plan already exists for today',
-        plan: existing
-      });
-    }
-
-    const dailyPlan = await prisma.dailyPlan.create({
-      data: {
-        date: today,
-        energyLevel: validatedData.energyLevel,
-        deepWorkBlock1: validatedData.deepWorkBlock1,
-        deepWorkBlock2: validatedData.deepWorkBlock2,
-        adminBlock: validatedData.adminBlock,
-        bufferBlock: validatedData.bufferBlock,
-        topOutcomes: validatedData.topOutcomes,
-        reward: validatedData.reward,
-      }
-    });
-
-    res.status(201).json(dailyPlan);
-  } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.issues });
-    }
-    console.error('Error creating Orient East:', error);
-    res.status(500).json({ error: error.message });
+    return;
   }
-});
+
+  const dailyPlan = await prisma.dailyPlan.create({
+    data: {
+      date: today,
+      energyLevel: validatedData.energyLevel,
+      deepWorkBlock1: validatedData.deepWorkBlock1,
+      deepWorkBlock2: validatedData.deepWorkBlock2,
+      adminBlock: validatedData.adminBlock,
+      bufferBlock: validatedData.bufferBlock,
+      topOutcomes: validatedData.topOutcomes,
+      reward: validatedData.reward,
+    }
+  });
+
+  res.status(201).json(dailyPlan);
+}));
 
 // PATCH /api/orient/west/:planId - Update plan with evening reflection (Orient West)
-router.patch('/west/:planId', async (req: Request, res: Response) => {
-  try {
-    const { planId } = req.params;
-    const validatedData = orientWestSchema.parse(req.body);
+router.patch('/west/:planId', asyncHandler(async (req: Request, res: Response) => {
+  const { planId } = req.params;
+  const validatedData = orientWestSchema.parse(req.body);
 
-    const updated = await prisma.dailyPlan.update({
-      where: { id: planId },
-      data: {
-        reflection: validatedData.reflection,
-        actualOutcomes: validatedData.actualOutcomes,
-        energyMatch: validatedData.energyMatch,
-      }
-    });
+  const updated = await prisma.dailyPlan.update({
+    where: { id: planId },
+    data: {
+      reflection: validatedData.reflection,
+      actualOutcomes: validatedData.actualOutcomes,
+      energyMatch: validatedData.energyMatch,
+    }
+  });
 
-    res.json(updated);
-  } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.issues });
-    }
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Daily plan not found' });
-    }
-    console.error('Error updating Orient West:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+  res.json(updated);
+}));
 
 // GET /api/orient/today - Get today's daily plan
-router.get('/today', async (req: Request, res: Response) => {
-  try {
-    const today = startOfDay(new Date());
+router.get('/today', asyncHandler(async (req: Request, res: Response) => {
+  const today = startOfDay(new Date());
 
-    const plan = await prisma.dailyPlan.findUnique({
-      where: { date: today }
-    });
+  const plan = await prisma.dailyPlan.findUnique({
+    where: { date: today }
+  });
 
-    if (!plan) {
-      return res.status(404).json({ error: 'No plan found for today' });
-    }
-
-    res.json(plan);
-  } catch (error: any) {
-    console.error('Error fetching today\'s plan:', error);
-    res.status(500).json({ error: error.message });
+  if (!plan) {
+    throw new NotFoundError('Daily plan for today');
   }
-});
+
+  res.json(plan);
+}));
 
 // GET /api/orient/:date - Get daily plan for specific date
-router.get('/:date', async (req: Request, res: Response) => {
-  try {
-    const date = startOfDay(new Date(req.params.date));
+router.get('/:date', asyncHandler(async (req: Request, res: Response) => {
+  const date = startOfDay(new Date(req.params.date));
 
-    const plan = await prisma.dailyPlan.findUnique({
-      where: { date }
-    });
+  const plan = await prisma.dailyPlan.findUnique({
+    where: { date }
+  });
 
-    if (!plan) {
-      return res.status(404).json({ error: 'No plan found for this date' });
-    }
-
-    res.json(plan);
-  } catch (error: any) {
-    console.error('Error fetching plan:', error);
-    res.status(500).json({ error: error.message });
+  if (!plan) {
+    throw new NotFoundError('Daily plan for this date');
   }
-});
+
+  res.json(plan);
+}));
 
 export default router;
