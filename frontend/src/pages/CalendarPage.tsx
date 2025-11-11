@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Calendar, momentLocalizer, Event as BigCalendarEvent, View } from 'react-big-calendar';
+import { Calendar, dateFnsLocalizer, Event as BigCalendarEvent, View } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import CalendarToolbar from '../components/CalendarToolbar';
-import moment from 'moment';
+import { format, parse, startOfWeek, getDay } from 'date-fns';
+import enUS from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import type { Task, CalendarEvent } from '../types';
@@ -15,12 +16,31 @@ import Badge from '../components/Badge';
 import Button from '../components/Button';
 import { getCategoryStyle } from '../lib/designTokens';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
+import {
+  getTodayDateString,
+  combineISODateAndTime,
+  formatDisplayDateTime,
+  formatDisplayDate,
+  formatDisplayTime,
+  parseTimeString,
+  addMinutesToDate,
+  calculateDurationMinutes,
+  isValidDate,
+} from '../lib/dateUtils';
 
 // Development-only logging
 const DEBUG = process.env.NODE_ENV === 'development';
 const log = DEBUG ? console.log : () => {};
 
-const localizer = momentLocalizer(moment);
+// Configure date-fns localizer for react-big-calendar
+const locales = { 'en-US': enUS };
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+});
 const DnDCalendar = withDragAndDrop(Calendar);
 
 // Category color mapping - defined outside component to prevent recreations
@@ -133,7 +153,7 @@ const CalendarPage: React.FC = () => {
 
         try {
           const start = new Date(task.scheduledStart);
-          if (isNaN(start.getTime())) {
+          if (!isValidDate(start)) {
             log('[Calendar] Invalid scheduledStart date:', task.scheduledStart);
             return false;
           }
@@ -145,7 +165,7 @@ const CalendarPage: React.FC = () => {
       })
       .map((task) => {
         const start = new Date(task.scheduledStart!);
-        const end = new Date(start.getTime() + task.duration * 60000);
+        const end = addMinutesToDate(start, task.duration);
 
         return {
           id: task.id,
@@ -162,14 +182,14 @@ const CalendarPage: React.FC = () => {
     // Generate plan events if today's plan exists
     const planEvents: CalendarEvent[] = [];
     if (todayPlan) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayDateString();
 
       if (todayPlan.deepWorkBlock1) {
         planEvents.push({
           id: `dw1-${todayPlan.id}`,
           title: `Deep Work: ${todayPlan.deepWorkBlock1.focus}`,
-          start: new Date(`${today}T${todayPlan.deepWorkBlock1.start}`),
-          end: new Date(`${today}T${todayPlan.deepWorkBlock1.end}`),
+          start: combineISODateAndTime(today, todayPlan.deepWorkBlock1.start),
+          end: combineISODateAndTime(today, todayPlan.deepWorkBlock1.end),
           type: 'deepWork',
         });
       }
@@ -178,8 +198,8 @@ const CalendarPage: React.FC = () => {
         planEvents.push({
           id: `dw2-${todayPlan.id}`,
           title: `Deep Work: ${todayPlan.deepWorkBlock2.focus}`,
-          start: new Date(`${today}T${todayPlan.deepWorkBlock2.start}`),
-          end: new Date(`${today}T${todayPlan.deepWorkBlock2.end}`),
+          start: combineISODateAndTime(today, todayPlan.deepWorkBlock2.start),
+          end: combineISODateAndTime(today, todayPlan.deepWorkBlock2.end),
           type: 'deepWork',
         });
       }
@@ -188,8 +208,8 @@ const CalendarPage: React.FC = () => {
         planEvents.push({
           id: `admin-${todayPlan.id}`,
           title: 'Admin Time',
-          start: new Date(`${today}T${todayPlan.adminBlock.start}`),
-          end: new Date(`${today}T${todayPlan.adminBlock.end}`),
+          start: combineISODateAndTime(today, todayPlan.adminBlock.start),
+          end: combineISODateAndTime(today, todayPlan.adminBlock.end),
           type: 'admin',
         });
       }
@@ -198,8 +218,8 @@ const CalendarPage: React.FC = () => {
         planEvents.push({
           id: `buffer-${todayPlan.id}`,
           title: 'Buffer Time',
-          start: new Date(`${today}T${todayPlan.bufferBlock.start}`),
-          end: new Date(`${today}T${todayPlan.bufferBlock.end}`),
+          start: combineISODateAndTime(today, todayPlan.bufferBlock.start),
+          end: combineISODateAndTime(today, todayPlan.bufferBlock.end),
           type: 'buffer',
         });
       }
@@ -216,9 +236,7 @@ const CalendarPage: React.FC = () => {
       }
 
       const taskId = prompt(
-        `Enter task number (1-${unscheduledTasks.length}) to schedule at ${moment(start).format(
-          'MMM D, YYYY h:mm A'
-        )}:`
+        `Enter task number (1-${unscheduledTasks.length}) to schedule at ${formatDisplayDateTime(start)}:`
       );
 
       if (taskId) {
@@ -249,7 +267,7 @@ const CalendarPage: React.FC = () => {
         id: task.id,
         scheduledStart: scheduledStart.toISOString(),
       });
-      toast.showSuccess(`Task scheduled for ${moment(scheduledStart).format('MMM D, h:mm A')}`);
+      toast.showSuccess(`Task scheduled for ${formatDisplayTime(scheduledStart)} on ${formatDisplayDate(scheduledStart)}`);
     } catch (err) {
       toast.showError('Failed to schedule task. Please try again.');
       console.error('Error scheduling task:', err);
@@ -328,8 +346,7 @@ const CalendarPage: React.FC = () => {
 
     try {
       // Calculate new duration in minutes
-      const durationMs = end.getTime() - start.getTime();
-      const durationMinutes = Math.round(durationMs / (1000 * 60));
+      const durationMinutes = calculateDurationMinutes(start, end);
 
       // Validate minimum duration
       if (durationMinutes < 1) {
@@ -444,11 +461,8 @@ const CalendarPage: React.FC = () => {
     );
     if (timeString) {
       try {
-        const scheduledTime = moment(timeString, [
-          'h:mm A',
-          'HH:mm',
-        ]).toDate();
-        if (isNaN(scheduledTime.getTime())) {
+        const scheduledTime = parseTimeString(timeString);
+        if (!isValidDate(scheduledTime)) {
           toast.showError('Invalid time format');
           return;
         }
@@ -663,7 +677,7 @@ const CalendarPage: React.FC = () => {
                       Scheduled Time
                     </h3>
                     <span className="text-slate">
-                      {moment(selectedTask.scheduledStart).format('MMM D, YYYY h:mm A')}
+                      {formatDisplayDateTime(selectedTask.scheduledStart)}
                     </span>
                   </div>
                 )}
@@ -672,7 +686,7 @@ const CalendarPage: React.FC = () => {
                   <div>
                     <h3 className="font-medium text-ink mb-4">Due Date</h3>
                     <span className="text-slate">
-                      {moment(selectedTask.dueDate).format('MMM D, YYYY')}
+                      {formatDisplayDate(selectedTask.dueDate)}
                     </span>
                   </div>
                 )}
