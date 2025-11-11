@@ -144,7 +144,7 @@ router.post('/enrich', asyncHandler(async (req: Request, res: Response) => {
     4: 'MAYBE'
   };
 
-  // Enrich with LLM
+  // Enrich with LLM (outside transaction - external API call)
   const enrichment = await enrichTask({
     rawTaskName: tempTask.name,
     priority: validatedData.priority,
@@ -152,30 +152,35 @@ router.post('/enrich', asyncHandler(async (req: Request, res: Response) => {
     energy: validatedData.energy
   });
 
-  // Create full task
-  const task = await prisma.task.create({
-    data: {
-      name: enrichment.rephrasedName,
-      status: validatedData.priority <= 2 ? 'NEXT' : 'WAITING',
-      priority: priorityMap[validatedData.priority],
-      category: enrichment.category as any,
-      context: enrichment.context as any,
-      energyRequired: validatedData.energy,
-      duration: validatedData.duration,
-      definitionOfDone: enrichment.definitionOfDone,
-      dueDate: tempTask.dueDate
-    }
+  // TRANSACTION: Atomic task creation + temp task marking
+  const result = await prisma.$transaction(async (tx) => {
+    // Create full task
+    const task = await tx.task.create({
+      data: {
+        name: enrichment.rephrasedName,
+        status: validatedData.priority <= 2 ? 'NEXT' : 'WAITING',
+        priority: priorityMap[validatedData.priority],
+        category: enrichment.category as any,
+        context: enrichment.context as any,
+        energyRequired: validatedData.energy,
+        duration: validatedData.duration,
+        definitionOfDone: enrichment.definitionOfDone,
+        dueDate: tempTask.dueDate
+      }
+    });
+
+    // Mark temp task as processed
+    const updatedTempTask = await tx.tempCapturedTask.update({
+      where: { id: validatedData.tempTaskId },
+      data: { processed: true }
+    });
+
+    return { task, updatedTempTask };
   });
 
-  // Mark temp task as processed
-  await prisma.tempCapturedTask.update({
-    where: { id: validatedData.tempTaskId },
-    data: { processed: true }
-  });
-
-  log('[POST /tasks/enrich] Enriched and created task:', task.id);
+  log('[POST /tasks/enrich] Enriched and created task:', result.task.id);
   res.status(201).json({
-    task,
+    task: result.task,
     enrichment
   });
 }));
