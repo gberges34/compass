@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, QueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import * as api from '../lib/api';
 import type { Task, TaskFilters, EnrichTaskRequest, CompleteTaskRequest } from '../types';
@@ -28,10 +28,13 @@ export const prefetchTasks = (queryClient: QueryClient, filters?: TaskFilters) =
 
 // Queries
 
-export function useTasks(filters?: TaskFilters) {
+type TasksQueryOptions = Omit<UseQueryOptions<Task[], Error>, 'queryKey' | 'queryFn'>;
+
+export function useTasks(filters?: TaskFilters, options?: TasksQueryOptions) {
   return useQuery({
     queryKey: taskKeys.list(filters),
     queryFn: () => api.getTasks(filters),
+    ...options,
   });
 }
 
