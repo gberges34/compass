@@ -137,17 +137,43 @@ router.post('/', async (req, res) => {
 3. Return 400 with `error.issues` for validation failures
 
 #### Error Handling
-**Consistent error response format:**
+
+**Architecture:**
+- Custom error classes in `src/errors/AppError.ts` (ValidationError, NotFoundError, BadRequestError, InternalError)
+- Global error middleware in `src/middleware/errorHandler.ts` catches all errors
+- Async handler wrapper in `src/middleware/asyncHandler.ts` catches async route errors
+- All routes wrapped with `asyncHandler()` - no try-catch blocks needed
+
+**Error response format:**
 ```typescript
-// Validation errors (400)
-{ error: 'Validation error', details: [...] }
+// Standard errors
+{ error: 'Human-readable message', code: 'ERROR_CODE' }
 
-// Not found (404) - Prisma code P2025
-{ error: 'Resource not found' }
-
-// Server errors (500)
-{ error: error.message }
+// Validation errors include details
+{ error: 'Validation error', code: 'VALIDATION_ERROR', details: [...] }
 ```
+
+**Required imports for new routes:**
+```typescript
+import { asyncHandler } from '../middleware/asyncHandler';
+import { NotFoundError, BadRequestError } from '../errors/AppError';
+```
+
+**When adding new endpoints:**
+1. Wrap handler with `asyncHandler(async (req, res) => { ... })`
+2. Use `schema.parse()` for validation - ZodError automatically caught
+3. Throw error classes instead of returning status codes:
+   - `throw new NotFoundError('Resource')` for 404
+   - `throw new BadRequestError('message')` for 400
+   - `throw new ValidationError('message', details)` for validation
+4. DO NOT add try-catch blocks (let middleware handle errors)
+5. Prisma P2025 errors automatically converted to 404
+
+**Handled automatically by middleware:**
+- Zod validation errors → 400 with details
+- Prisma P2025 (not found) → 404
+- Custom AppError instances → appropriate status code
+- Unhandled errors → 500 (logged with stack trace)
 
 #### Middleware Stack
 Core middleware in order (see `src/index.ts`):
