@@ -17,6 +17,13 @@ import type {
   TaskFilters,
 } from '../types';
 
+// Augment Axios error with user-friendly message
+declare module 'axios' {
+  export interface AxiosError {
+    userMessage?: string;
+  }
+}
+
 // Development-only logging
 const DEBUG = process.env.NODE_ENV === 'development';
 const log = DEBUG ? console.log : () => {};
@@ -31,28 +38,39 @@ const api = axios.create({
 });
 
 // User-friendly error message mapping
-const getUserFriendlyError = (status: number): string => {
+const getUserFriendlyError = (error: any): string => {
+  const status = error.response?.status;
+  const serverMessage = error.response?.data?.message || error.response?.data?.error;
+
+  if (!status) {
+    return serverMessage || 'An error occurred. Please try again.';
+  }
+
   switch (status) {
     case 400:
-      return 'Invalid request. Please check your input.';
+      return serverMessage || 'Invalid request. Please check your input.';
     case 401:
       return 'Unauthorized. Please log in.';
     case 403:
       return 'You do not have permission to perform this action.';
     case 404:
-      return 'Resource not found.';
+      return serverMessage || 'Resource not found.';
     case 409:
-      return 'Conflict. This operation conflicts with existing data.';
+      return serverMessage || 'Conflict. This operation conflicts with existing data.';
     case 422:
-      return 'Validation error. Please check your input.';
+      return serverMessage || 'Validation error. Please check your input.';
+    case 429:
+      return 'Too many requests. Please wait a moment.';
     case 500:
       return 'Server error. Please try again later.';
     case 502:
       return 'Bad gateway. The server is temporarily unavailable.';
     case 503:
       return 'Service unavailable. Please try again later.';
+    case 504:
+      return 'Request timeout. Please try again.';
     default:
-      return 'An error occurred. Please try again.';
+      return serverMessage || 'An error occurred. Please try again.';
   }
 };
 
@@ -62,7 +80,7 @@ api.interceptors.response.use(
   (error) => {
     // Add user-friendly message to error object
     if (error.response) {
-      error.userMessage = getUserFriendlyError(error.response.status);
+      error.userMessage = getUserFriendlyError(error);
     } else if (error.request) {
       error.userMessage = 'Network error. Please check your connection.';
     } else {

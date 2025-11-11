@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
+import type { AxiosError } from 'axios';
 import * as api from '../lib/api';
 import type { Task, TaskFilters, EnrichTaskRequest, CompleteTaskRequest } from '../types';
 import { useToast } from '../contexts/ToastContext';
@@ -93,7 +94,7 @@ export function useCreateTask() {
 
       return { allCachedQueries };
     },
-    onError: (err: any, variables, context) => {
+    onError: (err: AxiosError, variables, context) => {
       console.error('[useCreateTask] Error:', err);
       if (context?.allCachedQueries) {
         context.allCachedQueries.forEach(([queryKey, data]) => {
@@ -140,7 +141,7 @@ export function useUpdateTask() {
 
       return { allCachedQueries };
     },
-    onError: (err: any, variables, context) => {
+    onError: (err: AxiosError, variables, context) => {
       console.error('[useUpdateTask] Error:', err);
       // Rollback ALL cache entries
       if (context?.allCachedQueries) {
@@ -182,7 +183,7 @@ export function useDeleteTask() {
 
       return { allCachedQueries };
     },
-    onError: (err: any, variables, context) => {
+    onError: (err: AxiosError, variables, context) => {
       console.error('[useDeleteTask] Error:', err);
       if (context?.allCachedQueries) {
         context.allCachedQueries.forEach(([queryKey, data]) => {
@@ -229,7 +230,7 @@ export function useScheduleTask() {
 
       return { allCachedQueries };
     },
-    onError: (err: any, variables, context) => {
+    onError: (err: AxiosError, variables, context) => {
       console.error('[useScheduleTask] Error:', err);
       // Rollback ALL cache entries
       if (context?.allCachedQueries) {
@@ -277,7 +278,7 @@ export function useUnscheduleTask() {
 
       return { allCachedQueries };
     },
-    onError: (err: any, variables, context) => {
+    onError: (err: AxiosError, variables, context) => {
       console.error('[useUnscheduleTask] Error:', err);
       if (context?.allCachedQueries) {
         context.allCachedQueries.forEach(([queryKey, data]) => {
@@ -314,7 +315,7 @@ export function useActivateTask() {
 
   return useMutation({
     mutationFn: (id: string) => api.activateTask(id),
-    onError: (err: any) => {
+    onError: (err: AxiosError) => {
       console.error('[useActivateTask] Error:', err);
       toast.showError(err.userMessage || 'Failed to activate task');
     },
@@ -332,7 +333,7 @@ export function useCompleteTask() {
   return useMutation({
     mutationFn: ({ id, request }: { id: string; request: CompleteTaskRequest }) =>
       api.completeTask(id, request),
-    onError: (err: any) => {
+    onError: (err: AxiosError) => {
       console.error('[useCompleteTask] Error:', err);
       toast.showError(err.userMessage || 'Failed to complete task');
     },
