@@ -232,17 +232,35 @@ router.post('/weekly', asyncHandler(async (req: Request, res: Response) => {
   res.status(201).json(review);
 }));
 
-// GET /api/reviews - Get all reviews (with optional filters)
+// GET /api/reviews - Get all reviews with pagination
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
-  const { type, limit } = req.query;
+  const { type, cursor, limit } = req.query;
+
+  const pageSize = Math.min(
+    parseInt(limit as string) || 30,
+    100
+  );
+
+  const where: any = {};
+  if (type) where.type = type as any;
+  if (cursor) {
+    where.id = { lt: cursor }; // Use 'lt' for DESC ordering
+  }
 
   const reviews = await prisma.review.findMany({
-    where: type ? { type: type as any } : undefined,
-    orderBy: { periodStart: 'desc' },
-    take: limit ? parseInt(limit as string) : undefined,
+    where,
+    take: pageSize + 1,
+    orderBy: [
+      { periodStart: 'desc' }, // Newest first
+      { id: 'desc' }, // Stable sort
+    ],
   });
 
-  res.json(reviews);
+  const hasMore = reviews.length > pageSize;
+  const items = hasMore ? reviews.slice(0, pageSize) : reviews;
+  const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+  res.json({ items, nextCursor });
 }));
 
 // GET /api/reviews/:id - Get single review
