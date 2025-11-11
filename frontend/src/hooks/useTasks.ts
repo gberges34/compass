@@ -1,7 +1,7 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient, QueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import * as api from '../lib/api';
-import type { Task, TaskFilters, EnrichTaskRequest, CompleteTaskRequest } from '../types';
+import type { Task, TaskFilters, EnrichTaskRequest, CompleteTaskRequest, PaginatedResponse } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { getCurrentTimestamp } from '../lib/dateUtils';
 import { useMemo } from 'react';
@@ -24,7 +24,7 @@ export const prefetchTasks = (queryClient: QueryClient, filters?: TaskFilters) =
   return queryClient.prefetchInfiniteQuery({
     queryKey: taskKeys.list(filters),
     queryFn: ({ pageParam }) => api.getTasks({ ...filters, cursor: pageParam, limit: 30 }),
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    getNextPageParam: (lastPage: PaginatedResponse<Task>) => lastPage.nextCursor,
     initialPageParam: undefined as string | undefined,
   });
 };
@@ -35,7 +35,7 @@ export function useTasks(filters?: TaskFilters) {
   return useInfiniteQuery({
     queryKey: taskKeys.list(filters),
     queryFn: ({ pageParam }) => api.getTasks({ ...filters, cursor: pageParam, limit: 30 }),
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    getNextPageParam: (lastPage: PaginatedResponse<Task>) => lastPage.nextCursor,
     initialPageParam: undefined as string | undefined,
   });
 }
