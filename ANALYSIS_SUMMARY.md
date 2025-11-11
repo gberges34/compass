@@ -1,5 +1,19 @@
 # Frontend Analysis Phase 1 - Quick Reference Summary
 
+## 2025-11-11 — REQ-SEC-001: Remove insecure Anthropic script
+
+- Deleted `backend/test-api.js` and replaced the workflow with `npm run check:anthropic`, which shells into `scripts/health-check.sh` for a sanitized Anthropic connectivity probe.
+- Extended `scripts/health-check.sh` with an `anthropic` mode, `CHECK_ANTHROPIC` flag, and fallbacks for `COMPASS_ANTHROPIC_API_KEY`/`ANTHROPIC_API_KEY` so no credentials are logged.
+- Added documentation covering the new workflow (`backend/README.md`, `scripts/README.md`, `docs/QUICK_START.md`).
+- Introduced `scripts/check-forbidden-files.sh` plus gating inside `scripts/verify-git-sync.sh` and `scripts/verify-environment.sh` so CI fails if `backend/test-api.js` (or future forbidden files) reappears.
+
+### Verification
+
+| Command | Result |
+|---------|--------|
+| `COMPASS_ANTHROPIC_API_KEY=dummy npm run check:anthropic` | Fails with `Failed (000)` (expected — network blocked) but proves sanitized logging and non-zero exit |
+| `npm run verify` | Fails because local PostgreSQL isn’t reachable (expected in this sandbox) but now reports the new “Forbidden files (REQ-SEC-001)” check |
+
 ## What Was Analyzed
 - **7 Pages**: TodayPage, TasksPage, ReviewsPage, CalendarPage, ClarifyPage, OrientEastPage, OrientWestPage
 - **5 Hooks**: useTasks, useReviews, useDailyPlans, usePostDoLogs, useTodoist
@@ -148,4 +162,3 @@ After completing all phases, you should have:
 - Fewer useState calls in form-heavy pages (OrientEastPage from 31 to <5)
 - Full accessibility compliance
 - Better testability and reusability
-
