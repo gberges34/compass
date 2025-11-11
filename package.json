@@ -15,7 +15,8 @@
     "db:reset": "cd backend && npx prisma migrate reset",
     "setup": "bash scripts/setup.sh",
     "verify": "bash scripts/verify-environment.sh",
-    "health": "bash scripts/health-check.sh"
+    "health": "bash scripts/health-check.sh",
+    "check:anthropic": "CHECK_ANTHROPIC=true ./scripts/health-check.sh anthropic"
   },
   "keywords": ["productivity", "task-management", "calendar"],
   "author": "",
