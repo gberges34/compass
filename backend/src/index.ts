@@ -92,6 +92,12 @@ app.use('/api/postdo', postdoRouter);
 // Error handling middleware (MUST be last)
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Compass API server running on port ${PORT}`);
-});
+// Export app for testing
+export { app };
+
+// Only start server if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Compass API server running on port ${PORT}`);
+  });
+}
