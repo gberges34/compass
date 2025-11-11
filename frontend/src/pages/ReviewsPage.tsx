@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { getReviews, createDailyReview, createWeeklyReview } from '../lib/api';
+import React, { useState } from 'react';
+import { useReviews, useCreateDailyReview, useCreateWeeklyReview } from '../hooks/useReviews';
 import type { Review, ReviewType } from '../types';
 import {
   LineChart,
@@ -22,8 +22,6 @@ import Button from '../components/Button';
 const ReviewsPage: React.FC = () => {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<ReviewType>('DAILY');
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
   const [expandedReview, setExpandedReview] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<{
     [reviewId: string]: {
@@ -34,23 +32,12 @@ const ReviewsPage: React.FC = () => {
     };
   }>({});
 
-  useEffect(() => {
-    fetchReviews();
-  }, [activeTab]);
+  // Replace all manual state with React Query hook
+  const limit = activeTab === 'DAILY' ? 30 : 12;
+  const { data: reviews = [], isLoading: loading, isError } = useReviews(activeTab, limit);
 
-  const fetchReviews = async () => {
-    try {
-      setLoading(true);
-      const limit = activeTab === 'DAILY' ? 30 : 12;
-      const data = await getReviews(activeTab, limit);
-      setReviews(data);
-    } catch (err) {
-      toast.showError('Failed to load reviews. Please try again.');
-      console.error('Error fetching reviews:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const createDailyReview = useCreateDailyReview();
+  const createWeeklyReview = useCreateWeeklyReview();
 
   const toggleSection = (reviewId: string, section: 'wins' | 'misses' | 'lessons' | 'nextGoals') => {
     setExpandedSections((prev) => ({
@@ -141,6 +128,16 @@ const ReviewsPage: React.FC = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-48 w-48 border-b-4 border-action"></div>
           <p className="mt-16 text-slate">Loading reviews...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center py-64">
+        <div className="text-center">
+          <p className="text-red-600">Failed to load reviews. Please try again.</p>
         </div>
       </div>
     );
