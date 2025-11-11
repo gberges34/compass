@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
 import { z } from 'zod';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, subDays } from 'date-fns';
+import { asyncHandler } from '../middleware/asyncHandler';
+import { NotFoundError, BadRequestError } from '../errors/AppError';
 
 const router = Router();
 
@@ -167,121 +169,95 @@ async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date) {
 }
 
 // POST /api/reviews/daily - Create daily review
-router.post('/daily', async (req: Request, res: Response) => {
-  try {
-    const validatedData = createReviewSchema.parse({
-      ...req.body,
-      type: 'DAILY'
-    });
+router.post('/daily', asyncHandler(async (req: Request, res: Response) => {
+  const validatedData = createReviewSchema.parse({
+    ...req.body,
+    type: 'DAILY'
+  });
 
-    const today = new Date();
-    const periodStart = startOfDay(today);
-    const periodEnd = endOfDay(today);
+  const today = new Date();
+  const periodStart = startOfDay(today);
+  const periodEnd = endOfDay(today);
 
-    // Calculate metrics
-    const metrics = await calculateDailyMetrics(today);
+  // Calculate metrics
+  const metrics = await calculateDailyMetrics(today);
 
-    // Create review
-    const review = await prisma.review.create({
-      data: {
-        type: 'DAILY',
-        periodStart,
-        periodEnd,
-        wins: validatedData.wins,
-        misses: validatedData.misses,
-        lessons: validatedData.lessons,
-        nextGoals: validatedData.nextGoals,
-        energyAssessment: validatedData.energyAssessment || null,
-        ...metrics,
-      }
-    });
-
-    res.status(201).json(review);
-  } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.issues });
+  // Create review
+  const review = await prisma.review.create({
+    data: {
+      type: 'DAILY',
+      periodStart,
+      periodEnd,
+      wins: validatedData.wins,
+      misses: validatedData.misses,
+      lessons: validatedData.lessons,
+      nextGoals: validatedData.nextGoals,
+      energyAssessment: validatedData.energyAssessment || null,
+      ...metrics,
     }
-    console.error('Error creating daily review:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+  });
+
+  res.status(201).json(review);
+}));
 
 // POST /api/reviews/weekly - Create weekly review
-router.post('/weekly', async (req: Request, res: Response) => {
-  try {
-    const validatedData = createReviewSchema.parse({
-      ...req.body,
-      type: 'WEEKLY'
-    });
+router.post('/weekly', asyncHandler(async (req: Request, res: Response) => {
+  const validatedData = createReviewSchema.parse({
+    ...req.body,
+    type: 'WEEKLY'
+  });
 
-    const today = new Date();
-    const periodStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
-    const periodEnd = endOfWeek(today, { weekStartsOn: 0 });
+  const today = new Date();
+  const periodStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
+  const periodEnd = endOfWeek(today, { weekStartsOn: 0 });
 
-    // Calculate metrics
-    const metrics = await calculateWeeklyMetrics(periodStart, periodEnd);
+  // Calculate metrics
+  const metrics = await calculateWeeklyMetrics(periodStart, periodEnd);
 
-    // Create review
-    const review = await prisma.review.create({
-      data: {
-        type: 'WEEKLY',
-        periodStart,
-        periodEnd,
-        wins: validatedData.wins,
-        misses: validatedData.misses,
-        lessons: validatedData.lessons,
-        nextGoals: validatedData.nextGoals,
-        energyAssessment: validatedData.energyAssessment || null,
-        ...metrics,
-      }
-    });
-
-    res.status(201).json(review);
-  } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.issues });
+  // Create review
+  const review = await prisma.review.create({
+    data: {
+      type: 'WEEKLY',
+      periodStart,
+      periodEnd,
+      wins: validatedData.wins,
+      misses: validatedData.misses,
+      lessons: validatedData.lessons,
+      nextGoals: validatedData.nextGoals,
+      energyAssessment: validatedData.energyAssessment || null,
+      ...metrics,
     }
-    console.error('Error creating weekly review:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+  });
+
+  res.status(201).json(review);
+}));
 
 // GET /api/reviews - Get all reviews (with optional filters)
-router.get('/', async (req: Request, res: Response) => {
-  try {
-    const { type, limit } = req.query;
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
+  const { type, limit } = req.query;
 
-    const reviews = await prisma.review.findMany({
-      where: type ? { type: type as any } : undefined,
-      orderBy: { periodStart: 'desc' },
-      take: limit ? parseInt(limit as string) : undefined,
-    });
+  const reviews = await prisma.review.findMany({
+    where: type ? { type: type as any } : undefined,
+    orderBy: { periodStart: 'desc' },
+    take: limit ? parseInt(limit as string) : undefined,
+  });
 
-    res.json(reviews);
-  } catch (error: any) {
-    console.error('Error fetching reviews:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+  res.json(reviews);
+}));
 
 // GET /api/reviews/:id - Get single review
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
 
-    const review = await prisma.review.findUnique({
-      where: { id }
-    });
+  const review = await prisma.review.findUnique({
+    where: { id }
+  });
 
-    if (!review) {
-      return res.status(404).json({ error: 'Review not found' });
-    }
-
-    res.json(review);
-  } catch (error: any) {
-    console.error('Error fetching review:', error);
-    res.status(500).json({ error: error.message });
+  if (!review) {
+    throw new NotFoundError('Review');
   }
-});
+
+  res.json(review);
+}));
 
 export default router;

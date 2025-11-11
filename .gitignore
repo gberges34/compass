@@ -59,3 +59,6 @@ backend/prisma/migrations/
 .codex/
 codex.log
 log/
+
+# Claude Code sensitive settings
+.claude/settings.local.json

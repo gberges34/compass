@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useReviews, useCreateDailyReview, useCreateWeeklyReview } from '../hooks/useReviews';
-import type { Review, ReviewType } from '../types';
+import type { Review, ReviewType, CreateReviewRequest } from '../types';
 import {
   LineChart,
   Line,
@@ -18,11 +18,13 @@ import {
 import { useToast } from '../contexts/ToastContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import CreateReviewModal from '../components/CreateReviewModal';
 
 const ReviewsPage: React.FC = () => {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<ReviewType>('DAILY');
   const [expandedReview, setExpandedReview] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<{
     [reviewId: string]: {
       wins?: boolean;
@@ -38,6 +40,21 @@ const ReviewsPage: React.FC = () => {
 
   const createDailyReview = useCreateDailyReview();
   const createWeeklyReview = useCreateWeeklyReview();
+
+  const handleCreateReview = async (data: CreateReviewRequest) => {
+    try {
+      if (activeTab === 'DAILY') {
+        await createDailyReview.mutateAsync(data);
+        toast.showSuccess('Daily review created successfully!');
+      } else {
+        await createWeeklyReview.mutateAsync(data);
+        toast.showSuccess('Weekly review created successfully!');
+      }
+    } catch (error) {
+      toast.showError(error instanceof Error ? error.message : 'Failed to create review');
+      throw error; // Re-throw so modal can handle it
+    }
+  };
 
   const toggleSection = (reviewId: string, section: 'wins' | 'misses' | 'lessons' | 'nextGoals') => {
     setExpandedSections((prev) => ({
@@ -154,14 +171,7 @@ const ReviewsPage: React.FC = () => {
           </div>
           <Button
             variant="primary"
-            onClick={() => {
-              // TODO: Open modal to create review
-              if (activeTab === 'DAILY') {
-                console.log('Create daily review');
-              } else {
-                console.log('Create weekly review');
-              }
-            }}
+            onClick={() => setIsCreateModalOpen(true)}
           >
             Create {activeTab === 'DAILY' ? 'Daily' : 'Weekly'} Review
           </Button>
@@ -265,13 +275,7 @@ const ReviewsPage: React.FC = () => {
               <p className="text-slate mb-16">No {activeTab.toLowerCase()} reviews yet</p>
               <Button
                 variant="primary"
-                onClick={() => {
-                  if (activeTab === 'DAILY') {
-                    console.log('Create daily review');
-                  } else {
-                    console.log('Create weekly review');
-                  }
-                }}
+                onClick={() => setIsCreateModalOpen(true)}
               >
                 Create Your First {activeTab === 'DAILY' ? 'Daily' : 'Weekly'} Review
               </Button>
@@ -534,6 +538,15 @@ const ReviewsPage: React.FC = () => {
           ))
         )}
       </div>
+
+      {/* Create Review Modal */}
+      {isCreateModalOpen && (
+        <CreateReviewModal
+          reviewType={activeTab}
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreate={handleCreateReview}
+        />
+      )}
     </div>
   );
 };

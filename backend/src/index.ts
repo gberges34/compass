@@ -7,6 +7,7 @@ import orientRouter from './routes/orient';
 import reviewsRouter from './routes/reviews';
 import postdoRouter from './routes/postdo';
 import { getCurrentTimestamp } from './utils/dateHelpers';
+import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
 
@@ -88,13 +89,8 @@ app.use('/api/orient', orientRouter);
 app.use('/api/reviews', reviewsRouter);
 app.use('/api/postdo', postdoRouter);
 
-// Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal server error'
-  });
-});
+// Error handling middleware (MUST be last)
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`🚀 Compass API server running on port ${PORT}`);

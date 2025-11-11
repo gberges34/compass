@@ -17,10 +17,11 @@ import type {
   TaskFilters,
 } from '../types';
 
-// Augment Axios error with user-friendly message
+// Augment Axios error with user-friendly message and error code
 declare module 'axios' {
   export interface AxiosError {
     userMessage?: string;
+    errorCode?: string;
   }
 }
 
@@ -37,55 +38,30 @@ const api = axios.create({
   },
 });
 
-// User-friendly error message mapping
-const getUserFriendlyError = (error: any): string => {
-  const status = error.response?.status;
-  const serverMessage = error.response?.data?.message || error.response?.data?.error;
-
-  if (!status) {
-    return serverMessage || 'An error occurred. Please try again.';
-  }
-
-  switch (status) {
-    case 400:
-      return serverMessage || 'Invalid request. Please check your input.';
-    case 401:
-      return 'Unauthorized. Please log in.';
-    case 403:
-      return 'You do not have permission to perform this action.';
-    case 404:
-      return serverMessage || 'Resource not found.';
-    case 409:
-      return serverMessage || 'Conflict. This operation conflicts with existing data.';
-    case 422:
-      return serverMessage || 'Validation error. Please check your input.';
-    case 429:
-      return 'Too many requests. Please wait a moment.';
-    case 500:
-      return 'Server error. Please try again later.';
-    case 502:
-      return 'Bad gateway. The server is temporarily unavailable.';
-    case 503:
-      return 'Service unavailable. Please try again later.';
-    case 504:
-      return 'Request timeout. Please try again.';
-    default:
-      return serverMessage || 'An error occurred. Please try again.';
-  }
-};
-
-// Add response interceptor for user-friendly error messages
+// Response interceptor to extract error from new backend format
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Add user-friendly message to error object
-    if (error.response) {
-      error.userMessage = getUserFriendlyError(error);
-    } else if (error.request) {
-      error.userMessage = 'Network error. Please check your connection.';
-    } else {
-      error.userMessage = 'An unexpected error occurred.';
+    // Extract error message from new backend format
+    const errorMessage = error.response?.data?.error || 'An error occurred. Please try again.';
+    const errorCode = error.response?.data?.code;
+    const errorDetails = error.response?.data?.details;
+
+    // Attach user-friendly message to error object
+    error.userMessage = errorMessage;
+    error.errorCode = errorCode;
+
+    // Log for debugging in development
+    if (DEBUG) {
+      console.error('API Error:', {
+        status: error.response?.status,
+        code: errorCode,
+        message: errorMessage,
+        details: errorDetails,
+        url: error.config?.url
+      });
     }
+
     return Promise.reject(error);
   }
 );

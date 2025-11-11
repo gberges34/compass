@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
 import { z } from 'zod';
+import { asyncHandler } from '../middleware/asyncHandler';
+import { NotFoundError, BadRequestError } from '../errors/AppError';
 
 const router = Router();
 
@@ -16,75 +18,54 @@ const importTasksSchema = z.object({
 
 // POST /api/todoist/import
 // Receives tasks from iOS Shortcut's Todoist query
-router.post('/import', async (req: Request, res: Response) => {
-  try {
-    const { tasks } = importTasksSchema.parse(req.body);
+router.post('/import', asyncHandler(async (req: Request, res: Response) => {
+  const { tasks } = importTasksSchema.parse(req.body);
 
-    // Store tasks temporarily for Northbound processing
-    const tempTasks = await Promise.all(
-      tasks.map(task =>
-        prisma.tempCapturedTask.create({
-          data: {
-            name: task.name,
-            dueDate: task.due ? new Date(task.due) : null,
-            source: 'TODOIST',
-            processed: false,
-          }
-        })
-      )
-    );
+  // Store tasks temporarily for Northbound processing
+  const tempTasks = await Promise.all(
+    tasks.map(task =>
+      prisma.tempCapturedTask.create({
+        data: {
+          name: task.name,
+          dueDate: task.due ? new Date(task.due) : null,
+          source: 'TODOIST',
+          processed: false,
+        }
+      })
+    )
+  );
 
-    res.json({
-      success: true,
-      count: tempTasks.length,
-      tasks: tempTasks,
-    });
-  } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.issues });
-    }
-    console.error('Error importing tasks:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+  res.json({
+    success: true,
+    count: tempTasks.length,
+    tasks: tempTasks,
+  });
+}));
 
 // GET /api/todoist/pending
 // Returns tasks waiting for Northbound processing
-router.get('/pending', async (req: Request, res: Response) => {
-  try {
-    const pending = await prisma.tempCapturedTask.findMany({
-      where: { processed: false },
-      orderBy: { createdAt: 'asc' },
-    });
+router.get('/pending', asyncHandler(async (req: Request, res: Response) => {
+  const pending = await prisma.tempCapturedTask.findMany({
+    where: { processed: false },
+    orderBy: { createdAt: 'asc' },
+  });
 
-    res.json({
-      count: pending.length,
-      tasks: pending,
-    });
-  } catch (error: any) {
-    console.error('Error fetching pending tasks:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+  res.json({
+    count: pending.length,
+    tasks: pending,
+  });
+}));
 
 // DELETE /api/todoist/temp/:id
 // Delete a temp task (used after successful enrichment)
-router.delete('/temp/:id', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
+router.delete('/temp/:id', asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
 
-    await prisma.tempCapturedTask.delete({
-      where: { id },
-    });
+  await prisma.tempCapturedTask.delete({
+    where: { id },
+  });
 
-    res.status(204).send();
-  } catch (error: any) {
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Temp task not found' });
-    }
-    console.error('Error deleting temp task:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+  res.status(204).send();
+}));
 
 export default router;
