@@ -434,35 +434,40 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
   const timeOfDay = calculateTimeOfDay(startTime);
   const dayOfWeek = getDayOfWeek(startTime);
 
-  // Create Post-Do Log
-  const postDoLog = await prisma.postDoLog.create({
-    data: {
-      taskId: task.id,
-      outcome: validatedData.outcome,
-      effortLevel: validatedData.effortLevel,
-      keyInsight: validatedData.keyInsight,
-      estimatedDuration: task.duration,
-      actualDuration: validatedData.actualDuration,
-      variance,
-      efficiency,
-      startTime,
-      endTime,
-      timeOfDay: timeOfDay as any,
-      dayOfWeek,
-      timeryEntryId: validatedData.timeryEntryId,
-    }
-  });
+  // TRANSACTION: Atomic task completion
+  const result = await prisma.$transaction(async (tx) => {
+    // Create Post-Do Log
+    const postDoLog = await tx.postDoLog.create({
+      data: {
+        taskId: task.id,
+        outcome: validatedData.outcome,
+        effortLevel: validatedData.effortLevel,
+        keyInsight: validatedData.keyInsight,
+        estimatedDuration: task.duration,
+        actualDuration: validatedData.actualDuration,
+        variance,
+        efficiency,
+        startTime,
+        endTime,
+        timeOfDay: timeOfDay as any,
+        dayOfWeek,
+        timeryEntryId: validatedData.timeryEntryId,
+      }
+    });
 
-  // Update task status
-  const updatedTask = await prisma.task.update({
-    where: { id },
-    data: { status: 'DONE' }
+    // Update task status
+    const updatedTask = await tx.task.update({
+      where: { id },
+      data: { status: 'DONE' }
+    });
+
+    return { updatedTask, postDoLog };
   });
 
   log('[POST /tasks/:id/complete] Completed task:', task.id);
   res.json({
-    task: updatedTask,
-    postDoLog,
+    task: result.updatedTask,
+    postDoLog: result.postDoLog,
     metrics: {
       variance,
       efficiency: Math.round(efficiency * 100) / 100,
