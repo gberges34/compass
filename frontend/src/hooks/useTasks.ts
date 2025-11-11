@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, QueryClient, type UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient, QueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import * as api from '../lib/api';
 import type { Task, TaskFilters, EnrichTaskRequest, CompleteTaskRequest } from '../types';
@@ -30,10 +30,25 @@ export const prefetchTasks = (queryClient: QueryClient, filters?: TaskFilters) =
 
 type TasksQueryOptions = Omit<UseQueryOptions<Task[], Error>, 'queryKey' | 'queryFn'>;
 
+// Keep useTasks backwards compatible (returns just data array)
 export function useTasks(filters?: TaskFilters, options?: TasksQueryOptions) {
   return useQuery({
     queryKey: taskKeys.list(filters),
-    queryFn: () => api.getTasks(filters),
+    queryFn: async () => {
+      const response = await api.getTasks(filters);
+      return response.data; // Return just the data array for backwards compatibility
+    },
+    ...options,
+  });
+}
+
+// New hook for infinite scroll with pagination
+export function useTasksInfinite(filters?: TaskFilters, options?: any) {
+  return useInfiniteQuery({
+    queryKey: [...taskKeys.list(filters), 'infinite'],
+    queryFn: ({ pageParam }) => api.getTasks(filters, { cursor: pageParam, limit: 50 }),
+    getNextPageParam: (lastPage) => lastPage.pagination.nextCursor,
+    initialPageParam: undefined,
     ...options,
   });
 }

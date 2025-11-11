@@ -55,10 +55,27 @@ const completeTaskSchema = z.object({
 });
 
 // GET /api/tasks - List tasks with filters
-router.get('/', asyncHandler(async (req: Request, res: Response) => {
-  const { status, priority, category, scheduledDate } = req.query;
+// Pagination schema
+const paginationSchema = z.object({
+  cursor: z.string().uuid().optional(),
+  limit: z.coerce.number().min(1).max(100).default(50),
+});
 
-  log('[GET /tasks] Query params:', { status, priority, category, scheduledDate });
+// GET /api/tasks - List tasks with filters and pagination
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
+  const { status, priority, category, scheduledDate, cursor, limit } = req.query;
+
+  // Validate pagination params
+  const pagination = paginationSchema.parse({ cursor, limit });
+
+  log('[GET /tasks] Query params:', {
+    status,
+    priority,
+    category,
+    scheduledDate,
+    cursor: pagination.cursor,
+    limit: pagination.limit
+  });
 
   const where: any = {};
 
@@ -75,17 +92,34 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 
   log('[GET /tasks] Query where clause:', JSON.stringify(where));
 
+  // Cursor-based pagination
   const tasks = await prisma.task.findMany({
     where,
+    take: pagination.limit + 1, // Fetch one extra to determine if there's a next page
+    ...(pagination.cursor ? { cursor: { id: pagination.cursor }, skip: 1 } : {}),
     orderBy: [
       { status: 'asc' },
       { priority: 'asc' },
       { scheduledStart: 'asc' },
+      { createdAt: 'desc' }, // Tiebreaker for stable pagination
     ],
   });
 
-  log('[GET /tasks] Found tasks:', tasks.length);
-  res.json(tasks);
+  // Determine if there's a next page
+  const hasMore = tasks.length > pagination.limit;
+  const results = hasMore ? tasks.slice(0, pagination.limit) : tasks;
+  const nextCursor = hasMore ? results[results.length - 1].id : null;
+
+  log('[GET /tasks] Found tasks:', results.length, 'hasMore:', hasMore);
+
+  res.json({
+    data: results,
+    pagination: {
+      nextCursor,
+      hasMore,
+      limit: pagination.limit,
+    }
+  });
 }));
 
 // GET /api/tasks/:id - Get single task
