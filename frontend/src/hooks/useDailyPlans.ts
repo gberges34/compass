@@ -29,7 +29,18 @@ export const prefetchDailyPlan = (queryClient: QueryClient, date: string) => {
 export function useTodayPlan() {
   return useQuery({
     queryKey: dailyPlanKeys.today(),
-    queryFn: () => api.getTodayPlan(),
+    queryFn: async () => {
+      try {
+        return await api.getTodayPlan();
+      } catch (error: any) {
+        // 404 means no plan exists yet - this is expected and acceptable
+        if (error.response?.status === 404) {
+          return null;
+        }
+        // Re-throw other errors (network issues, 500s, etc.)
+        throw error;
+      }
+    },
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
 }
