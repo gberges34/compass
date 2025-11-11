@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { getTodoistPending, enrichTask, createTask } from '../lib/api';
+import React, { useState } from 'react';
+import { enrichTask, createTask } from '../lib/api';
 import type { TempCapturedTask, Priority, Energy } from '../types';
 import { useToast } from '../contexts/ToastContext';
+import { useTodoistPending } from '../hooks/useTodoist';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -15,9 +16,12 @@ interface EnrichedTaskData {
 
 const ClarifyPage: React.FC = () => {
   const toast = useToast();
-  const [pendingTasks, setPendingTasks] = useState<TempCapturedTask[]>([]);
+
+  // Replace manual state with React Query hook
+  const { data, isLoading, isError } = useTodoistPending();
+  const pendingTasks = data?.tasks ?? [];
+
   const [selectedTask, setSelectedTask] = useState<TempCapturedTask | null>(null);
-  const [loading, setLoading] = useState(true);
 
   // Form state
   const [priority, setPriority] = useState<number>(1);
@@ -30,23 +34,6 @@ const ClarifyPage: React.FC = () => {
 
   // Save state
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    fetchPendingTasks();
-  }, []);
-
-  const fetchPendingTasks = async () => {
-    setLoading(true);
-    try {
-      const response = await getTodoistPending();
-      setPendingTasks(response.tasks);
-    } catch (err) {
-      toast.showError('Failed to load pending tasks. Please try again.');
-      console.error('Error fetching pending tasks:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSelectTask = (task: TempCapturedTask) => {
     setSelectedTask(task);
@@ -109,8 +96,8 @@ const ClarifyPage: React.FC = () => {
 
       toast.showSuccess('Task saved successfully!');
 
-      // Remove from pending list
-      setPendingTasks(prev => prev.filter(t => t.id !== selectedTask.id));
+      // No manual cache invalidation needed!
+      // The mutation hook handles it automatically via queryClient.invalidateQueries
 
       // Reset form
       setSelectedTask(null);
@@ -134,11 +121,17 @@ const ClarifyPage: React.FC = () => {
       </Card>
 
       {/* Content */}
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center items-center py-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-48 w-48 border-b-4 border-action"></div>
             <p className="mt-16 text-slate">Loading tasks...</p>
+          </div>
+        </div>
+      ) : isError ? (
+        <div className="flex justify-center items-center py-64">
+          <div className="text-center">
+            <p className="text-red-600">Failed to load pending tasks</p>
           </div>
         </div>
       ) : (
