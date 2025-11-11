@@ -1,7 +1,22 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { z } from 'zod';
+import { withRetry } from '../utils/retry';
 
-const anthropic = new Anthropic({
+let anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+// Export for testing purposes
+export const setAnthropicClient = (client: Anthropic) => {
+  anthropic = client;
+};
+
+// Zod schemas for validation
+const taskEnrichmentSchema = z.object({
+  category: z.enum(['SCHOOL', 'MUSIC', 'FITNESS', 'GAMING', 'NUTRITION', 'HYGIENE', 'PET', 'SOCIAL', 'PERSONAL', 'ADMIN']),
+  context: z.enum(['HOME', 'OFFICE', 'COMPUTER', 'PHONE', 'ERRANDS', 'ANYWHERE']),
+  rephrasedName: z.string().min(1),
+  definitionOfDone: z.string().min(1),
 });
 
 export interface TaskEnrichmentInput {
@@ -16,6 +31,45 @@ export interface TaskEnrichmentOutput {
   context: string;
   rephrasedName: string;
   definitionOfDone: string;
+}
+
+function isValidCategory(value: any): boolean {
+  return taskEnrichmentSchema.shape.category.safeParse(value).success;
+}
+
+function isValidContext(value: any): boolean {
+  return taskEnrichmentSchema.shape.context.safeParse(value).success;
+}
+
+function validateWithRecovery(data: any, input: TaskEnrichmentInput): TaskEnrichmentOutput {
+  const result = taskEnrichmentSchema.safeParse(data);
+
+  if (result.success) {
+    return result.data;
+  }
+
+  // Partial recovery: use valid fields, fill in defaults for invalid
+  const recovered: TaskEnrichmentOutput = {
+    category: isValidCategory(data.category) ? data.category : 'PERSONAL',
+    context: isValidContext(data.context) ? data.context : 'ANYWHERE',
+    rephrasedName:
+      typeof data.rephrasedName === 'string' && data.rephrasedName.length > 0
+        ? data.rephrasedName
+        : input.rawTaskName,
+    definitionOfDone:
+      typeof data.definitionOfDone === 'string' && data.definitionOfDone.length > 0
+        ? data.definitionOfDone
+        : 'Task completed as described',
+  };
+
+  // Log validation failures for monitoring
+  console.warn('[LLM Validation] Partial validation failure:', {
+    errors: result.error.issues,
+    rawResponse: data,
+    recoveredFields: recovered,
+  });
+
+  return recovered;
 }
 
 export async function enrichTask(
@@ -43,14 +97,18 @@ Respond ONLY with valid JSON in this exact format:
 }`;
 
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 500,
-      messages: [{
-        role: 'user',
-        content: prompt
-      }]
-    });
+    const message = await withRetry(() =>
+      anthropic.messages.create({
+        model: 'claude-sonnet-4-5-20250929',
+        max_tokens: 500,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+      })
+    );
 
     // Parse response
     const content = message.content[0];
@@ -68,14 +126,10 @@ Respond ONLY with valid JSON in this exact format:
       jsonText = jsonText.replace(/```\n?/g, '');
     }
 
-    const enrichment = JSON.parse(jsonText) as TaskEnrichmentOutput;
+    const enrichment = JSON.parse(jsonText);
 
-    // Validate the response has all required fields
-    if (!enrichment.category || !enrichment.context || !enrichment.rephrasedName || !enrichment.definitionOfDone) {
-      throw new Error('Invalid enrichment response: missing required fields');
-    }
-
-    return enrichment;
+    // Validate with partial recovery
+    return validateWithRecovery(enrichment, input);
   } catch (error: any) {
     console.error('Error enriching task:', error);
 
