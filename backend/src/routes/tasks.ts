@@ -56,9 +56,15 @@ const completeTaskSchema = z.object({
 
 // GET /api/tasks - List tasks with filters
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
-  const { status, priority, category, scheduledDate } = req.query;
+  const { status, priority, category, scheduledDate, cursor, limit } = req.query;
 
-  log('[GET /tasks] Query params:', { status, priority, category, scheduledDate });
+  log('[GET /tasks] Query params:', { status, priority, category, scheduledDate, cursor, limit });
+
+  // Parse and validate limit
+  const pageSize = Math.min(
+    parseInt(limit as string) || 30,
+    100
+  );
 
   const where: any = {};
 
@@ -73,19 +79,32 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
     };
   }
 
+  // Add cursor filter
+  if (cursor) {
+    where.id = { gt: cursor };
+  }
+
   log('[GET /tasks] Query where clause:', JSON.stringify(where));
 
+  // Fetch one extra item to determine if more pages exist
   const tasks = await prisma.task.findMany({
     where,
+    take: pageSize + 1,
     orderBy: [
       { status: 'asc' },
       { priority: 'asc' },
-      { scheduledStart: 'asc' },
+      { id: 'asc' }, // Stable sort for cursor
     ],
   });
 
-  log('[GET /tasks] Found tasks:', tasks.length);
-  res.json(tasks);
+  // Determine if more pages exist
+  const hasMore = tasks.length > pageSize;
+  const items = hasMore ? tasks.slice(0, pageSize) : tasks;
+  const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+  log('[GET /tasks] Found tasks:', items.length, 'hasMore:', hasMore);
+
+  res.json({ items, nextCursor });
 }));
 
 // GET /api/tasks/:id - Get single task
