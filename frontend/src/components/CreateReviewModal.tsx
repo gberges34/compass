@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { ReviewType, Energy, CreateReviewRequest } from '../types';
 import Button from './Button';
 
@@ -29,6 +29,14 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
   // UI state
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Ref for focus management
+  const winInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Focus first textarea on mount
+  useEffect(() => {
+    winInputRef.current?.focus();
+  }, []);
 
   const addWin = () => {
     if (winInput.trim()) {
@@ -101,10 +109,20 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !submitting) {
+      handleSubmit(e as any);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
       onClick={(e) => e.target === e.currentTarget && onClose()}
+      onKeyDown={handleKeyDown}
     >
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
@@ -146,6 +164,7 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
               </label>
               <div className="flex gap-2 mb-2">
                 <textarea
+                  ref={winInputRef}
                   value={winInput}
                   onChange={(e) => setWinInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -178,6 +197,7 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                         type="button"
                         onClick={() => removeWin(idx)}
                         className="text-gray-400 hover:text-red-600 transition-colors"
+                        aria-label={`Remove win: ${win.slice(0, 50)}`}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -228,6 +248,7 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                         type="button"
                         onClick={() => removeMiss(idx)}
                         className="text-gray-400 hover:text-red-600 transition-colors"
+                        aria-label={`Remove miss: ${miss.slice(0, 50)}`}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -278,6 +299,7 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                         type="button"
                         onClick={() => removeLesson(idx)}
                         className="text-gray-400 hover:text-red-600 transition-colors"
+                        aria-label={`Remove lesson: ${lesson.slice(0, 50)}`}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -328,6 +350,7 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                         type="button"
                         onClick={() => removeGoal(idx)}
                         className="text-gray-400 hover:text-red-600 transition-colors"
+                        aria-label={`Remove goal: ${goal.slice(0, 50)}`}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
