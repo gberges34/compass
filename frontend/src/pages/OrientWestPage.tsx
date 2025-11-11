@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getTodayPlan, updateDailyPlanReflection } from '../lib/api';
-import type { DailyPlan, EnergyMatch, UpdateDailyPlanRequest } from '../types';
+import { useTodayPlan, useUpdateDailyPlanReflection } from '../hooks/useDailyPlans';
+import type { EnergyMatch, UpdateDailyPlanRequest } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import Card from '../components/Card';
@@ -12,11 +12,9 @@ const OrientWestPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
 
-  // State
-  const [plan, setPlan] = useState<DailyPlan | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [noPlanFound, setNoPlanFound] = useState(false);
+  // Replace all manual state with React Query
+  const { data: plan, isLoading } = useTodayPlan();
+  const updateReflection = useUpdateDailyPlanReflection();
 
   // Form state
   const [actualOutcomes, setActualOutcomes] = useState<number>(0);
@@ -30,36 +28,9 @@ const OrientWestPage: React.FC = () => {
     day: 'numeric',
   });
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchPlan = async () => {
-      try {
-        setLoading(true);
-        const todayPlan = await getTodayPlan();
-        if (isMounted) {
-          setPlan(todayPlan);
-          setNoPlanFound(false);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setNoPlanFound(true);
-          toast.showWarning('No plan found for today. Please create a plan first with Orient East.');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchPlan();
-
-    return () => {
-      isMounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // toast removed - context functions are stable
+  // No isMounted checks needed
+  // No useEffect needed
+  // No cleanup function needed
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,30 +46,28 @@ const OrientWestPage: React.FC = () => {
     }
 
     try {
-      setSubmitting(true);
-
       const request: UpdateDailyPlanRequest = {
         reflection: reflection.trim(),
         actualOutcomes,
         energyMatch,
       };
 
-      await updateDailyPlanReflection(plan.id, request);
-      toast.showSuccess('Evening reflection saved successfully! Navigating to Reviews...');
+      await updateReflection.mutateAsync({
+        planId: plan.id,
+        request,
+      });
 
-      // Navigate to reviews after a brief delay
-      setTimeout(() => {
-        navigate('/reviews');
-      }, 1500);
+      toast.showSuccess('Evening reflection saved successfully!');
+
+      // No setTimeout hack needed - immediate navigation
+      navigate('/reviews');
     } catch (err) {
       toast.showError(err instanceof Error ? err.message : 'Failed to save reflection');
       console.error('Error saving reflection:', err);
-    } finally {
-      setSubmitting(false);
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-24">
         <LoadingSkeleton variant="card" count={1} />
@@ -107,7 +76,7 @@ const OrientWestPage: React.FC = () => {
     );
   }
 
-  if (!plan || noPlanFound) {
+  if (!plan) {
     return (
       <div className="space-y-24">
         <Card padding="large">
@@ -414,10 +383,10 @@ const OrientWestPage: React.FC = () => {
           </Link>
           <button
             type="submit"
-            disabled={submitting}
+            disabled={updateReflection.isPending}
             className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
           >
-            {submitting ? 'Saving...' : 'Save Reflection'}
+            {updateReflection.isPending ? 'Saving...' : 'Save Reflection'}
           </button>
         </div>
       </form>
