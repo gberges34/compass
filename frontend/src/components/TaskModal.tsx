@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Task, Priority, Category, Context, Energy } from '../types';
+import { dateToISO } from '../lib/dateUtils';
 
 interface TaskModalProps {
   mode: 'create' | 'edit';
@@ -67,7 +68,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ mode, task, onClose, onSave }) =>
       };
 
       if (dueDate) {
-        taskData.dueDate = new Date(dueDate).toISOString();
+        taskData.dueDate = dateToISO(new Date(dueDate));
       }
       if (scheduledStart) {
         taskData.scheduledStart = scheduledStart;

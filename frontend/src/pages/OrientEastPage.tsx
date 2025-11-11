@@ -8,6 +8,7 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import { formatLongDate } from '../lib/dateUtils';
 
 const OrientEastPage: React.FC = () => {
   const navigate = useNavigate();
@@ -52,12 +53,7 @@ const OrientEastPage: React.FC = () => {
   // Reward (optional)
   const [reward, setReward] = useState('');
 
-  const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const today = formatLongDate();
 
   // No useEffect needed - React Query handles data fetching
   // No cleanup function needed - React Query handles component unmounting

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Task, Effort } from '../types';
+import { formatForDatetimeInput, addMinutesToDate } from '../lib/dateUtils';
 
 interface CompleteTaskModalProps {
   task: Task;
@@ -16,17 +17,17 @@ interface CompleteTaskModalProps {
 
 const CompleteTaskModal: React.FC<CompleteTaskModalProps> = ({ task, onClose, onComplete }) => {
   const now = new Date();
-  const startTime = task.activatedAt ? new Date(task.activatedAt) : new Date(now.getTime() - task.duration * 60000);
+  const startTime = task.activatedAt ? new Date(task.activatedAt) : addMinutesToDate(now, -task.duration);
 
   const [outcome, setOutcome] = useState('');
   const [effortLevel, setEffortLevel] = useState<Effort>('MEDIUM');
   const [keyInsight, setKeyInsight] = useState('');
   const [actualDuration, setActualDuration] = useState(task.duration);
   const [startTimeStr, setStartTimeStr] = useState(
-    startTime.toISOString().slice(0, 16)
+    formatForDatetimeInput(startTime)
   );
   const [endTimeStr, setEndTimeStr] = useState(
-    now.toISOString().slice(0, 16)
+    formatForDatetimeInput(now)
   );
   const [completing, setCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);

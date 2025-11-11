@@ -7,6 +7,7 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
+import { formatLongDate } from '../lib/dateUtils';
 
 const OrientWestPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,12 +22,7 @@ const OrientWestPage: React.FC = () => {
   const [energyMatch, setEnergyMatch] = useState<EnergyMatch>('MOSTLY_ALIGNED');
   const [reflection, setReflection] = useState('');
 
-  const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const today = formatLongDate();
 
   // No isMounted checks needed
   // No useEffect needed

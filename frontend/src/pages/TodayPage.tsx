@@ -10,21 +10,17 @@ import Badge from '../components/Badge';
 import Button from '../components/Button';
 import { getPriorityStyle, getEnergyStyle } from '../lib/designTokens';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
+import { getTodayDateString, formatLongDate } from '../lib/dateUtils';
 
 const TodayPage: React.FC = () => {
-  const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const today = formatLongDate();
 
   // Replace ALL manual state with React Query hooks - parallel fetching
   const { data: plan = null, isLoading: planLoading } = useTodayPlan();
   const { data: activeTasks = [], isLoading: activeLoading } = useTasks({ status: 'ACTIVE' });
   const { data: allNextTasks = [], isLoading: nextLoading } = useTasks({ status: 'NEXT' });
 
-  const todayDate = new Date().toISOString().split('T')[0];
+  const todayDate = getTodayDateString();
   const { data: todayLogs = [], isLoading: logsLoading } = usePostDoLogs({
     startDate: todayDate,
     endDate: todayDate,
