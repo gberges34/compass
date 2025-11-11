@@ -21,6 +21,14 @@ should_run_anthropic_check() {
     return 1
 }
 
+get_anthropic_key() {
+    if [ -n "${COMPASS_ANTHROPIC_API_KEY:-}" ]; then
+        printf '%s' "$COMPASS_ANTHROPIC_API_KEY"
+    else
+        printf '%s' "${ANTHROPIC_API_KEY:-}"
+    fi
+}
+
 check_anthropic() {
     echo -n "Anthropic connectivity: "
 
@@ -29,8 +37,11 @@ check_anthropic() {
         return 1
     fi
 
-    if [ -z "${COMPASS_ANTHROPIC_API_KEY:-}" ]; then
-        echo -e "${YELLOW}Missing COMPASS_ANTHROPIC_API_KEY ⚠${NC}"
+    local api_key
+    api_key=$(get_anthropic_key)
+
+    if [ -z "$api_key" ]; then
+        echo -e "${YELLOW}Missing COMPASS_ANTHROPIC_API_KEY / ANTHROPIC_API_KEY ⚠${NC}"
         return 1
     fi
 
@@ -51,7 +62,7 @@ JSON
 
     local response
     response=$(curl -s -w "\n%{http_code}" https://api.anthropic.com/v1/messages \
-        -H "x-api-key: $COMPASS_ANTHROPIC_API_KEY" \
+        -H "x-api-key: $api_key" \
         -H "anthropic-version: 2023-06-01" \
         -H "content-type: application/json" \
         -d "$payload" 2>/dev/null)
