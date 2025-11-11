@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, QueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import * as api from '../lib/api';
 import type { DailyPlan, CreateDailyPlanRequest, UpdateDailyPlanRequest } from '../types';
 
@@ -26,7 +26,9 @@ export const prefetchDailyPlan = (queryClient: QueryClient, date: string) => {
 
 // Queries
 
-export function useTodayPlan() {
+type TodayPlanQueryOptions = Omit<UseQueryOptions<DailyPlan | null, Error>, 'queryKey' | 'queryFn'>;
+
+export function useTodayPlan(options?: TodayPlanQueryOptions) {
   return useQuery({
     queryKey: dailyPlanKeys.today(),
     queryFn: async () => {
@@ -42,6 +44,7 @@ export function useTodayPlan() {
       }
     },
     staleTime: 1000 * 60 * 10, // 10 minutes
+    ...options,
   });
 }
 
