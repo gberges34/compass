@@ -8,9 +8,10 @@ import { calculateTimeOfDay, getDayOfWeek } from '../utils/timeUtils';
 import { getCurrentTimestamp, dateToISO } from '../utils/dateHelpers';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
+import { env } from '../config/env';
 
 // Development-only logging
-const DEBUG = process.env.NODE_ENV === 'development';
+const DEBUG = env.NODE_ENV === 'development';
 const log = DEBUG ? console.log : () => {};
 
 const router = Router();
@@ -58,8 +59,8 @@ const completeTaskSchema = z.object({
 // GET /api/tasks - List tasks with filters
 // Pagination schema
 const paginationSchema = z.object({
-  cursor: z.string().uuid().optional(),
-  limit: z.coerce.number().min(1).max(100).default(50),
+  cursor: z.string().optional(),
+  limit: z.coerce.number().min(1).default(50).transform(val => Math.min(val, 100)),
 });
 
 // GET /api/tasks - List tasks with filters and pagination
@@ -78,11 +79,11 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
     limit: pagination.limit
   });
 
-  const where: any = {};
+  const where: Prisma.TaskWhereInput = {};
 
-  if (status) where.status = status;
-  if (priority) where.priority = priority;
-  if (category) where.category = category;
+  if (status) where.status = status as TaskStatus;
+  if (priority) where.priority = priority as Priority;
+  if (category) where.category = category as Category;
   if (scheduledDate) {
     const date = new Date(scheduledDate as string);
     where.scheduledStart = {
@@ -92,8 +93,8 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Add cursor filter
-  if (cursor) {
-    where.id = { gt: cursor };
+  if (pagination.cursor) {
+    where.id = { gt: pagination.cursor };
   }
 
   log('[GET /tasks] Query where clause:', JSON.stringify(where));
@@ -119,12 +120,8 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   log('[GET /tasks] Found tasks:', results.length, 'hasMore:', hasMore);
 
   res.json({
-    data: results,
-    pagination: {
-      nextCursor,
-      hasMore,
-      limit: pagination.limit,
-    }
+    items: results,
+    nextCursor,
   });
 }));
 

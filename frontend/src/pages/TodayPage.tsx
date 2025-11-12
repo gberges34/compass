@@ -3,12 +3,11 @@ import { Link } from 'react-router-dom';
 import { useFlatTasks } from '../hooks/useTasks';
 import { useTodayPlan } from '../hooks/useDailyPlans';
 import { usePostDoLogs } from '../hooks/usePostDoLogs';
-import type { DailyPlan, Task, PostDoLog } from '../types';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
-import { getPriorityStyle, getEnergyStyle } from '../lib/designTokens';
+import { getEnergyStyle } from '../lib/designTokens';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
 import { getTodayDateString, formatLongDate } from '../lib/dateUtils';
 

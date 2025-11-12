@@ -11,7 +11,6 @@ import type { AxiosError } from 'axios';
 import * as api from '../lib/api';
 import type { Task, TaskFilters, EnrichTaskRequest, CompleteTaskRequest, PaginatedResponse } from '../types';
 import { useToast } from '../contexts/ToastContext';
-import { getCurrentTimestamp } from '../lib/dateUtils';
 import { useMemo } from 'react';
 
 // Development-only logging
@@ -45,7 +44,7 @@ type InfiniteTasksQueryOptions = Omit<
   UseInfiniteQueryOptions<
     PaginatedResponse<Task>,
     Error,
-    PaginatedResponse<Task>,
+    any,
     InfiniteTasksQueryKey,
     string | undefined
   >,
@@ -58,7 +57,7 @@ export function useTasks(filters?: TaskFilters, options?: TasksQueryOptions) {
     queryKey: taskKeys.list(filters),
     queryFn: async () => {
       const response = await api.getTasks(filters);
-      return response.data; // Return just the data array for backwards compatibility
+      return response.items; // Return just the items array for backwards compatibility
     },
     ...options,
   });
@@ -68,16 +67,10 @@ export function useTasks(filters?: TaskFilters, options?: TasksQueryOptions) {
 export function useTasksInfinite(filters?: TaskFilters, options?: InfiniteTasksQueryOptions) {
   const queryKey = [...taskKeys.list(filters), 'infinite'] as InfiniteTasksQueryKey;
 
-  return useInfiniteQuery<
-    PaginatedResponse<Task>,
-    Error,
-    PaginatedResponse<Task>,
-    InfiniteTasksQueryKey,
-    string | undefined
-  >({
+  return useInfiniteQuery({
     queryKey,
     queryFn: ({ pageParam = undefined }) => api.getTasks(filters, { cursor: pageParam, limit: 50 }),
-    getNextPageParam: (lastPage) => lastPage.pagination.nextCursor,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: undefined,
     ...options,
   });

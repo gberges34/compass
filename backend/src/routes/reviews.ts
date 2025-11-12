@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
+import { Prisma, ReviewType } from '@prisma/client';
 import { z } from 'zod';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, subDays } from 'date-fns';
 import { asyncHandler } from '../middleware/asyncHandler';
@@ -241,10 +242,10 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
     100
   );
 
-  const where: any = {};
-  if (type) where.type = type as any;
+  const where: Prisma.ReviewWhereInput = {};
+  if (type) where.type = type as ReviewType;
   if (cursor) {
-    where.id = { lt: cursor }; // Use 'lt' for DESC ordering
+    where.id = { lt: cursor as string }; // Use 'lt' for DESC ordering
   }
 
   const reviews = await prisma.review.findMany({

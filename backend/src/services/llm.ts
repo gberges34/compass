@@ -1,9 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 import { withRetry } from '../utils/retry';
+import { env } from '../config/env';
 
 let anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+  apiKey: env.ANTHROPIC_API_KEY,
 });
 
 // Export for testing purposes
