@@ -62,12 +62,12 @@ describe('Pagination Integration Tests', () => {
     }
 
     let allTasks: any[] = [];
-    let cursor: string | null = undefined;
+    let cursor: string | null = null;
     let pageCount = 0;
 
     // Fetch all pages
     while (pageCount === 0 || cursor !== null) {
-      const url = cursor ? `/api/tasks?cursor=${cursor}&limit=20` : '/api/tasks?limit=20';
+      const url: string = cursor ? `/api/tasks?cursor=${cursor}&limit=20` : '/api/tasks?limit=20';
       const response = await request(app).get(url).expect(200);
 
       allTasks.push(...response.body.items);
