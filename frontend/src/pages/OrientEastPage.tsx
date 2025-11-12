@@ -353,32 +353,30 @@ const OrientEastPage: React.FC = () => {
         <Card padding="large">
           <div className="flex items-center justify-between mb-16">
             <h2 className="text-h2 text-ink">Admin Block</h2>
-            <label className="flex items-center space-x-8 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={enableAdmin}
-                onChange={(e) => setEnableAdmin(e.target.checked)}
-                className="w-20 h-20 text-action rounded focus:ring-2 focus:ring-action"
-              />
-              <span className="text-small font-medium text-ink">Enable</span>
-            </label>
+            <ToggleSwitch
+              checked={enableAdmin}
+              onChange={setEnableAdmin}
+              ariaLabel="Enable Admin Block"
+            />
           </div>
           {enableAdmin && (
-            <div className="grid grid-cols-2 gap-16">
-              <Input
-                type="time"
-                label="Start Time"
-                value={adminStart}
-                onChange={(e) => setAdminStart(e.target.value)}
-                fullWidth
-              />
-              <Input
-                type="time"
-                label="End Time"
-                value={adminEnd}
-                onChange={(e) => setAdminEnd(e.target.value)}
-                fullWidth
-              />
+            <div className="space-y-16">
+              <div className="grid grid-cols-2 gap-16">
+                <Input
+                  type="time"
+                  label="Start Time"
+                  value={adminStart}
+                  onChange={(e) => setAdminStart(e.target.value)}
+                  fullWidth
+                />
+                <Input
+                  type="time"
+                  label="End Time"
+                  value={adminEnd}
+                  onChange={(e) => setAdminEnd(e.target.value)}
+                  fullWidth
+                />
+              </div>
             </div>
           )}
         </Card>
@@ -387,32 +385,30 @@ const OrientEastPage: React.FC = () => {
         <Card padding="large">
           <div className="flex items-center justify-between mb-16">
             <h2 className="text-h2 text-ink">Buffer Block</h2>
-            <label className="flex items-center space-x-8 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={enableBuffer}
-                onChange={(e) => setEnableBuffer(e.target.checked)}
-                className="w-20 h-20 text-action rounded focus:ring-2 focus:ring-action"
-              />
-              <span className="text-small font-medium text-ink">Enable</span>
-            </label>
+            <ToggleSwitch
+              checked={enableBuffer}
+              onChange={setEnableBuffer}
+              ariaLabel="Enable Buffer Block"
+            />
           </div>
           {enableBuffer && (
-            <div className="grid grid-cols-2 gap-16">
-              <Input
-                type="time"
-                label="Start Time"
-                value={bufferStart}
-                onChange={(e) => setBufferStart(e.target.value)}
-                fullWidth
-              />
-              <Input
-                type="time"
-                label="End Time"
-                value={bufferEnd}
-                onChange={(e) => setBufferEnd(e.target.value)}
-                fullWidth
-              />
+            <div className="space-y-16">
+              <div className="grid grid-cols-2 gap-16">
+                <Input
+                  type="time"
+                  label="Start Time"
+                  value={bufferStart}
+                  onChange={(e) => setBufferStart(e.target.value)}
+                  fullWidth
+                />
+                <Input
+                  type="time"
+                  label="End Time"
+                  value={bufferEnd}
+                  onChange={(e) => setBufferEnd(e.target.value)}
+                  fullWidth
+                />
+              </div>
             </div>
           )}
         </Card>
