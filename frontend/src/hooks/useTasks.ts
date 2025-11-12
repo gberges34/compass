@@ -31,7 +31,7 @@ export const prefetchTasks = (queryClient: QueryClient, filters?: TaskFilters) =
   return queryClient.prefetchInfiniteQuery({
     queryKey: taskKeys.list(filters),
     queryFn: ({ pageParam }) => api.getTasks(filters, { cursor: pageParam, limit: 30 }),
-    getNextPageParam: (lastPage: PaginatedResponse<Task>) => lastPage.nextCursor,
+    getNextPageParam: (lastPage: PaginatedResponse<Task>) => lastPage.pagination.nextCursor,
     initialPageParam: undefined as string | undefined,
   });
 };
@@ -77,11 +77,11 @@ export function useTasksInfinite(filters?: TaskFilters, options?: InfiniteTasksQ
 }
 
 // Helper to flatten pages for components that need a simple array
-export function useFlatTasks(filters?: TaskFilters): { tasks: Task[]; [key: string]: any } {
+export function useFlatTasks(filters?: TaskFilters) {
   const { data, ...rest } = useTasksInfinite(filters);
 
   const tasks = useMemo(() => {
-    return data?.pages.flatMap((page: PaginatedResponse<Task>) => page.items) ?? [];
+    return data?.pages.flatMap(page => page.data) ?? [];
   }, [data]);
 
   return { tasks, ...rest };

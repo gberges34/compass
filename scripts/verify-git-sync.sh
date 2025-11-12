@@ -12,6 +12,10 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
+
 # Test counters
 TESTS_RUN=0
 TESTS_PASSED=0
@@ -250,6 +254,27 @@ test_fetch_remote_state() {
   echo ""
 }
 
+# Test 11: Forbidden Files Check (REQ-SEC-001)
+test_forbidden_files_absent() {
+  TESTS_RUN=$((TESTS_RUN + 1))
+  info "Test 11: Checking forbidden files do not exist..."
+
+  set +e
+  output=$(bash "$REPO_ROOT/scripts/check-forbidden-files.sh" 2>&1)
+  status=$?
+  set -e
+
+  if [ $status -eq 0 ]; then
+    pass_test "No forbidden files detected"
+  else
+    fail_test "Forbidden files detected (see REQ-SEC-001)"
+    echo "$output"
+    echo ""
+    echo "Fix: Remove the files listed above before continuing."
+  fi
+  echo ""
+}
+
 # Print summary report
 print_summary() {
   echo ""
@@ -299,6 +324,7 @@ main() {
   test_gitignore_effectiveness    # Test 7
   test_head_matches_origin        # Test 3
   test_no_unpushed_commits        # Test 2
+  test_forbidden_files_absent     # Test 11
 
   # Print summary
   print_summary

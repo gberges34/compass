@@ -10,6 +10,90 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+MODE=${1:-""}
+
+should_run_anthropic_check() {
+    local flag
+    flag=$(printf '%s' "${CHECK_ANTHROPIC:-}" | tr '[:upper:]' '[:lower:]')
+    if [ "$flag" = "true" ] || [ "$flag" = "1" ] || [ "$flag" = "yes" ]; then
+        return 0
+    fi
+    return 1
+}
+
+get_anthropic_key() {
+    if [ -n "${COMPASS_ANTHROPIC_API_KEY:-}" ]; then
+        printf '%s' "$COMPASS_ANTHROPIC_API_KEY"
+    else
+        printf '%s' "${ANTHROPIC_API_KEY:-}"
+    fi
+}
+
+check_anthropic() {
+    echo -n "Anthropic connectivity: "
+
+    if ! command -v curl >/dev/null 2>&1; then
+        echo -e "${RED}curl not available ✗${NC}"
+        return 1
+    fi
+
+    local api_key
+    api_key=$(get_anthropic_key)
+
+    if [ -z "$api_key" ]; then
+        echo -e "${YELLOW}Missing COMPASS_ANTHROPIC_API_KEY / ANTHROPIC_API_KEY ⚠${NC}"
+        return 1
+    fi
+
+    local payload
+    payload=$(cat <<'JSON'
+{
+  "model": "claude-3-5-sonnet-latest",
+  "max_tokens": 1,
+  "messages": [
+    {
+      "role": "user",
+      "content": "ping"
+    }
+  ]
+}
+JSON
+)
+
+    local response
+    response=$(curl -s -w "\n%{http_code}" https://api.anthropic.com/v1/messages \
+        -H "x-api-key: $api_key" \
+        -H "anthropic-version: 2023-06-01" \
+        -H "content-type: application/json" \
+        -d "$payload" 2>/dev/null)
+
+    local http_status
+    http_status=$(echo "$response" | tail -n 1)
+    local body
+    body=$(echo "$response" | sed '$d')
+
+    if [ "$http_status" = "200" ]; then
+        echo -e "${GREEN}Reachable ✓${NC}"
+        return 0
+    else
+        local snippet
+        snippet=$(echo "$body" | head -c 160 | tr '\n' ' ')
+        echo -e "${RED}Failed (${http_status}) ✗${NC}"
+        if [ -n "$snippet" ]; then
+            echo "  Details: ${snippet}..."
+        fi
+        return 1
+    fi
+}
+
+if [ "$MODE" = "anthropic" ]; then
+    if check_anthropic; then
+        exit 0
+    else
+        exit 1
+    fi
+fi
+
 # Check backend
 echo -n "Backend (http://localhost:3001): "
 BACKEND_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health 2>/dev/null)
@@ -50,17 +134,51 @@ else
 fi
 cd .. 2>/dev/null
 
+ANTHROPIC_STATUS=-1
+ANTHROPIC_REQUESTED=0
+if should_run_anthropic_check; then
+    ANTHROPIC_REQUESTED=1
+    echo ""
+    if check_anthropic; then
+        ANTHROPIC_STATUS=1
+    else
+        ANTHROPIC_STATUS=0
+    fi
+fi
+
 echo ""
 echo "======================="
 
-# Summary
+ALL_OK=1
+if [ $BACKEND_UP -ne 1 ] || [ $FRONTEND_UP -ne 1 ] || [ $DB_UP -ne 1 ]; then
+    ALL_OK=0
+fi
+if [ $ANTHROPIC_REQUESTED -eq 1 ] && [ $ANTHROPIC_STATUS -ne 1 ]; then
+    ALL_OK=0
+fi
+
 if [ $BACKEND_UP -eq 1 ] && [ $FRONTEND_UP -eq 1 ] && [ $DB_UP -eq 1 ]; then
-    echo -e "${GREEN}✓ All systems operational${NC}"
-    exit 0
+    if [ $ANTHROPIC_REQUESTED -eq 1 ] && [ $ANTHROPIC_STATUS -ne 1 ]; then
+        echo -e "${YELLOW}⚠ Anthropic connectivity failed${NC}"
+    else
+        echo -e "${GREEN}✓ All systems operational${NC}"
+    fi
 elif [ $BACKEND_UP -eq 0 ] && [ $FRONTEND_UP -eq 0 ]; then
     echo -e "${YELLOW}⚠ Servers not running. Start with: npm run dev${NC}"
-    exit 1
 else
     echo -e "${YELLOW}⚠ Some services are down${NC}"
+fi
+
+if [ $ANTHROPIC_REQUESTED -eq 1 ]; then
+    if [ $ANTHROPIC_STATUS -eq 1 ]; then
+        echo -e "${GREEN}Anthropic connectivity verified ✓${NC}"
+    else
+        echo -e "${RED}Anthropic connectivity failed ✗${NC}"
+    fi
+fi
+
+if [ $ALL_OK -eq 1 ]; then
+    exit 0
+else
     exit 1
 fi
