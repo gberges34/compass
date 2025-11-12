@@ -37,7 +37,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={`
-        relative inline-flex items-center align-middle
+        relative inline-flex items-center align-middle translate-y-[10px]
         w-[44px] h-[24px] rounded-pill
         transition-all duration-standard
         focus:outline-none focus:ring-2 focus:ring-action focus:ring-offset-2
