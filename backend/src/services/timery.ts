@@ -200,7 +200,8 @@ async function getProjects(): Promise<Map<number, string>> {
 // Calculate category balance from Toggl time entries
 export async function getCategoryBalanceFromToggl(
   startDate: Date,
-  endDate: Date
+  endDate: Date,
+  postDoLogs: Array<{ completionDate: Date; actualDuration: number }> = []
 ): Promise<Record<string, number>> {
   try {
     // Get time entries and projects
@@ -214,6 +215,15 @@ export async function getCategoryBalanceFromToggl(
     entries.forEach(entry => {
       // Skip running entries (negative duration)
       if (entry.duration < 0) return;
+
+      // Skip if this overlaps with a Compass task (dedupe)
+      if (isTogglEntryDuplicate(entry, postDoLogs)) {
+        console.log(
+          `Skipping duplicate Toggl entry (overlaps with Compass task): ` +
+          `"${entry.description || 'No description'}", ${Math.floor(entry.duration / 60)}m`
+        );
+        return;
+      }
 
       // Get project name
       const projectName = entry.project_id
