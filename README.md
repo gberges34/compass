@@ -69,6 +69,19 @@ Utilities:
 - `npm run verify` - Environment health check
 - `npm run build` - Production build
 
+Code Quality Analysis:
+- `npm run analyze` - Run all 9 quality assessment agents
+- `npm run analyze:parallel` - Run all agents in parallel (faster)
+- `npm run analyze:reliability` - Error handling analysis
+- `npm run analyze:maintainability` - Code maintainability check
+- `npm run analyze:complexity` - Cyclomatic complexity audit
+- `npm run analyze:churn` - Code change frequency tracking
+- `npm run analyze:duplication` - Duplicate code detection
+- `npm run analyze:coverage` - Test coverage analysis
+- `npm run analyze:debt` - Technical debt calculation
+- `npm run analyze:sustainability` - Resource efficiency evaluation
+- `npm run analyze:reviews` - Code review metrics
+
 ### Troubleshooting
 
 Run environment diagnostics:
@@ -78,10 +91,47 @@ npm run verify
 
 For common issues and solutions, see [Quick Start Guide](docs/QUICK_START.md#troubleshooting).
 
+## Multi-Agent Code Quality Assessment
+
+Compass includes a comprehensive code quality analysis system powered by 9 specialized AI agents:
+
+1. **Reliability Analyst** - Error handling, input validation, edge case coverage
+2. **Maintainability Inspector** - Code readability, documentation, architecture
+3. **Cyclomatic Complexity Auditor** - Control flow complexity measurement
+4. **Code Churn Tracker** - Change frequency and stability analysis
+5. **Duplication Detective** - Duplicate code detection and DRY violations
+6. **Test Coverage Analyst** - Test coverage gaps and recommendations
+7. **Technical Debt Accountant** - Debt calculation with payoff roadmap
+8. **Sustainability Metrics Evaluator** - Resource efficiency and performance
+9. **Review Metrics Analyst** - Code review process health
+
+### Running Analysis
+
+```bash
+# Run all agents sequentially
+npm run analyze
+
+# Run all agents in parallel (faster)
+npm run analyze:parallel
+
+# Run individual agents
+npm run analyze:reliability
+npm run analyze:maintainability
+# ... etc
+```
+
+Results are saved to `analysis/ANALYSIS_REPORT.md` with an overall quality score, detailed findings, and actionable recommendations.
+
+For more details, see [analysis/README.md](analysis/README.md).
+
 ## Project Structure
 
 ```
 compass/
+├── analysis/              # Code quality assessment system
+│   ├── agents/           # 9 specialized analysis agents
+│   ├── orchestrator.ts   # Multi-agent coordinator
+│   └── ANALYSIS_REPORT.md # Generated quality report
 ├── backend/
 │   ├── src/
 │   │   ├── routes/        # API route handlers

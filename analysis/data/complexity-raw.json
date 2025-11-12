@@ -1,0 +1,4796 @@
+{
+  "analysis": {
+    "averageComplexity": 2,
+    "distribution": {
+      "simple": 540,
+      "moderate": 40,
+      "complex": 2,
+      "veryComplex": 0
+    },
+    "topComplexFunctions": [
+      {
+        "file": "analysis/agents/churn-tracker.ts",
+        "line": 98,
+        "functionName": "for",
+        "complexity": 13,
+        "category": "complex",
+        "nestingDepth": 2
+      },
+      {
+        "file": "frontend/src/components/TaskActions.tsx",
+        "line": 38,
+        "functionName": "if",
+        "complexity": 12,
+        "category": "complex",
+        "nestingDepth": 0
+      },
+      {
+        "file": "analysis/agents/coverage-analyst.ts",
+        "line": 119,
+        "functionName": "for",
+        "complexity": 10,
+        "category": "moderate",
+        "nestingDepth": 2
+      },
+      {
+        "file": "analysis/agents/debt-accountant.ts",
+        "line": 122,
+        "functionName": "for",
+        "complexity": 10,
+        "category": "moderate",
+        "nestingDepth": 4
+      },
+      {
+        "file": "analysis/agents/review-metrics-analyst.ts",
+        "line": 69,
+        "functionName": "for",
+        "complexity": 10,
+        "category": "moderate",
+        "nestingDepth": 3
+      },
+      {
+        "file": "backend/src/index.ts",
+        "line": 46,
+        "functionName": "if",
+        "complexity": 10,
+        "category": "moderate",
+        "nestingDepth": 2
+      },
+      {
+        "file": "backend/src/middleware/prismaErrorMiddleware.ts",
+        "line": 15,
+        "functionName": "defineExtension",
+        "complexity": 10,
+        "category": "moderate",
+        "nestingDepth": 3
+      },
+      {
+        "file": "analysis/agents/maintainability-inspector.ts",
+        "line": 205,
+        "functionName": "for",
+        "complexity": 9,
+        "category": "moderate",
+        "nestingDepth": 3
+      },
+      {
+        "file": "analysis/agents/maintainability-inspector.ts",
+        "line": 348,
+        "functionName": "for",
+        "complexity": 9,
+        "category": "moderate",
+        "nestingDepth": 4
+      },
+      {
+        "file": "analysis/agents/maintainability-inspector.ts",
+        "line": 417,
+        "functionName": "for",
+        "complexity": 9,
+        "category": "moderate",
+        "nestingDepth": 3
+      }
+    ],
+    "nestingViolations": [
+      {
+        "file": "analysis/agents/complexity-auditor.ts",
+        "line": 447,
+        "functionName": "validateUser",
+        "complexity": 8,
+        "category": "moderate",
+        "nestingDepth": 5
+      },
+      {
+        "file": "analysis/agents/complexity-auditor.ts",
+        "line": 447,
+        "functionName": "validateUser",
+        "complexity": 8,
+        "category": "moderate",
+        "nestingDepth": 5
+      },
+      {
+        "file": "analysis/agents/complexity-auditor.ts",
+        "line": 448,
+        "functionName": "if",
+        "complexity": 7,
+        "category": "moderate",
+        "nestingDepth": 4
+      },
+      {
+        "file": "analysis/agents/debt-accountant.ts",
+        "line": 122,
+        "functionName": "for",
+        "complexity": 10,
+        "category": "moderate",
+        "nestingDepth": 4
+      },
+      {
+        "file": "analysis/agents/maintainability-inspector.ts",
+        "line": 348,
+        "functionName": "for",
+        "complexity": 9,
+        "category": "moderate",
+        "nestingDepth": 4
+      }
+    ],
+    "simplificationStrategies": [],
+    "comparisonBenchmark": "Average complexity: 2 (✅ Excellent - below industry target of 10)\n\n0% of functions are complex (>10 complexity) (✅ Excellent)"
+  },
+  "results": [
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 403,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 57,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 98,
+      "functionName": "for",
+      "complexity": 13,
+      "category": "complex",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 101,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 117,
+      "functionName": "if",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 131,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 136,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 143,
+      "functionName": "for",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 146,
+      "functionName": "for",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 149,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 168,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 182,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 184,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 273,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 278,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 283,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 290,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 294,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 334,
+      "functionName": "for",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 349,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 355,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 371,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 373,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 378,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 403,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 419,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/churn-tracker.ts",
+      "line": 425,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 447,
+      "functionName": "validateUser",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 5
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 462,
+      "functionName": "validateUser",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 487,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 49,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 59,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 76,
+      "functionName": "for",
+      "complexity": 6,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 90,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 105,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 119,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 141,
+      "functionName": "for",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 151,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 169,
+      "functionName": "for",
+      "complexity": 6,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 172,
+      "functionName": "if",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 173,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 177,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 179,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 186,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 211,
+      "functionName": "for",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 213,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 228,
+      "functionName": "for",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 3
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 237,
+      "functionName": "includes",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 313,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 315,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 317,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 341,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 343,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 345,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 353,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 355,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 357,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 413,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 420,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 431,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 447,
+      "functionName": "validateUser",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 5
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 448,
+      "functionName": "if",
+      "complexity": 7,
+      "category": "moderate",
+      "nestingDepth": 4
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 449,
+      "functionName": "if",
+      "complexity": 6,
+      "category": "moderate",
+      "nestingDepth": 3
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 451,
+      "functionName": "if",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 452,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 462,
+      "functionName": "validateUser",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 487,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 503,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/complexity-auditor.ts",
+      "line": 509,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 286,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 29,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 88,
+      "functionName": "for",
+      "complexity": 6,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 101,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 119,
+      "functionName": "for",
+      "complexity": 10,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 125,
+      "functionName": "if",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 154,
+      "functionName": "for",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 160,
+      "functionName": "if",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 165,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 183,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 194,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 198,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 202,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 206,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 249,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 253,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 260,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 270,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 286,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 301,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/coverage-analyst.ts",
+      "line": 307,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 360,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 42,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 52,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 69,
+      "functionName": "for",
+      "complexity": 6,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 83,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 111,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 122,
+      "functionName": "for",
+      "complexity": 10,
+      "category": "moderate",
+      "nestingDepth": 4
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 132,
+      "functionName": "for",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 3
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 133,
+      "functionName": "if",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 137,
+      "functionName": "if",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 142,
+      "functionName": "if",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 145,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 149,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 160,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 216,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 224,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 232,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 251,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 254,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 259,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 262,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 267,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 323,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 331,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 337,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 343,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 349,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 360,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 375,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/debt-accountant.ts",
+      "line": 381,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 400,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 51,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 61,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 78,
+      "functionName": "for",
+      "complexity": 6,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 92,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 114,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 122,
+      "functionName": "for",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 136,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 166,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 249,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 256,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 262,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 273,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 279,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 319,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 324,
+      "functionName": "for",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 332,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 340,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 343,
+      "functionName": "for",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 351,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 400,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 416,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/duplication-detective.ts",
+      "line": 422,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 673,
+      "functionName": "processOrder",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 689,
+      "functionName": "processOrder",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 694,
+      "functionName": "applyDiscount",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 699,
+      "functionName": "calculateShipping",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 713,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 60,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 71,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 90,
+      "functionName": "for",
+      "complexity": 6,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 104,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 130,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 148,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 163,
+      "functionName": "for",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 205,
+      "functionName": "for",
+      "complexity": 9,
+      "category": "moderate",
+      "nestingDepth": 3
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 207,
+      "functionName": "for",
+      "complexity": 6,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 208,
+      "functionName": "if",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 211,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 213,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 225,
+      "functionName": "if",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 253,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 331,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 348,
+      "functionName": "for",
+      "complexity": 9,
+      "category": "moderate",
+      "nestingDepth": 4
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 354,
+      "functionName": "while",
+      "complexity": 6,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 381,
+      "functionName": "for",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 389,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 417,
+      "functionName": "for",
+      "complexity": 9,
+      "category": "moderate",
+      "nestingDepth": 3
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 419,
+      "functionName": "for",
+      "complexity": 6,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 420,
+      "functionName": "if",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 423,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 425,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 436,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 515,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 522,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 526,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 531,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 553,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 569,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 579,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 595,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 644,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 647,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 654,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 657,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 664,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 673,
+      "functionName": "processOrder",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 674,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 677,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 689,
+      "functionName": "processOrder",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 694,
+      "functionName": "applyDiscount",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 695,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 699,
+      "functionName": "calculateShipping",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 713,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 729,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/maintainability-inspector.ts",
+      "line": 735,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 470,
+      "functionName": "fetchUserData",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 475,
+      "functionName": "fetchUserData",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 496,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 49,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 59,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 76,
+      "functionName": "for",
+      "complexity": 6,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 90,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 113,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 135,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 203,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 259,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 285,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 343,
+      "functionName": "if",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 355,
+      "functionName": "for",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 380,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 384,
+      "functionName": "if",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 388,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 396,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 442,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 448,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 456,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 462,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 470,
+      "functionName": "fetchUserData",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 475,
+      "functionName": "fetchUserData",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 478,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 482,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 496,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 512,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/reliability-analyst.ts",
+      "line": 518,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 279,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 31,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 69,
+      "functionName": "for",
+      "complexity": 10,
+      "category": "moderate",
+      "nestingDepth": 3
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 72,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 98,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 103,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 127,
+      "functionName": "for",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 178,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 182,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 186,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 234,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 240,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 247,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 251,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 263,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 279,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 294,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/review-metrics-analyst.ts",
+      "line": 300,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 374,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 35,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 45,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 62,
+      "functionName": "for",
+      "complexity": 6,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 76,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 95,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 265,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 269,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 273,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 306,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 311,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 318,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 321,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 328,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 336,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 342,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 350,
+      "functionName": "for",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 351,
+      "functionName": "for",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 352,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 363,
+      "functionName": "for",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 374,
+      "functionName": "main",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 389,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/agents/sustainability-evaluator.ts",
+      "line": 395,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 440,
+      "functionName": "main",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 83,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 99,
+      "functionName": "if",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 115,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 122,
+      "functionName": "for",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 2
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 124,
+      "functionName": "if",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 128,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 136,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 143,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 189,
+      "functionName": "catch",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 200,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 213,
+      "functionName": "if",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 230,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 254,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 261,
+      "functionName": "if",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 271,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 279,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 284,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 313,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 345,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 356,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 359,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 362,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 364,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 374,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 377,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 380,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 383,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 386,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 390,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 396,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 424,
+      "functionName": "if",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 440,
+      "functionName": "main",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 451,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "analysis/orchestrator.ts",
+      "line": 457,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/__tests__/integration/pagination.integration.test.ts",
+      "line": 42,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/__tests__/integration/pagination.integration.test.ts",
+      "line": 49,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/__tests__/integration/pagination.integration.test.ts",
+      "line": 59,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/__tests__/integration/pagination.integration.test.ts",
+      "line": 69,
+      "functionName": "while",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/src/__tests__/integration/pagination.integration.test.ts",
+      "line": 86,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/__tests__/integration/pagination.integration.test.ts",
+      "line": 98,
+      "functionName": "if",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/errors/AppError.ts",
+      "line": 4,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/errors/AppError.ts",
+      "line": 17,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/errors/AppError.ts",
+      "line": 23,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/errors/AppError.ts",
+      "line": 29,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/errors/AppError.ts",
+      "line": 35,
+      "functionName": "constructor",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/index.ts",
+      "line": 46,
+      "functionName": "if",
+      "complexity": 10,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "backend/src/index.ts",
+      "line": 103,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/middleware/errorHandler.ts",
+      "line": 5,
+      "functionName": "errorHandler",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/src/middleware/errorHandler.ts",
+      "line": 13,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/middleware/errorHandler.ts",
+      "line": 21,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/middleware/errorHandler.ts",
+      "line": 30,
+      "functionName": "if",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/src/middleware/errorHandler.ts",
+      "line": 36,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/middleware/prismaErrorMiddleware.ts",
+      "line": 15,
+      "functionName": "defineExtension",
+      "complexity": 10,
+      "category": "moderate",
+      "nestingDepth": 3
+    },
+    {
+      "file": "backend/src/middleware/prismaErrorMiddleware.ts",
+      "line": 22,
+      "functionName": "catch",
+      "complexity": 9,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "backend/src/middleware/prismaErrorMiddleware.ts",
+      "line": 24,
+      "functionName": "if",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/src/middleware/prismaErrorMiddleware.ts",
+      "line": 25,
+      "functionName": "if",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/middleware/prismaErrorMiddleware.ts",
+      "line": 32,
+      "functionName": "if",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/middleware/prismaErrorMiddleware.ts",
+      "line": 38,
+      "functionName": "if",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/prisma.ts",
+      "line": 9,
+      "functionName": "createPrismaClient",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/orient.ts",
+      "line": 51,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/orient.ts",
+      "line": 100,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/orient.ts",
+      "line": 115,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/postdo.ts",
+      "line": 28,
+      "functionName": "if",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/src/routes/postdo.ts",
+      "line": 31,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/postdo.ts",
+      "line": 36,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/postdo.ts",
+      "line": 43,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/postdo.ts",
+      "line": 74,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/reviews.ts",
+      "line": 22,
+      "functionName": "calculateDailyMetrics",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/reviews.ts",
+      "line": 95,
+      "functionName": "calculateWeeklyMetrics",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/reviews.ts",
+      "line": 22,
+      "functionName": "calculateDailyMetrics",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/reviews.ts",
+      "line": 95,
+      "functionName": "calculateWeeklyMetrics",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/reviews.ts",
+      "line": 247,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/reviews.ts",
+      "line": 275,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/tasks.ts",
+      "line": 92,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/tasks.ts",
+      "line": 101,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/tasks.ts",
+      "line": 142,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/tasks.ts",
+      "line": 173,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/tasks.ts",
+      "line": 177,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/tasks.ts",
+      "line": 284,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/routes/tasks.ts",
+      "line": 466,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/services/llm.ts",
+      "line": 11,
+      "functionName": "setAnthropicClient",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/services/llm.ts",
+      "line": 48,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/services/llm.ts",
+      "line": 116,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/services/llm.ts",
+      "line": 134,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/services/llm.ts",
+      "line": 154,
+      "functionName": "switch",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/services/llm.ts",
+      "line": 201,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/services/llm.ts",
+      "line": 215,
+      "functionName": "catch",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/services/timery.ts",
+      "line": 39,
+      "functionName": "catch",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/services/timery.ts",
+      "line": 49,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/services/timery.ts",
+      "line": 66,
+      "functionName": "catch",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/services/timery.ts",
+      "line": 75,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/services/timery.ts",
+      "line": 83,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/services/timery.ts",
+      "line": 92,
+      "functionName": "catch",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/utils/__tests__/retry.test.ts",
+      "line": 64,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/utils/retry.ts",
+      "line": 23,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/utils/retry.ts",
+      "line": 28,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/utils/retry.ts",
+      "line": 33,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/src/utils/retry.ts",
+      "line": 52,
+      "functionName": "for",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "backend/src/utils/retry.ts",
+      "line": 55,
+      "functionName": "catch",
+      "complexity": 7,
+      "category": "moderate",
+      "nestingDepth": 2
+    },
+    {
+      "file": "backend/src/utils/retry.ts",
+      "line": 62,
+      "functionName": "if",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/src/utils/retry.ts",
+      "line": 64,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/test-enrichment-transaction.ts",
+      "line": 3,
+      "functionName": "testEnrichment",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/test-enrichment-transaction.ts",
+      "line": 3,
+      "functionName": "testEnrichment",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/test-enrichment-transaction.ts",
+      "line": 37,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/test-pagination.ts",
+      "line": 3,
+      "functionName": "testPagination",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/test-pagination.ts",
+      "line": 3,
+      "functionName": "testPagination",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/test-pagination.ts",
+      "line": 9,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/test-pagination.ts",
+      "line": 58,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/test-pagination.ts",
+      "line": 66,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/test-prisma-middleware.ts",
+      "line": 4,
+      "functionName": "testMiddleware",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/test-prisma-middleware.ts",
+      "line": 4,
+      "functionName": "testMiddleware",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/test-prisma-middleware.ts",
+      "line": 15,
+      "functionName": "catch",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/test-prisma-middleware.ts",
+      "line": 16,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/test-prisma-middleware.ts",
+      "line": 36,
+      "functionName": "catch",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/test-prisma-middleware.ts",
+      "line": 37,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/test-prisma-middleware.ts",
+      "line": 51,
+      "functionName": "catch",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/test-prisma-middleware.ts",
+      "line": 52,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/test-prisma-middleware.ts",
+      "line": 64,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/tests/integration/tasks.test.ts",
+      "line": 15,
+      "functionName": "if",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/tests/integration/tasks.test.ts",
+      "line": 219,
+      "functionName": "for",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "backend/tests/integration/tasks.test.ts",
+      "line": 284,
+      "functionName": "while",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "backend/tests/integration/tasks.test.ts",
+      "line": 295,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/App.tsx",
+      "line": 15,
+      "functionName": "App",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/App.tsx",
+      "line": 15,
+      "functionName": "App",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CalendarToolbar.tsx",
+      "line": 6,
+      "functionName": "navigate",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CalendarToolbar.tsx",
+      "line": 10,
+      "functionName": "changeView",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CompleteTaskModal.tsx",
+      "line": 39,
+      "functionName": "handleSubmit",
+      "complexity": 6,
+      "category": "moderate",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/components/CompleteTaskModal.tsx",
+      "line": 52,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CompleteTaskModal.tsx",
+      "line": 68,
+      "functionName": "catch",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 41,
+      "functionName": "addWin",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 48,
+      "functionName": "removeWin",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 52,
+      "functionName": "addMiss",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 59,
+      "functionName": "removeMiss",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 63,
+      "functionName": "addLesson",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 70,
+      "functionName": "removeLesson",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 74,
+      "functionName": "addGoal",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 81,
+      "functionName": "removeGoal",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 85,
+      "functionName": "handleSubmit",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 112,
+      "functionName": "handleKeyDown",
+      "complexity": 6,
+      "category": "moderate",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 90,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 105,
+      "functionName": "catch",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 113,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 171,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 222,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 273,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/CreateReviewModal.tsx",
+      "line": 324,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/Layout.tsx",
+      "line": 73,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/LoadingSkeleton.tsx",
+      "line": 9,
+      "functionName": "renderSkeleton",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/components/LoadingSkeleton.tsx",
+      "line": 10,
+      "functionName": "switch",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/TaskActions.tsx",
+      "line": 38,
+      "functionName": "if",
+      "complexity": 12,
+      "category": "complex",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/TaskModal.tsx",
+      "line": 39,
+      "functionName": "handleSubmit",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/components/TaskModal.tsx",
+      "line": 86,
+      "functionName": "handleKeyDown",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/components/TaskModal.tsx",
+      "line": 26,
+      "functionName": "if",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/TaskModal.tsx",
+      "line": 52,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/TaskModal.tsx",
+      "line": 70,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/TaskModal.tsx",
+      "line": 73,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/TaskModal.tsx",
+      "line": 79,
+      "functionName": "catch",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/TaskModal.tsx",
+      "line": 87,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/Toast.tsx",
+      "line": 25,
+      "functionName": "getToastStyles",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/components/Toast.tsx",
+      "line": 38,
+      "functionName": "getIcon",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/components/Toast.tsx",
+      "line": 26,
+      "functionName": "switch",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/components/Toast.tsx",
+      "line": 39,
+      "functionName": "switch",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/contexts/ToastContext.tsx",
+      "line": 66,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/__tests__/useDailyPlans-options.test.tsx",
+      "line": 20,
+      "functionName": "createWrapper",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/__tests__/useTasks-options.test.tsx",
+      "line": 20,
+      "functionName": "createWrapper",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useDailyPlans.ts",
+      "line": 31,
+      "functionName": "useTodayPlan",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/hooks/useDailyPlans.ts",
+      "line": 51,
+      "functionName": "useDailyPlan",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useDailyPlans.ts",
+      "line": 61,
+      "functionName": "useCreateDailyPlan",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useDailyPlans.ts",
+      "line": 73,
+      "functionName": "useUpdateDailyPlanReflection",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useDailyPlans.ts",
+      "line": 13,
+      "functionName": "prefetchTodayPlan",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useDailyPlans.ts",
+      "line": 20,
+      "functionName": "prefetchDailyPlan",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useDailyPlans.ts",
+      "line": 31,
+      "functionName": "useTodayPlan",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/hooks/useDailyPlans.ts",
+      "line": 37,
+      "functionName": "catch",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/hooks/useDailyPlans.ts",
+      "line": 39,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useDailyPlans.ts",
+      "line": 51,
+      "functionName": "useDailyPlan",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useDailyPlans.ts",
+      "line": 61,
+      "functionName": "useCreateDailyPlan",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useDailyPlans.ts",
+      "line": 73,
+      "functionName": "useUpdateDailyPlanReflection",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useDocumentVisibility.ts",
+      "line": 7,
+      "functionName": "useDocumentVisibility",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/hooks/useDocumentVisibility.ts",
+      "line": 8,
+      "functionName": "getVisibilityState",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/hooks/useDocumentVisibility.ts",
+      "line": 22,
+      "functionName": "handleChange",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useDocumentVisibility.ts",
+      "line": 7,
+      "functionName": "useDocumentVisibility",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/hooks/useDocumentVisibility.ts",
+      "line": 9,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useDocumentVisibility.ts",
+      "line": 18,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/usePostDoLogs.ts",
+      "line": 11,
+      "functionName": "usePostDoLogs",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/usePostDoLogs.ts",
+      "line": 11,
+      "functionName": "usePostDoLogs",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useReviews.ts",
+      "line": 28,
+      "functionName": "useReviews",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useReviews.ts",
+      "line": 38,
+      "functionName": "useFlatReviews",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useReviews.ts",
+      "line": 48,
+      "functionName": "useReview",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useReviews.ts",
+      "line": 56,
+      "functionName": "useCreateDailyReview",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useReviews.ts",
+      "line": 67,
+      "functionName": "useCreateWeeklyReview",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useReviews.ts",
+      "line": 16,
+      "functionName": "prefetchReviews",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useReviews.ts",
+      "line": 28,
+      "functionName": "useReviews",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useReviews.ts",
+      "line": 38,
+      "functionName": "useFlatReviews",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useReviews.ts",
+      "line": 48,
+      "functionName": "useReview",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useReviews.ts",
+      "line": 56,
+      "functionName": "useCreateDailyReview",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useReviews.ts",
+      "line": 67,
+      "functionName": "useCreateWeeklyReview",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 55,
+      "functionName": "useTasks",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 67,
+      "functionName": "useTasksInfinite",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 80,
+      "functionName": "useFlatTasks",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 90,
+      "functionName": "useTask",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 100,
+      "functionName": "useCreateTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 117,
+      "functionName": "useUpdateTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 136,
+      "functionName": "useDeleteTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 153,
+      "functionName": "useScheduleTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 171,
+      "functionName": "useUnscheduleTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 188,
+      "functionName": "useEnrichTask",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 199,
+      "functionName": "useActivateTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 216,
+      "functionName": "useCompleteTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 30,
+      "functionName": "prefetchTasks",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 55,
+      "functionName": "useTasks",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 67,
+      "functionName": "useTasksInfinite",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 80,
+      "functionName": "useFlatTasks",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 90,
+      "functionName": "useTask",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 100,
+      "functionName": "useCreateTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 117,
+      "functionName": "useUpdateTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 136,
+      "functionName": "useDeleteTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 153,
+      "functionName": "useScheduleTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 171,
+      "functionName": "useUnscheduleTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 188,
+      "functionName": "useEnrichTask",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 199,
+      "functionName": "useActivateTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTasks.ts",
+      "line": 216,
+      "functionName": "useCompleteTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTodoist.ts",
+      "line": 19,
+      "functionName": "useTodoistPending",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTodoist.ts",
+      "line": 27,
+      "functionName": "useImportTodoistTasks",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTodoist.ts",
+      "line": 12,
+      "functionName": "prefetchTodoistPending",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTodoist.ts",
+      "line": 19,
+      "functionName": "useTodoistPending",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/hooks/useTodoist.ts",
+      "line": 27,
+      "functionName": "useImportTodoistTasks",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/lib/api.ts",
+      "line": 57,
+      "functionName": "if",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/lib/api.ts",
+      "line": 136,
+      "functionName": "catch",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/lib/api.ts",
+      "line": 154,
+      "functionName": "catch",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/lib/badgeUtils.ts",
+      "line": 7,
+      "functionName": "switch",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/lib/badgeUtils.ts",
+      "line": 25,
+      "functionName": "switch",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/lib/dateUtils.ts",
+      "line": 175,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/lib/dateUtils.ts",
+      "line": 178,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/lib/designTokens.ts",
+      "line": 184,
+      "functionName": "getCategoryStyle",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/lib/designTokens.ts",
+      "line": 189,
+      "functionName": "getPriorityStyle",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/lib/designTokens.ts",
+      "line": 194,
+      "functionName": "getEnergyStyle",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/lib/designTokens.ts",
+      "line": 199,
+      "functionName": "getStatusStyle",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/lib/designTokens.ts",
+      "line": 204,
+      "functionName": "getEnergyMatchStyle",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 272,
+      "functionName": "handleScheduleTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 285,
+      "functionName": "handleUnscheduleTask",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 2
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 298,
+      "functionName": "handleEventDrop",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 337,
+      "functionName": "handleEventResize",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 425,
+      "functionName": "handleDragStart",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 429,
+      "functionName": "handleDragOver",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 433,
+      "functionName": "handleDrop",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 444,
+      "functionName": "handleNavigate",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 157,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 169,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 192,
+      "functionName": "if",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 195,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 205,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 215,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 225,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 241,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 250,
+      "functionName": "if",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 252,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 264,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 279,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 292,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 302,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 309,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 331,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 341,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 348,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 360,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 377,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 389,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 392,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 395,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 398,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 454,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 470,
+      "functionName": "if",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 478,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/CalendarPage.tsx",
+      "line": 485,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/ClarifyPage.tsx",
+      "line": 42,
+      "functionName": "handleSelectTask",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/ClarifyPage.tsx",
+      "line": 50,
+      "functionName": "handleEnrichTask",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/ClarifyPage.tsx",
+      "line": 77,
+      "functionName": "handleSaveTask",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/ClarifyPage.tsx",
+      "line": 69,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/ClarifyPage.tsx",
+      "line": 109,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/OrientEastPage.tsx",
+      "line": 86,
+      "functionName": "handleSubmit",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/OrientEastPage.tsx",
+      "line": 90,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/OrientEastPage.tsx",
+      "line": 141,
+      "functionName": "catch",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/OrientEastPage.tsx",
+      "line": 147,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/OrientEastPage.tsx",
+      "line": 157,
+      "functionName": "if",
+      "complexity": 8,
+      "category": "moderate",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/OrientWestPage.tsx",
+      "line": 31,
+      "functionName": "handleSubmit",
+      "complexity": 5,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/OrientWestPage.tsx",
+      "line": 34,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/OrientWestPage.tsx",
+      "line": 60,
+      "functionName": "catch",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/OrientWestPage.tsx",
+      "line": 66,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/OrientWestPage.tsx",
+      "line": 75,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/OrientWestPage.tsx",
+      "line": 99,
+      "functionName": "if",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/ReviewsPage.tsx",
+      "line": 43,
+      "functionName": "handleCreateReview",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/ReviewsPage.tsx",
+      "line": 58,
+      "functionName": "toggleSection",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/ReviewsPage.tsx",
+      "line": 84,
+      "functionName": "formatDate",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/ReviewsPage.tsx",
+      "line": 92,
+      "functionName": "formatPeriod",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/ReviewsPage.tsx",
+      "line": 99,
+      "functionName": "getExecutionRateChartData",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/ReviewsPage.tsx",
+      "line": 109,
+      "functionName": "getCategoryBalanceChartData",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/ReviewsPage.tsx",
+      "line": 118,
+      "functionName": "getDeepWorkTrendData",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/ReviewsPage.tsx",
+      "line": 45,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/ReviewsPage.tsx",
+      "line": 52,
+      "functionName": "catch",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/ReviewsPage.tsx",
+      "line": 141,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/ReviewsPage.tsx",
+      "line": 152,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/TasksPage.tsx",
+      "line": 50,
+      "functionName": "formatDuration",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/TasksPage.tsx",
+      "line": 58,
+      "functionName": "handleActivateTask",
+      "complexity": 2,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/TasksPage.tsx",
+      "line": 69,
+      "functionName": "handleCompleteTask",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/TasksPage.tsx",
+      "line": 85,
+      "functionName": "handleEditTask",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/pages/TasksPage.tsx",
+      "line": 101,
+      "functionName": "handleDeleteTask",
+      "complexity": 4,
+      "category": "simple",
+      "nestingDepth": 2
+    },
+    {
+      "file": "frontend/src/pages/TasksPage.tsx",
+      "line": 63,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/TasksPage.tsx",
+      "line": 79,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/TasksPage.tsx",
+      "line": 95,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/TasksPage.tsx",
+      "line": 107,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/TasksPage.tsx",
+      "line": 346,
+      "functionName": "catch",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/TodayPage.tsx",
+      "line": 53,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/pages/__tests__/CalendarPage-passive-refresh.test.tsx",
+      "line": 48,
+      "functionName": "createWrapper",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    },
+    {
+      "file": "frontend/src/reportWebVitals.ts",
+      "line": 3,
+      "functionName": "reportWebVitals",
+      "complexity": 3,
+      "category": "simple",
+      "nestingDepth": 1
+    },
+    {
+      "file": "frontend/src/reportWebVitals.ts",
+      "line": 4,
+      "functionName": "if",
+      "complexity": 1,
+      "category": "simple",
+      "nestingDepth": 0
+    }
+  ],
+  "timestamp": "2025-11-12T07:20:44.409Z"
+}
