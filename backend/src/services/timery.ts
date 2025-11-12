@@ -152,7 +152,10 @@ export async function getTimeEntriesForDateRange(startDate: Date, endDate: Date)
 // Get all projects to map project_id → project name
 async function getProjects(): Promise<Map<number, string>> {
   try {
-    const response = await togglAPI.get('/me/projects');
+    const response = await withRetry(() =>
+      togglAPI.get('/me/projects')
+    );
+
     const projects: TogglProject[] = response.data || [];
 
     const projectMap = new Map<number, string>();
