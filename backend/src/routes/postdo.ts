@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { startOfDay, endOfDay } from 'date-fns';
 import { asyncHandler } from '../middleware/asyncHandler';
@@ -21,7 +22,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const { startDate, endDate, category } = validatedQuery;
 
   // Build where clause
-  const where: any = {};
+  const where: Prisma.PostDoLogWhereInput = {};
 
   // Add date range filter if provided
   if (startDate || endDate) {
