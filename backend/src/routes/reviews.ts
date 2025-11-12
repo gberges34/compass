@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
+import { Prisma, ReviewType } from '@prisma/client';
 import { z } from 'zod';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, subDays } from 'date-fns';
 import { asyncHandler } from '../middleware/asyncHandler';
@@ -56,21 +57,21 @@ async function calculateDailyMetrics(date: Date) {
 
   // Calculate deep work hours (tasks with HIGH energy)
   const deepWorkMinutes = postDoLogs
-    .filter(log => log.task.energyRequired === 'HIGH')
-    .reduce((sum, log) => sum + log.actualDuration, 0);
+    .filter((log: any) => log.task.energyRequired === 'HIGH')
+    .reduce((sum: number, log: any) => sum + log.actualDuration, 0);
 
   const deepWorkHours = Math.round((deepWorkMinutes / 60) * 10) / 10;
 
   // Calculate category balance
   const categoryBreakdown: Record<string, number> = {};
-  postDoLogs.forEach(log => {
+  postDoLogs.forEach((log: any) => {
     const category = log.task.category;
     categoryBreakdown[category] = (categoryBreakdown[category] || 0) + log.actualDuration;
   });
 
   // Total tracked time in minutes
   const totalTrackedTime = Object.values(categoryBreakdown)
-    .reduce((sum, mins) => sum + mins, 0);
+    .reduce((sum: number, mins: number) => sum + mins, 0);
 
   // Calculate time coverage (assuming 16 waking hours = 960 minutes)
   const wakingMinutes = 960;
@@ -114,7 +115,7 @@ async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date) {
   });
 
   const totalPlannedOutcomes = dailyPlans.reduce(
-    (sum, plan) => sum + plan.topOutcomes.length,
+    (sum: number, plan: any) => sum + plan.topOutcomes.length,
     0
   );
 
@@ -135,21 +136,21 @@ async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date) {
 
   // Calculate deep work hours
   const deepWorkMinutes = postDoLogs
-    .filter(log => log.task.energyRequired === 'HIGH')
-    .reduce((sum, log) => sum + log.actualDuration, 0);
+    .filter((log: any) => log.task.energyRequired === 'HIGH')
+    .reduce((sum: number, log: any) => sum + log.actualDuration, 0);
 
   const deepWorkHours = Math.round((deepWorkMinutes / 60) * 10) / 10;
 
   // Calculate category balance
   const categoryBreakdown: Record<string, number> = {};
-  postDoLogs.forEach(log => {
+  postDoLogs.forEach((log: any) => {
     const category = log.task.category;
     categoryBreakdown[category] = (categoryBreakdown[category] || 0) + log.actualDuration;
   });
 
   // Total tracked time
   const totalTrackedTime = Object.values(categoryBreakdown)
-    .reduce((sum, mins) => sum + mins, 0);
+    .reduce((sum: number, mins: number) => sum + mins, 0);
 
   // 7 days × 16 hours = 6720 minutes
   const weeklyWakingMinutes = 7 * 960;
@@ -241,10 +242,10 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
     100
   );
 
-  const where: any = {};
-  if (type) where.type = type as any;
+  const where: Prisma.ReviewWhereInput = {};
+  if (type) where.type = type as ReviewType;
   if (cursor) {
-    where.id = { lt: cursor }; // Use 'lt' for DESC ordering
+    where.id = { lt: cursor as string }; // Use 'lt' for DESC ordering
   }
 
   const reviews = await prisma.review.findMany({

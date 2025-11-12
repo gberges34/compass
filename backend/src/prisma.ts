@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { prismaErrorExtension } from './middleware/prismaErrorMiddleware';
+import { env } from './config/env';
 
 // Singleton pattern for Prisma Client
 const globalForPrisma = global as unknown as { prisma: ReturnType<typeof createPrismaClient> };
@@ -7,7 +8,7 @@ const globalForPrisma = global as unknown as { prisma: ReturnType<typeof createP
 // Create Prisma client with error handling extension
 const createPrismaClient = () => {
   const client = new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
   // Apply error handling extension (Prisma 6 style)
@@ -16,4 +17,4 @@ const createPrismaClient = () => {
 
 export const prisma = globalForPrisma.prisma || createPrismaClient();
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+if (env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;

@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { NotFoundError } from '../errors/AppError';
 
 /**
@@ -18,9 +19,9 @@ export const prismaErrorExtension = Prisma.defineExtension({
       async $allOperations({ operation, model, args, query }) {
         try {
           return await query(args);
-        } catch (error) {
+        } catch (error: unknown) {
           // Convert Prisma P2025 to NotFoundError
-          if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          if (error instanceof PrismaClientKnownRequestError) {
             if (error.code === 'P2025') {
               // Extract model name from error meta
               const modelName = error.meta?.modelName || model || 'Record';

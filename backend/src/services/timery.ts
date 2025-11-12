@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { env } from '../config/env';
 
 const togglAPI = axios.create({
   baseURL: 'https://api.track.toggl.com/api/v9',
   auth: {
-    username: process.env.TOGGL_API_TOKEN || '',
+    username: env.TOGGL_API_TOKEN || '',
     password: 'api_token'
   },
   headers: {

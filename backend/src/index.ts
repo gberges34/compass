@@ -1,6 +1,12 @@
+import dotenv from 'dotenv';
+
+// Load .env before validating (must be first)
+dotenv.config();
+
+// MUST be first import after dotenv - validates environment before anything else
+import { env } from './config/env';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import tasksRouter from './routes/tasks';
 import todoistRouter from './routes/todoist';
 import orientRouter from './routes/orient';
@@ -9,14 +15,12 @@ import postdoRouter from './routes/postdo';
 import { getCurrentTimestamp } from './utils/dateHelpers';
 import { errorHandler } from './middleware/errorHandler';
 
-dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = env.PORT;
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: env.FRONTEND_URL,
   credentials: true
 }));
 app.use(express.json());
@@ -96,7 +100,7 @@ app.use(errorHandler);
 export { app };
 
 // Only start server if not in test environment
-if (process.env.NODE_ENV !== 'test') {
+if (env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`🚀 Compass API server running on port ${PORT}`);
   });

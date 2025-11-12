@@ -1,14 +1,14 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import type { Task } from '../types';
 import { useFlatTasks } from '../hooks/useTasks';
 import { useTodayPlan } from '../hooks/useDailyPlans';
 import { usePostDoLogs } from '../hooks/usePostDoLogs';
-import type { DailyPlan, Task, PostDoLog } from '../types';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
-import { getPriorityStyle, getEnergyStyle } from '../lib/designTokens';
+import { getEnergyStyle } from '../lib/designTokens';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
 import { getTodayDateString, formatLongDate } from '../lib/dateUtils';
 
@@ -34,7 +34,7 @@ const TodayPage: React.FC = () => {
 
   // Sort and limit next tasks
   const nextTasks = useMemo(() => {
-    const priorityOrder = { MUST: 0, SHOULD: 1, COULD: 2, MAYBE: 3 };
+    const priorityOrder: Record<string, number> = { MUST: 0, SHOULD: 1, COULD: 2, MAYBE: 3 };
     const sorted = [...allNextTasks].sort(
       (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
     );
@@ -194,7 +194,7 @@ const TodayPage: React.FC = () => {
         <div className="p-24">
           {activeTasks.length > 0 ? (
             <div className="space-y-12">
-              {activeTasks.map((task) => (
+              {activeTasks.map((task: Task) => (
                 <div
                   key={task.id}
                   className="border border-mint bg-mint rounded-card p-16 hover:shadow-e02 transition-shadow duration-micro"

@@ -8,6 +8,7 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import ToggleSwitch from '../components/ToggleSwitch';
 import { formatLongDate } from '../lib/dateUtils';
 
 const OrientEastPage: React.FC = () => {
@@ -266,9 +267,9 @@ const OrientEastPage: React.FC = () => {
             onChange={(e) => setEnergyLevel(e.target.value as Energy)}
             className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
           >
-            <option value="HIGH">⚡ HIGH - Fully energized and ready</option>
-            <option value="MEDIUM">⚖️ MEDIUM - Normal energy levels</option>
-            <option value="LOW">🔋 LOW - Running on reserve</option>
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
           </select>
         </Card>
 
@@ -310,17 +311,13 @@ const OrientEastPage: React.FC = () => {
 
         {/* Deep Work Block #2 (Optional) */}
         <Card padding="large">
-          <div className="flex items-center justify-between mb-16">
+          <div className="flex items-start justify-between mb-16">
             <h2 className="text-h2 text-ink">Deep Work Block #2</h2>
-            <label className="flex items-center space-x-8 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={enableDwb2}
-                onChange={(e) => setEnableDwb2(e.target.checked)}
-                className="w-20 h-20 text-action rounded focus:ring-2 focus:ring-action"
-              />
-              <span className="text-small font-medium text-ink">Enable</span>
-            </label>
+            <ToggleSwitch
+              checked={enableDwb2}
+              onChange={setEnableDwb2}
+              ariaLabel="Enable Deep Work Block 2"
+            />
           </div>
           {enableDwb2 && (
             <div className="space-y-16">
@@ -354,68 +351,64 @@ const OrientEastPage: React.FC = () => {
 
         {/* Admin Block (Optional) */}
         <Card padding="large">
-          <div className="flex items-center justify-between mb-16">
+          <div className="flex items-start justify-between mb-16">
             <h2 className="text-h2 text-ink">Admin Block</h2>
-            <label className="flex items-center space-x-8 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={enableAdmin}
-                onChange={(e) => setEnableAdmin(e.target.checked)}
-                className="w-20 h-20 text-action rounded focus:ring-2 focus:ring-action"
-              />
-              <span className="text-small font-medium text-ink">Enable</span>
-            </label>
+            <ToggleSwitch
+              checked={enableAdmin}
+              onChange={setEnableAdmin}
+              ariaLabel="Enable Admin Block"
+            />
           </div>
           {enableAdmin && (
-            <div className="grid grid-cols-2 gap-16">
-              <Input
-                type="time"
-                label="Start Time"
-                value={adminStart}
-                onChange={(e) => setAdminStart(e.target.value)}
-                fullWidth
-              />
-              <Input
-                type="time"
-                label="End Time"
-                value={adminEnd}
-                onChange={(e) => setAdminEnd(e.target.value)}
-                fullWidth
-              />
+            <div className="space-y-16">
+              <div className="grid grid-cols-2 gap-16">
+                <Input
+                  type="time"
+                  label="Start Time"
+                  value={adminStart}
+                  onChange={(e) => setAdminStart(e.target.value)}
+                  fullWidth
+                />
+                <Input
+                  type="time"
+                  label="End Time"
+                  value={adminEnd}
+                  onChange={(e) => setAdminEnd(e.target.value)}
+                  fullWidth
+                />
+              </div>
             </div>
           )}
         </Card>
 
         {/* Buffer Block (Optional) */}
         <Card padding="large">
-          <div className="flex items-center justify-between mb-16">
+          <div className="flex items-start justify-between mb-16">
             <h2 className="text-h2 text-ink">Buffer Block</h2>
-            <label className="flex items-center space-x-8 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={enableBuffer}
-                onChange={(e) => setEnableBuffer(e.target.checked)}
-                className="w-20 h-20 text-action rounded focus:ring-2 focus:ring-action"
-              />
-              <span className="text-small font-medium text-ink">Enable</span>
-            </label>
+            <ToggleSwitch
+              checked={enableBuffer}
+              onChange={setEnableBuffer}
+              ariaLabel="Enable Buffer Block"
+            />
           </div>
           {enableBuffer && (
-            <div className="grid grid-cols-2 gap-16">
-              <Input
-                type="time"
-                label="Start Time"
-                value={bufferStart}
-                onChange={(e) => setBufferStart(e.target.value)}
-                fullWidth
-              />
-              <Input
-                type="time"
-                label="End Time"
-                value={bufferEnd}
-                onChange={(e) => setBufferEnd(e.target.value)}
-                fullWidth
-              />
+            <div className="space-y-16">
+              <div className="grid grid-cols-2 gap-16">
+                <Input
+                  type="time"
+                  label="Start Time"
+                  value={bufferStart}
+                  onChange={(e) => setBufferStart(e.target.value)}
+                  fullWidth
+                />
+                <Input
+                  type="time"
+                  label="End Time"
+                  value={bufferEnd}
+                  onChange={(e) => setBufferEnd(e.target.value)}
+                  fullWidth
+                />
+              </div>
             </div>
           )}
         </Card>

@@ -1,17 +1,22 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
+import { Prisma, $Enums } from '@prisma/client';
 import { z } from 'zod';
+
+// Type aliases for Prisma enums
+type TaskStatus = $Enums.TaskStatus;
+type Priority = $Enums.Priority;
+type Category = $Enums.Category;
 import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { enrichTask } from '../services/llm';
 import { calculateTimeOfDay, getDayOfWeek } from '../utils/timeUtils';
 import { getCurrentTimestamp, dateToISO } from '../utils/dateHelpers';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
-import type { PaginationResponse } from '@compass/dto/pagination';
-import { Prisma, $Enums } from '@prisma/client';
+import { env } from '../config/env';
 
 // Development-only logging
-const DEBUG = process.env.NODE_ENV === 'development';
+const DEBUG = env.NODE_ENV === 'development';
 const log = DEBUG ? console.log : () => {};
 
 const router = Router();
@@ -57,13 +62,10 @@ const completeTaskSchema = z.object({
 });
 
 // GET /api/tasks - List tasks with filters
-const listTasksQuerySchema = z.object({
-  status: z.nativeEnum($Enums.TaskStatus).optional(),
-  priority: z.nativeEnum($Enums.Priority).optional(),
-  category: z.nativeEnum($Enums.Category).optional(),
-  scheduledDate: z.string().datetime().optional(),
-  cursor: z.string().uuid().optional(),
-  limit: z.coerce.number().min(1).max(100).default(50),
+// Pagination schema
+const paginationSchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().min(1).default(50).transform(val => Math.min(val, 100)),
 });
 
 // GET /api/tasks - List tasks with filters and pagination
@@ -74,11 +76,11 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 
   const where: Prisma.TaskWhereInput = {};
 
-  if (query.status) where.status = query.status;
-  if (query.priority) where.priority = query.priority;
-  if (query.category) where.category = query.category;
-  if (query.scheduledDate) {
-    const date = new Date(query.scheduledDate);
+  if (status) where.status = status as TaskStatus;
+  if (priority) where.priority = priority as Priority;
+  if (category) where.category = category as Category;
+  if (scheduledDate) {
+    const date = new Date(scheduledDate as string);
     where.scheduledStart = {
       gte: startOfDay(date),
       lte: endOfDay(date),
@@ -86,8 +88,8 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Add cursor filter
-  if (query.cursor) {
-    where.id = { gt: query.cursor };
+  if (pagination.cursor) {
+    where.id = { gt: pagination.cursor };
   }
 
   log('[GET /tasks] Query where clause:', JSON.stringify(where));
@@ -112,12 +114,10 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 
   log('[GET /tasks] Found tasks:', results.length, 'hasMore:', hasMore);
 
-  const response: PaginationResponse<typeof results[number]> = {
+  res.json({
     items: results,
     nextCursor,
-  };
-
-  res.json(response);
+  });
 }));
 
 // GET /api/tasks/:id - Get single task
