@@ -8,6 +8,7 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import ToggleSwitch from '../components/ToggleSwitch';
 import { formatLongDate } from '../lib/dateUtils';
 
 const OrientEastPage: React.FC = () => {
@@ -312,15 +313,11 @@ const OrientEastPage: React.FC = () => {
         <Card padding="large">
           <div className="flex items-center justify-between mb-16">
             <h2 className="text-h2 text-ink">Deep Work Block #2</h2>
-            <label className="flex items-center space-x-8 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={enableDwb2}
-                onChange={(e) => setEnableDwb2(e.target.checked)}
-                className="w-20 h-20 text-action rounded focus:ring-2 focus:ring-action"
-              />
-              <span className="text-small font-medium text-ink">Enable</span>
-            </label>
+            <ToggleSwitch
+              checked={enableDwb2}
+              onChange={setEnableDwb2}
+              ariaLabel="Enable Deep Work Block 2"
+            />
           </div>
           {enableDwb2 && (
             <div className="space-y-16">
