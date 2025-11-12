@@ -37,13 +37,16 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={`
-        relative inline-flex items-center
+        relative inline-flex items-center align-middle
         w-[44px] h-[24px] rounded-pill
         transition-all duration-standard
         focus:outline-none focus:ring-2 focus:ring-action focus:ring-offset-2
         disabled:opacity-50 disabled:cursor-not-allowed
         ${checked ? 'bg-mint' : 'bg-stone'}
       `}
+      style={{
+        transform: 'translateZ(0)',
+      }}
     >
       {/* Knob */}
       <span
@@ -52,10 +55,12 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
           w-[20px] h-[20px] rounded-pill
           bg-snow shadow-e01
           transition-all duration-standard
-          ${checked ? 'left-[22px] scale-105' : 'left-[2px]'}
+          ${checked ? 'left-[22px]' : 'left-[2px]'}
         `}
         style={{
           transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+          transform: 'translateZ(0)',
+          backfaceVisibility: 'hidden',
         }}
       />
     </button>
