@@ -267,9 +267,9 @@ const OrientEastPage: React.FC = () => {
             onChange={(e) => setEnergyLevel(e.target.value as Energy)}
             className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
           >
-            <option value="HIGH">⚡ HIGH - Fully energized and ready</option>
-            <option value="MEDIUM">⚖️ MEDIUM - Normal energy levels</option>
-            <option value="LOW">🔋 LOW - Running on reserve</option>
+            <option value="HIGH">HIGH - Fully energized and ready</option>
+            <option value="MEDIUM">MEDIUM - Normal energy levels</option>
+            <option value="LOW">LOW - Running on reserve</option>
           </select>
         </Card>
 
