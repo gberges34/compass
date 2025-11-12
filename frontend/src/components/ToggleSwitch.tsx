@@ -38,7 +38,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
       onKeyDown={handleKeyDown}
       className={`
         relative inline-flex items-center align-middle translate-y-[10px]
-        w-[44px] h-[24px] rounded-pill
+        w-[48px] h-[26px] rounded-pill
         transition-all duration-standard
         focus:outline-none focus:ring-2 focus:ring-action focus:ring-offset-2
         disabled:opacity-50 disabled:cursor-not-allowed
@@ -52,10 +52,10 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
       <span
         className={`
           absolute top-[2px]
-          w-[20px] h-[20px] rounded-pill
+          w-[22px] h-[22px] rounded-pill
           bg-snow shadow-e01
           transition-all duration-standard
-          ${checked ? 'left-[22px]' : 'left-[2px]'}
+          ${checked ? 'left-[24px]' : 'left-[2px]'}
         `}
         style={{
           transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
