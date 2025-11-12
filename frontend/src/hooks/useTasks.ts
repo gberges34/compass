@@ -121,14 +121,53 @@ export function useUpdateTask() {
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Task> }) =>
       api.updateTask(id, updates),
-    onError: (err: AxiosError) => {
-      console.error('[useUpdateTask] Error:', err);
+    onMutate: async ({ id, updates }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
+
+      // Snapshot the previous value for rollback
+      const previousInfiniteData = queryClient.getQueryData(
+        [...taskKeys.list({ status: 'NEXT' }), 'infinite']
+      );
+
+      // Optimistically update the cache - merge updates into task
+      queryClient.setQueryData(
+        [...taskKeys.list({ status: 'NEXT' }), 'infinite'],
+        (old: any) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              items: page.items.map((task: Task) =>
+                task.id === id ? { ...task, ...updates } : task
+              ),
+            })),
+          };
+        }
+      );
+
+      log('[useUpdateTask] Optimistically updated cache for task:', id, updates);
+
+      return { previousInfiniteData };
+    },
+    onError: (err: AxiosError, variables, context) => {
+      // Rollback to previous state on error
+      if (context?.previousInfiniteData) {
+        queryClient.setQueryData(
+          [...taskKeys.list({ status: 'NEXT' }), 'infinite'],
+          context.previousInfiniteData
+        );
+      }
+      console.error('[useUpdateTask] Error, rolled back:', err);
       toast.showError(err.userMessage || 'Failed to update task');
     },
     onSuccess: (_, variables) => {
-      log('[useUpdateTask] Success, invalidating queries');
+      log('[useUpdateTask] Success');
+      // Don't invalidate - trust the optimistic update
+      // Only invalidate the specific task detail if needed
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(variables.id) });
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 }
@@ -157,13 +196,53 @@ export function useScheduleTask() {
   return useMutation({
     mutationFn: ({ id, scheduledStart }: { id: string; scheduledStart: string }) =>
       api.scheduleTask(id, scheduledStart),
-    onError: (err: AxiosError) => {
-      console.error('[useScheduleTask] Error:', err);
+    onMutate: async ({ id, scheduledStart }) => {
+      // Cancel any outgoing refetches to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
+
+      // Snapshot the previous value for rollback
+      const previousInfiniteData = queryClient.getQueryData(
+        [...taskKeys.list({ status: 'NEXT' }), 'infinite']
+      );
+
+      // Optimistically update the cache - update task in all pages
+      queryClient.setQueryData(
+        [...taskKeys.list({ status: 'NEXT' }), 'infinite'],
+        (old: any) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              items: page.items.map((task: Task) =>
+                task.id === id ? { ...task, scheduledStart } : task
+              ),
+            })),
+          };
+        }
+      );
+
+      log('[useScheduleTask] Optimistically updated cache for task:', id);
+
+      return { previousInfiniteData };
+    },
+    onError: (err: AxiosError, variables, context) => {
+      // Rollback to previous state on error
+      if (context?.previousInfiniteData) {
+        queryClient.setQueryData(
+          [...taskKeys.list({ status: 'NEXT' }), 'infinite'],
+          context.previousInfiniteData
+        );
+      }
+      console.error('[useScheduleTask] Error, rolled back:', err);
       toast.showError(err.userMessage || 'Failed to schedule task');
     },
     onSuccess: (data) => {
       log('[useScheduleTask] Success response:', data);
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      // Don't invalidate - trust the optimistic update
+      // The optimistic update is now the source of truth
+      // Server has confirmed the change, no need to refetch
     },
   });
 }
@@ -174,13 +253,52 @@ export function useUnscheduleTask() {
 
   return useMutation({
     mutationFn: (id: string) => api.unscheduleTask(id),
-    onError: (err: AxiosError) => {
-      console.error('[useUnscheduleTask] Error:', err);
+    onMutate: async (id) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
+
+      // Snapshot the previous value for rollback
+      const previousInfiniteData = queryClient.getQueryData(
+        [...taskKeys.list({ status: 'NEXT' }), 'infinite']
+      );
+
+      // Optimistically update the cache - remove scheduledStart
+      queryClient.setQueryData(
+        [...taskKeys.list({ status: 'NEXT' }), 'infinite'],
+        (old: any) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              items: page.items.map((task: Task) =>
+                task.id === id ? { ...task, scheduledStart: undefined } : task
+              ),
+            })),
+          };
+        }
+      );
+
+      log('[useUnscheduleTask] Optimistically updated cache for task:', id);
+
+      return { previousInfiniteData };
+    },
+    onError: (err: AxiosError, variables, context) => {
+      // Rollback to previous state on error
+      if (context?.previousInfiniteData) {
+        queryClient.setQueryData(
+          [...taskKeys.list({ status: 'NEXT' }), 'infinite'],
+          context.previousInfiniteData
+        );
+      }
+      console.error('[useUnscheduleTask] Error, rolled back:', err);
       toast.showError(err.userMessage || 'Failed to unschedule task');
     },
     onSuccess: (data) => {
       log('[useUnscheduleTask] Success response:', data);
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      // Don't invalidate - trust the optimistic update
+      // The optimistic update is now the source of truth
     },
   });
 }
