@@ -69,8 +69,13 @@ router.post('/east', asyncHandler(async (req: Request, res: Response) => {
       );
 
     if (isUniqueDateViolation) {
+      const existingPlan = await prisma.dailyPlan.findUnique({
+        where: { date: today }
+      });
+
       throw new ConflictError('Daily plan already exists for today', {
         date: today.toISOString(),
+        plan: existingPlan,
       });
     }
 

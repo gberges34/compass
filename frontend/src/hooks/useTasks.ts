@@ -58,7 +58,7 @@ export function useTasks(filters?: TaskFilters, options?: TasksQueryOptions) {
     queryKey: taskKeys.list(filters),
     queryFn: async () => {
       const response = await api.getTasks(filters);
-      return response.data; // Return just the data array for backwards compatibility
+      return response.items; // Return just the data array for backwards compatibility
     },
     ...options,
   });
@@ -77,7 +77,7 @@ export function useTasksInfinite(filters?: TaskFilters, options?: InfiniteTasksQ
   >({
     queryKey,
     queryFn: ({ pageParam = undefined }) => api.getTasks(filters, { cursor: pageParam, limit: 50 }),
-    getNextPageParam: (lastPage) => lastPage.pagination.nextCursor,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: undefined,
     ...options,
   });

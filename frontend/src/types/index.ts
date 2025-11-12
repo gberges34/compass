@@ -1,3 +1,5 @@
+import type { PaginationResponse } from '@compass/dto/pagination';
+
 // Compass Frontend - Type Definitions
 
 export type TaskStatus = 'NEXT' | 'WAITING' | 'ACTIVE' | 'DONE';
@@ -105,14 +107,7 @@ export interface Review {
 
 // API Request/Response types
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    nextCursor: string | null;
-    hasMore: boolean;
-    limit: number;
-  };
-}
+export type PaginatedResponse<T> = PaginationResponse<T>;
 
 export interface EnrichTaskRequest {
   tempTaskId: string;

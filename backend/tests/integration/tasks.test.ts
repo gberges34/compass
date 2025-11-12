@@ -240,17 +240,14 @@ describe('Tasks API - Integration Tests', () => {
       });
     });
 
-    it('should return first page with pagination metadata', async () => {
+    it('should return first page with nextCursor metadata', async () => {
       const response = await request(app)
         .get('/api/tasks?status=NEXT&limit=3');
 
       expect(response.status).toBe(200);
-      expect(response.body.data).toBeDefined();
-      expect(response.body.data.length).toBe(3);
-      expect(response.body.pagination).toBeDefined();
-      expect(response.body.pagination.hasMore).toBe(true);
-      expect(response.body.pagination.nextCursor).toBeDefined();
-      expect(response.body.pagination.limit).toBe(3);
+      expect(response.body.items).toBeDefined();
+      expect(response.body.items.length).toBe(3);
+      expect(response.body.nextCursor).toBeDefined();
     });
 
     it('should return second page using cursor', async () => {
@@ -259,18 +256,18 @@ describe('Tasks API - Integration Tests', () => {
         .get('/api/tasks?status=NEXT&limit=3');
 
       expect(page1.status).toBe(200);
-      expect(page1.body.pagination.nextCursor).toBeDefined();
+      expect(page1.body.nextCursor).toBeDefined();
 
       // Get second page using cursor
       const page2 = await request(app)
-        .get(`/api/tasks?status=NEXT&limit=3&cursor=${page1.body.pagination.nextCursor}`);
+        .get(`/api/tasks?status=NEXT&limit=3&cursor=${page1.body.nextCursor}`);
 
       expect(page2.status).toBe(200);
-      expect(page2.body.data.length).toBe(3);
+      expect(page2.body.items.length).toBe(3);
 
       // Verify no overlap between pages
-      const page1Ids = page1.body.data.map((t: any) => t.id);
-      const page2Ids = page2.body.data.map((t: any) => t.id);
+      const page1Ids = page1.body.items.map((t: any) => t.id);
+      const page2Ids = page2.body.items.map((t: any) => t.id);
       const overlap = page1Ids.filter((id: string) => page2Ids.includes(id));
       expect(overlap.length).toBe(0);
     });
@@ -289,14 +286,14 @@ describe('Tasks API - Integration Tests', () => {
         const response = await request(app).get(url);
         expect(response.status).toBe(200);
 
-        allPages.push(...response.body.data);
+        allPages.push(...response.body.items);
         pageCount++;
 
-        if (!response.body.pagination.hasMore) {
+        if (!response.body.nextCursor) {
           break;
         }
 
-        cursor = response.body.pagination.nextCursor;
+        cursor = response.body.nextCursor;
       }
 
       // Verify we got at least 10 tasks (our created tasks)
@@ -313,8 +310,7 @@ describe('Tasks API - Integration Tests', () => {
         .get('/api/tasks?status=NEXT&limit=100'); // Large limit to get all
 
       expect(response.status).toBe(200);
-      expect(response.body.pagination.hasMore).toBe(false);
-      expect(response.body.pagination.nextCursor).toBeNull();
+      expect(response.body.nextCursor).toBeNull();
     });
 
     it('should respect limit parameter', async () => {
@@ -322,8 +318,7 @@ describe('Tasks API - Integration Tests', () => {
         .get('/api/tasks?status=NEXT&limit=5');
 
       expect(response.status).toBe(200);
-      expect(response.body.data.length).toBeLessThanOrEqual(5);
-      expect(response.body.pagination.limit).toBe(5);
+      expect(response.body.items.length).toBeLessThanOrEqual(5);
     });
 
     it('should enforce maximum limit of 100', async () => {
@@ -378,6 +373,16 @@ describe('Tasks API - Integration Tests', () => {
       // Should return 404 even though error occurred in transaction
       expect(response.status).toBe(404);
       expect(response.body.code).toBe('NOT_FOUND');
+    });
+  });
+
+  describe('Task 5: Validation errors', () => {
+    it('should reject invalid status values', async () => {
+      const response = await request(app)
+        .get('/api/tasks?status=INVALID');
+
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('VALIDATION_ERROR');
     });
   });
 

@@ -36,5 +36,7 @@ describe('Orient API', () => {
     expect(second.status).toBe(409);
     expect(second.body.code).toBe('CONFLICT');
     expect(second.body.error).toContain('Daily plan already exists');
+    expect(second.body.details?.plan?.id).toBe(first.body.id);
+    expect(second.body.details?.plan?.topOutcomes).toEqual(orientPayload.topOutcomes);
   });
 });
