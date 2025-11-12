@@ -196,7 +196,17 @@ export async function getCategoryBalanceFromToggl(
       // Map project to category
       const category = projectName && TOGGL_PROJECT_CATEGORY_MAP[projectName]
         ? TOGGL_PROJECT_CATEGORY_MAP[projectName]
-        : 'PERSONAL'; // Default to PERSONAL
+        : null;
+
+      // Skip unmapped projects with warning
+      if (!category) {
+        console.warn(
+          `Skipping Toggl entry: unmapped project "${projectName || 'No Project'}" ` +
+          `(ID: ${entry.project_id || 'none'}, duration: ${Math.floor(entry.duration / 60)}m). ` +
+          `Add to TOGGL_PROJECT_CATEGORY_MAP to include in metrics.`
+        );
+        return;
+      }
 
       // Convert seconds to minutes
       const durationMinutes = Math.floor(entry.duration / 60);
