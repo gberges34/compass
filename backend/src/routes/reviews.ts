@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, subDays } from 'date-fns';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
+import { getCategoryBalanceFromToggl } from '../services/timery';
 
 const router = Router();
 
@@ -17,6 +18,21 @@ const createReviewSchema = z.object({
   nextGoals: z.array(z.string()).max(3),
   energyAssessment: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
 });
+
+// Helper to merge category balances from Compass tasks and Toggl entries
+function mergeCategoryBalances(
+  compassBalance: Record<string, number>,
+  togglBalance: Record<string, number>
+): Record<string, number> {
+  const merged = { ...compassBalance };
+
+  // Add Toggl data
+  Object.entries(togglBalance).forEach(([category, minutes]) => {
+    merged[category] = (merged[category] || 0) + minutes;
+  });
+
+  return merged;
+}
 
 // Helper function to calculate daily metrics
 async function calculateDailyMetrics(date: Date) {
@@ -62,14 +78,20 @@ async function calculateDailyMetrics(date: Date) {
 
   const deepWorkHours = Math.round((deepWorkMinutes / 60) * 10) / 10;
 
-  // Calculate category balance
-  const categoryBreakdown: Record<string, number> = {};
+  // Calculate category balance from Compass tasks
+  const compassCategoryBalance: Record<string, number> = {};
   postDoLogs.forEach((log: any) => {
     const category = log.task.category;
-    categoryBreakdown[category] = (categoryBreakdown[category] || 0) + log.actualDuration;
+    compassCategoryBalance[category] = (compassCategoryBalance[category] || 0) + log.actualDuration;
   });
 
-  // Total tracked time in minutes
+  // Get category balance from Toggl (gracefully handles errors)
+  const togglCategoryBalance = await getCategoryBalanceFromToggl(dayStart, dayEnd);
+
+  // Merge both sources
+  const categoryBreakdown = mergeCategoryBalances(compassCategoryBalance, togglCategoryBalance);
+
+  // Total tracked time in minutes (from both sources)
   const totalTrackedTime = Object.values(categoryBreakdown)
     .reduce((sum: number, mins: number) => sum + mins, 0);
 
@@ -141,14 +163,20 @@ async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date) {
 
   const deepWorkHours = Math.round((deepWorkMinutes / 60) * 10) / 10;
 
-  // Calculate category balance
-  const categoryBreakdown: Record<string, number> = {};
+  // Calculate category balance from Compass tasks
+  const compassCategoryBalance: Record<string, number> = {};
   postDoLogs.forEach((log: any) => {
     const category = log.task.category;
-    categoryBreakdown[category] = (categoryBreakdown[category] || 0) + log.actualDuration;
+    compassCategoryBalance[category] = (compassCategoryBalance[category] || 0) + log.actualDuration;
   });
 
-  // Total tracked time
+  // Get category balance from Toggl (gracefully handles errors)
+  const togglCategoryBalance = await getCategoryBalanceFromToggl(weekStart, weekEnd);
+
+  // Merge both sources
+  const categoryBreakdown = mergeCategoryBalances(compassCategoryBalance, togglCategoryBalance);
+
+  // Total tracked time (from both sources)
   const totalTrackedTime = Object.values(categoryBreakdown)
     .reduce((sum: number, mins: number) => sum + mins, 0);
 
