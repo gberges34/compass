@@ -449,4 +449,66 @@ describe('Tasks API - Integration Tests', () => {
       await prisma.tempCapturedTask.delete({ where: { id: tempTask.id } });
     });
   });
+
+  describe('Task scheduling relies on Prisma errors', () => {
+    let taskId: string;
+
+    beforeEach(async () => {
+      const task = await prisma.task.create({
+        data: {
+          name: 'Spy task',
+          status: 'NEXT',
+          priority: 'MUST',
+          category: 'ADMIN',
+          context: 'COMPUTER',
+          energyRequired: 'MEDIUM',
+          duration: 30,
+          definitionOfDone: 'Log once'
+        }
+      });
+      taskId = task.id;
+    });
+
+    afterEach(async () => {
+      if (taskId) {
+        await prisma.task.deleteMany({ where: { id: taskId } }).catch(() => {});
+        taskId = '';
+      }
+    });
+
+    it('schedules task without extra findUnique calls', async () => {
+      const findUniqueSpy = jest.spyOn(prisma.task, 'findUnique');
+
+      const response = await request(app)
+        .patch(`/api/tasks/${taskId}/schedule`)
+        .send({
+          scheduledStart: new Date(Date.now() + 60 * 60 * 1000).toISOString()
+        });
+
+      expect(response.status).toBe(200);
+      expect(findUniqueSpy).not.toHaveBeenCalled();
+
+      findUniqueSpy.mockRestore();
+    });
+
+    it('unschedules task without extra findUnique calls', async () => {
+      await prisma.task.update({
+        where: { id: taskId },
+        data: {
+          scheduledStart: new Date(Date.now() + 60 * 60 * 1000)
+        }
+      });
+
+      const findUniqueSpy = jest.spyOn(prisma.task, 'findUnique');
+
+      const response = await request(app)
+        .patch(`/api/tasks/${taskId}/unschedule`)
+        .send();
+
+      expect(response.status).toBe(200);
+      expect(findUniqueSpy).not.toHaveBeenCalled();
+
+      findUniqueSpy.mockRestore();
+    });
+  });
 });
