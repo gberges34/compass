@@ -111,6 +111,33 @@ export async function stopRunningEntry(): Promise<TimeryEntry | null> {
   }
 }
 
+// Helper to detect if a Toggl entry overlaps with any Compass PostDoLog
+function isTogglEntryDuplicate(
+  togglEntry: { start: string; stop: string | null },
+  postDoLogs: Array<{ completionDate: Date; actualDuration: number }>
+): boolean {
+  const TOLERANCE_MINUTES = 15;
+  const toleranceMs = TOLERANCE_MINUTES * 60 * 1000;
+
+  const togglStart = new Date(togglEntry.start);
+  const togglEnd = togglEntry.stop ? new Date(togglEntry.stop) : new Date();
+
+  return postDoLogs.some(log => {
+    // Estimate Compass task end time: completionDate
+    // Estimate Compass task start time: completionDate - actualDuration
+    const compassEnd = log.completionDate;
+    const compassStart = new Date(compassEnd.getTime() - log.actualDuration * 60 * 1000);
+
+    // Apply tolerance to Compass time range
+    const compassStartWithTolerance = new Date(compassStart.getTime() - toleranceMs);
+    const compassEndWithTolerance = new Date(compassEnd.getTime() + toleranceMs);
+
+    // Check if time ranges overlap (with tolerance)
+    // Overlap if: toggl_start <= compass_end AND toggl_end >= compass_start
+    return togglStart <= compassEndWithTolerance && togglEnd >= compassStartWithTolerance;
+  });
+}
+
 interface TogglProject {
   id: number;
   name: string;
