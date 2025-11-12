@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
+import { Prisma, TaskStatus, Priority, Category } from '@prisma/client';
 import { z } from 'zod';
 import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { enrichTask } from '../services/llm';
@@ -78,11 +79,11 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
     limit: pagination.limit
   });
 
-  const where: any = {};
+  const where: Prisma.TaskWhereInput = {};
 
-  if (status) where.status = status;
-  if (priority) where.priority = priority;
-  if (category) where.category = category;
+  if (status) where.status = status as TaskStatus;
+  if (priority) where.priority = priority as Priority;
+  if (category) where.category = category as Category;
   if (scheduledDate) {
     const date = new Date(scheduledDate as string);
     where.scheduledStart = {
@@ -92,8 +93,8 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Add cursor filter
-  if (cursor) {
-    where.id = { gt: cursor };
+  if (pagination.cursor) {
+    where.id = { gt: pagination.cursor };
   }
 
   log('[GET /tasks] Query where clause:', JSON.stringify(where));
