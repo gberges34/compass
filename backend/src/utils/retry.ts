@@ -74,7 +74,7 @@ export async function withRetry<T>(
       console.warn(
         `[Retry] Attempt ${attempt + 1}/${opts.maxRetries} failed. ` +
         `Retrying in ${delayMs}ms...`,
-        { error: error.message || error.code }
+        { error: (error as any).message || (error as any).code }
       );
 
       await delay(delayMs);
