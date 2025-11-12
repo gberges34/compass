@@ -86,7 +86,11 @@ async function calculateDailyMetrics(date: Date) {
   });
 
   // Get category balance from Toggl (gracefully handles errors)
-  const togglCategoryBalance = await getCategoryBalanceFromToggl(dayStart, dayEnd);
+  const togglCategoryBalance = await getCategoryBalanceFromToggl(
+    dayStart,
+    dayEnd,
+    postDoLogs
+  );
 
   // Merge both sources
   const categoryBreakdown = mergeCategoryBalances(compassCategoryBalance, togglCategoryBalance);
@@ -171,7 +175,11 @@ async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date) {
   });
 
   // Get category balance from Toggl (gracefully handles errors)
-  const togglCategoryBalance = await getCategoryBalanceFromToggl(weekStart, weekEnd);
+  const togglCategoryBalance = await getCategoryBalanceFromToggl(
+    weekStart,
+    weekEnd,
+    postDoLogs
+  );
 
   // Merge both sources
   const categoryBreakdown = mergeCategoryBalances(compassCategoryBalance, togglCategoryBalance);
