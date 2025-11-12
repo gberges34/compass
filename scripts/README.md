@@ -172,7 +172,17 @@ npm run health
 - Frontend serving (http://localhost:3000)
 - Database connection active
 
-**When to use:** Verify running application, monitoring, CI/CD
+**Anthropic-only mode:**
+
+```bash
+COMPASS_ANTHROPIC_API_KEY=sk-ant-... npm run check:anthropic
+```
+
+- Requires `COMPASS_ANTHROPIC_API_KEY` (preferred) or falls back to `ANTHROPIC_API_KEY`.
+- Set `CHECK_ANTHROPIC=true` (handled automatically by the npm script) to include the Anthropic connectivity test alongside the other checks.
+- The script never echoes the key value, only sanitized status lines.
+
+**When to use:** Verify running application, monitoring, CI/CD, or to validate Anthropic credentials without bespoke scripts.
 
 ---
 
