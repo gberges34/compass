@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { env } from '../config/env';
 import { Category } from '@prisma/client';
+import { withRetry } from '../utils/retry';
 
 const togglAPI = axios.create({
   baseURL: 'https://api.track.toggl.com/api/v9',
@@ -131,12 +132,14 @@ export async function getTimeEntriesForDateRange(startDate: Date, endDate: Date)
     const startISO = startDate.toISOString();
     const endISO = endDate.toISOString();
 
-    const response = await togglAPI.get('/me/time_entries', {
-      params: {
-        start_date: startISO,
-        end_date: endISO,
-      }
-    });
+    const response = await withRetry(() =>
+      togglAPI.get('/me/time_entries', {
+        params: {
+          start_date: startISO,
+          end_date: endISO,
+        }
+      })
+    );
 
     return response.data || [];
   } catch (error: any) {
