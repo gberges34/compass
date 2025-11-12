@@ -31,7 +31,7 @@ export const taskKeys = {
 export const prefetchTasks = (queryClient: QueryClient, filters?: TaskFilters) => {
   return queryClient.prefetchInfiniteQuery({
     queryKey: taskKeys.list(filters),
-    queryFn: ({ pageParam }) => api.getTasks({ ...filters, cursor: pageParam, limit: 30 }),
+    queryFn: ({ pageParam }) => api.getTasks(filters, { cursor: pageParam, limit: 30 }),
     getNextPageParam: (lastPage: PaginatedResponse<Task>) => lastPage.nextCursor,
     initialPageParam: undefined as string | undefined,
   });
@@ -52,6 +52,8 @@ type InfiniteTasksQueryOptions = Omit<
   'queryKey' | 'queryFn' | 'initialPageParam'
 >;
 
+type UseFlatTasksResult = ReturnType<typeof useTasks> & { tasks: Task[] };
+
 // Keep useTasks backwards compatible (returns just data array)
 export function useTasks(filters?: TaskFilters, options?: TasksQueryOptions) {
   return useQuery({
@@ -68,30 +70,20 @@ export function useTasks(filters?: TaskFilters, options?: TasksQueryOptions) {
 export function useTasksInfinite(filters?: TaskFilters, options?: InfiniteTasksQueryOptions) {
   const queryKey = [...taskKeys.list(filters), 'infinite'] as InfiniteTasksQueryKey;
 
-  return useInfiniteQuery<
-    PaginatedResponse<Task>,
-    Error,
-    PaginatedResponse<Task>,
-    InfiniteTasksQueryKey,
-    string | undefined
-  >({
+  return useInfiniteQuery<PaginatedResponse<Task>, Error, PaginatedResponse<Task>, InfiniteTasksQueryKey, string | undefined>({
     queryKey,
     queryFn: ({ pageParam = undefined }) => api.getTasks(filters, { cursor: pageParam, limit: 50 }),
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
-    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
     ...options,
   });
 }
 
 // Helper to flatten pages for components that need a simple array
-export function useFlatTasks(filters?: TaskFilters) {
-  const { data, ...rest } = useTasks(filters);
-
-  const tasks = useMemo(() => {
-    return data?.pages.flatMap(page => page.items) ?? [];
-  }, [data]);
-
-  return { tasks, ...rest };
+export function useFlatTasks(filters?: TaskFilters): UseFlatTasksResult {
+  const queryResult = useTasks(filters);
+  const tasks = useMemo<Task[]>(() => queryResult.data ?? [], [queryResult.data]);
+  return { tasks, ...queryResult };
 }
 
 export function useTask(id: string) {

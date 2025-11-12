@@ -52,21 +52,25 @@ export async function withRetry<T>(
   for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
     try {
       return await fn();
-    } catch (error) {
-      lastError = error;
+    } catch (error: unknown) {
+      const normalizedError =
+        typeof error === 'object' && error !== null
+          ? (error as Record<string, any>)
+          : { message: String(error) };
+      lastError = normalizedError;
 
       // Check if we should retry
-      const shouldRetry = opts.shouldRetry(error);
+      const shouldRetry = opts.shouldRetry(normalizedError);
       const isLastAttempt = attempt === opts.maxRetries;
 
       if (!shouldRetry || isLastAttempt) {
         // Don't retry, throw immediately
         if (!shouldRetry) {
-          console.error('[Retry] Non-retryable error:', error);
+          console.error('[Retry] Non-retryable error:', normalizedError);
         } else {
           console.error(`[Retry] All ${opts.maxRetries} retries exhausted`);
         }
-        throw error;
+        throw normalizedError;
       }
 
       // Calculate exponential backoff delay
@@ -74,7 +78,12 @@ export async function withRetry<T>(
       console.warn(
         `[Retry] Attempt ${attempt + 1}/${opts.maxRetries} failed. ` +
         `Retrying in ${delayMs}ms...`,
-        { error: error.message || error.code }
+        {
+          error:
+            normalizedError.message ??
+            normalizedError.code ??
+            String(normalizedError),
+        }
       );
 
       await delay(delayMs);

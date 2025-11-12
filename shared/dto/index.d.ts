@@ -4,3 +4,7 @@ declare module '@compass/dto/pagination' {
     nextCursor: string | null;
   }
 }
+
+declare module '@compass/dto' {
+  export * from '@compass/dto/pagination';
+}

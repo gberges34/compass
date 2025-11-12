@@ -13,7 +13,7 @@
  *   npx prisma migrate deploy
  *   npm test -- src/__tests__/integration/pagination.integration.test.ts
  */
-import request from 'supertest';
+import request, { type Response } from 'supertest';
 import { app } from '../../index';
 import { prisma } from '../../prisma';
 
@@ -62,13 +62,13 @@ describe('Pagination Integration Tests', () => {
     }
 
     let allTasks: any[] = [];
-    let cursor: string | null = undefined;
+    let cursor: string | null = null;
     let pageCount = 0;
 
     // Fetch all pages
     while (pageCount === 0 || cursor !== null) {
-      const url = cursor ? `/api/tasks?cursor=${cursor}&limit=20` : '/api/tasks?limit=20';
-      const response = await request(app).get(url).expect(200);
+      const url: string = cursor ? `/api/tasks?cursor=${cursor}&limit=20` : '/api/tasks?limit=20';
+      const response: Response = await request(app).get(url).expect(200);
 
       allTasks.push(...response.body.items);
       cursor = response.body.nextCursor;
