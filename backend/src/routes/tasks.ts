@@ -1,7 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, $Enums } from '@prisma/client';
 import { z } from 'zod';
+
+// Type aliases for Prisma enums
+type TaskStatus = $Enums.TaskStatus;
+type Priority = $Enums.Priority;
+type Category = $Enums.Category;
 import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { enrichTask } from '../services/llm';
 import { calculateTimeOfDay, getDayOfWeek } from '../utils/timeUtils';
@@ -190,7 +195,7 @@ router.post('/enrich', asyncHandler(async (req: Request, res: Response) => {
   });
 
   // TRANSACTION: Atomic task creation + temp task marking
-  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  const result = await prisma.$transaction(async (tx) => {
     // Create full task
     const task = await tx.task.create({
       data: {
@@ -471,7 +476,7 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
   const dayOfWeek = getDayOfWeek(startTime);
 
   // TRANSACTION: Atomic task completion
-  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  const result = await prisma.$transaction(async (tx) => {
     // Create Post-Do Log
     const postDoLog = await tx.postDoLog.create({
       data: {

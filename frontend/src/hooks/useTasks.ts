@@ -31,7 +31,7 @@ export const prefetchTasks = (queryClient: QueryClient, filters?: TaskFilters) =
   return queryClient.prefetchInfiniteQuery({
     queryKey: taskKeys.list(filters),
     queryFn: ({ pageParam }) => api.getTasks(filters, { cursor: pageParam, limit: 30 }),
-    getNextPageParam: (lastPage: PaginatedResponse<Task>) => lastPage.pagination.nextCursor,
+    getNextPageParam: (lastPage: PaginatedResponse<Task>) => lastPage.nextCursor,
     initialPageParam: undefined as string | undefined,
   });
 };
@@ -81,7 +81,7 @@ export function useFlatTasks(filters?: TaskFilters) {
   const { data, ...rest } = useTasksInfinite(filters);
 
   const tasks = useMemo(() => {
-    return data?.pages.flatMap(page => page.data) ?? [];
+    return data?.pages.flatMap((page: PaginatedResponse<Task>) => page.items) ?? [];
   }, [data]);
 
   return { tasks, ...rest };

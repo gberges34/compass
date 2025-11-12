@@ -197,7 +197,7 @@ const TasksPage: React.FC = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
-          {tasks.map((task) => (
+          {tasks.map((task: Task) => (
             <Card
               key={task.id}
               padding="medium"

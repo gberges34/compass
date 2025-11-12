@@ -355,7 +355,7 @@ const ReviewsPage: React.FC = () => {
                       Wins ({review.wins.length})
                     </h4>
                     <ul className="space-y-1">
-                      {review.wins.slice(0, 2).map((win, idx) => (
+                      {review.wins.slice(0, 2).map((win: string, idx: number) => (
                         <li key={idx} className="text-sm text-gray-700 flex items-start">
                           <span className="text-green-500 mr-2">✓</span>
                           <span className="line-clamp-1">{win}</span>
@@ -375,7 +375,7 @@ const ReviewsPage: React.FC = () => {
                       Misses ({review.misses.length})
                     </h4>
                     <ul className="space-y-1">
-                      {review.misses.slice(0, 2).map((miss, idx) => (
+                      {review.misses.slice(0, 2).map((miss: string, idx: number) => (
                         <li key={idx} className="text-sm text-gray-700 flex items-start">
                           <span className="text-red-500 mr-2">✗</span>
                           <span className="line-clamp-1">{miss}</span>
@@ -412,7 +412,7 @@ const ReviewsPage: React.FC = () => {
                     </button>
                     {expandedSections[review.id]?.wins && (
                       <ul className="space-y-2 ml-4">
-                        {review.wins.map((win, idx) => (
+                        {review.wins.map((win: string, idx: number) => (
                           <li key={idx} className="text-gray-700 flex items-start">
                             <span className="text-green-500 mr-2">✓</span>
                             <span>{win}</span>
@@ -440,7 +440,7 @@ const ReviewsPage: React.FC = () => {
                     </button>
                     {expandedSections[review.id]?.misses && (
                       <ul className="space-y-2 ml-4">
-                        {review.misses.map((miss, idx) => (
+                        {review.misses.map((miss: string, idx: number) => (
                           <li key={idx} className="text-gray-700 flex items-start">
                             <span className="text-red-500 mr-2">✗</span>
                             <span>{miss}</span>
@@ -468,7 +468,7 @@ const ReviewsPage: React.FC = () => {
                     </button>
                     {expandedSections[review.id]?.lessons && (
                       <ul className="space-y-2 ml-4">
-                        {review.lessons.map((lesson, idx) => (
+                        {review.lessons.map((lesson: string, idx: number) => (
                           <li key={idx} className="text-gray-700 flex items-start">
                             <span className="text-blue-500 mr-2">💡</span>
                             <span>{lesson}</span>
@@ -496,7 +496,7 @@ const ReviewsPage: React.FC = () => {
                     </button>
                     {expandedSections[review.id]?.nextGoals && (
                       <ul className="space-y-2 ml-4">
-                        {review.nextGoals.map((goal, idx) => (
+                        {review.nextGoals.map((goal: string, idx: number) => (
                           <li key={idx} className="text-gray-700 flex items-start">
                             <span className="text-purple-500 mr-2">→</span>
                             <span>{goal}</span>

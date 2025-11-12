@@ -135,11 +135,11 @@ const CalendarPage: React.FC = () => {
   // Derived data from queries
   const loading = tasksLoading || planLoading;
   const unscheduledTasks = useMemo(
-    () => tasks.filter((task) => !task.scheduledStart),
+    () => tasks.filter((task: Task) => !task.scheduledStart),
     [tasks]
   );
   const scheduledTasks = useMemo(
-    () => tasks.filter((task) => task.scheduledStart),
+    () => tasks.filter((task: Task) => task.scheduledStart),
     [tasks]
   );
 
@@ -152,7 +152,7 @@ const CalendarPage: React.FC = () => {
 
     // Convert scheduled tasks to calendar events with defensive null checks
     const taskEvents: CalendarEvent[] = scheduledTasks
-      .filter((task) => {
+      .filter((task: Task) => {
         // Defensive: ensure scheduledStart exists and is valid
         if (!task.scheduledStart) {
           log('[Calendar] Task missing scheduledStart:', task.id);
@@ -171,7 +171,7 @@ const CalendarPage: React.FC = () => {
           return false;
         }
       })
-      .map((task) => {
+      .map((task: Task) => {
         const start = new Date(task.scheduledStart!);
         const end = addMinutesToDate(start, task.duration);
 
@@ -515,7 +515,7 @@ const CalendarPage: React.FC = () => {
                   All tasks are scheduled!
                 </p>
               ) : (
-                unscheduledTasks.map((task, index) => (
+                unscheduledTasks.map((task: Task, index: number) => (
                   <UnscheduledTaskCard
                     key={task.id}
                     task={task}
