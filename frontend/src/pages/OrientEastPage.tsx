@@ -311,7 +311,7 @@ const OrientEastPage: React.FC = () => {
 
         {/* Deep Work Block #2 (Optional) */}
         <Card padding="large">
-          <div className="flex items-center justify-between mb-16">
+          <div className="flex items-start justify-between mb-16">
             <h2 className="text-h2 text-ink">Deep Work Block #2</h2>
             <ToggleSwitch
               checked={enableDwb2}
@@ -351,7 +351,7 @@ const OrientEastPage: React.FC = () => {
 
         {/* Admin Block (Optional) */}
         <Card padding="large">
-          <div className="flex items-center justify-between mb-16">
+          <div className="flex items-start justify-between mb-16">
             <h2 className="text-h2 text-ink">Admin Block</h2>
             <ToggleSwitch
               checked={enableAdmin}
@@ -383,7 +383,7 @@ const OrientEastPage: React.FC = () => {
 
         {/* Buffer Block (Optional) */}
         <Card padding="large">
-          <div className="flex items-center justify-between mb-16">
+          <div className="flex items-start justify-between mb-16">
             <h2 className="text-h2 text-ink">Buffer Block</h2>
             <ToggleSwitch
               checked={enableBuffer}
