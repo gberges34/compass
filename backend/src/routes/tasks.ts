@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { enrichTask } from '../services/llm';
@@ -192,7 +193,7 @@ router.post('/enrich', asyncHandler(async (req: Request, res: Response) => {
   });
 
   // TRANSACTION: Atomic task creation + temp task marking
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // Create full task
     const task = await tx.task.create({
       data: {
@@ -473,7 +474,7 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
   const dayOfWeek = getDayOfWeek(startTime);
 
   // TRANSACTION: Atomic task completion
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // Create Post-Do Log
     const postDoLog = await tx.postDoLog.create({
       data: {
