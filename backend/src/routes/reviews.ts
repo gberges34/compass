@@ -7,6 +7,7 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
 import { reviewTypeEnum, energyEnum } from '../schemas/enums';
 import { calculateMetrics } from '../utils/reviewMetrics';
+import { paginationSchema } from '../schemas/pagination';
 
 const router = Router();
 
@@ -19,6 +20,10 @@ const createReviewSchema = z.object({
   nextGoals: z.array(z.string()).max(3),
   energyAssessment: energyEnum.optional(),
 });
+
+const listReviewsQuerySchema = z.object({
+  type: z.nativeEnum(ReviewType).optional(),
+}).merge(paginationSchema);
 
 // Helper function to calculate daily metrics
 async function calculateDailyMetrics(date: Date) {
@@ -120,12 +125,8 @@ router.post('/weekly', asyncHandler(async (req: Request, res: Response) => {
 
 // GET /api/reviews - Get all reviews with pagination
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
-  const { type, cursor, limit } = req.query;
-
-  const pageSize = Math.min(
-    parseInt(limit as string) || 30,
-    100
-  );
+  const { type, cursor, limit } = listReviewsQuerySchema.parse(req.query);
+  const pageSize = limit;
 
   const where: Prisma.ReviewWhereInput = {};
   if (type) where.type = type as ReviewType;

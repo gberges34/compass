@@ -17,6 +17,7 @@ import {
   energyEnum,
   effortEnum,
 } from '../schemas/enums';
+import { paginationSchema } from '../schemas/pagination';
 
 // Development-only logging
 const DEBUG = env.NODE_ENV === 'development';
@@ -75,9 +76,7 @@ export const listTasksQuerySchema = z.object({
   priority: z.nativeEnum($Enums.Priority).optional(),
   category: z.nativeEnum($Enums.Category).optional(),
   scheduledDate: z.string().datetime().optional(),
-  cursor: z.string().uuid().optional(),
-  limit: z.coerce.number().min(1).max(100).default(50),
-});
+}).merge(paginationSchema);
 
 // GET /api/tasks - List tasks with filters and pagination
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
