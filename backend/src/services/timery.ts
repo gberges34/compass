@@ -1,9 +1,13 @@
-import axios from 'axios';
+import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios';
 import { env } from '../config/env';
 import { Category } from '@prisma/client';
 import type { PostDoLog } from '@prisma/client';
-import { withRetry } from '../utils/retry';
 import { InternalError } from '../errors/AppError';
+import {
+  withCircuitBreaker,
+  withJitteredRetry,
+  defaultShouldRetry,
+} from '../../../shared/resilience';
 
 const togglAPI = axios.create({
   baseURL: 'https://api.track.toggl.com/api/v9',
@@ -16,6 +20,37 @@ const togglAPI = axios.create({
   },
   timeout: 15000, // 15 seconds
 });
+
+const togglRequestExecutor: (
+  config: AxiosRequestConfig
+) => Promise<AxiosResponse<any>> = withCircuitBreaker(
+  withJitteredRetry((config: AxiosRequestConfig) => togglAPI.request(config), {
+    maxRetries: 4,
+    baseDelayMs: 500,
+    maxDelayMs: 10_000,
+    jitterStrategy: 'decorrelated',
+    shouldRetry: defaultShouldRetry,
+    onRetry: (error, attempt, delayMs) => {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(
+        `[toggl] retry attempt=${attempt} delay=${delayMs}ms reason=${message}`
+      );
+    },
+  }),
+  {
+    failureThreshold: 5,
+    windowMs: 60_000,
+    cooldownMs: 30_000,
+    onStateChange: (state) => {
+      console.warn(`[toggl] circuit ${state}`);
+    },
+  }
+);
+
+async function togglRequest<T = any>(config: AxiosRequestConfig): Promise<T> {
+  const response = await togglRequestExecutor(config);
+  return response.data as T;
+}
 
 // Toggl Project Name → Compass Category mapping.
 // Keep this in sync with docs/timery-projects.md so Compass knows how to bucket Timery data.
@@ -49,8 +84,10 @@ export interface TimeryEntry {
  */
 export async function fetchTimeryEntry(entryId: string): Promise<TimeryEntry> {
   try {
-    const response = await togglAPI.get(`/time_entries/${entryId}`);
-    const data = response.data;
+    const data = await togglRequest<any>({
+      method: 'GET',
+      url: `/time_entries/${entryId}`,
+    });
 
     // Toggl returns duration in seconds (negative if running)
     const durationSeconds = Math.abs(data.duration);
@@ -76,13 +113,14 @@ export async function fetchTimeryEntry(entryId: string): Promise<TimeryEntry> {
  */
 export async function getCurrentRunningEntry(): Promise<TimeryEntry | null> {
   try {
-    const response = await togglAPI.get('/time_entries/current');
+    const data = await togglRequest<any>({
+      method: 'GET',
+      url: '/time_entries/current',
+    });
 
-    if (!response.data) {
+    if (!data) {
       return null; // No running entry
     }
-
-    const data = response.data;
     const now = new Date();
     const startTime = new Date(data.start);
     const durationSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
@@ -115,7 +153,10 @@ export async function stopRunningEntry(): Promise<TimeryEntry | null> {
     }
 
     // Use the entry ID from currentEntry (no duplicate API call)
-    await togglAPI.patch(`/time_entries/${currentEntry.id}/stop`);
+    await togglRequest({
+      method: 'PATCH',
+      url: `/time_entries/${currentEntry.id}/stop`,
+    });
     return await fetchTimeryEntry(currentEntry.id);
   } catch (error: any) {
     console.error('Error stopping entry:', error.response?.data || error.message);
@@ -170,19 +211,16 @@ export async function getTimeEntriesForDateRange(startDate: Date, endDate: Date)
     const startISO = startDate.toISOString();
     const endISO = endDate.toISOString();
 
-    const response = await withRetry(() =>
-      togglAPI.get('/me/time_entries', {
-        params: {
-          start_date: startISO,
-          end_date: endISO,
-        }
-      })
-    );
+    const entries = await togglRequest<TogglTimeEntry[]>({
+      method: 'GET',
+      url: '/me/time_entries',
+      params: {
+        start_date: startISO,
+        end_date: endISO,
+      },
+    });
 
-    // Toggl Track responses are documented as ISO 8601 UTC timestamps:
-    // https://developers.track.toggl.com/docs/time_entries#response
-    // Compass also stores UTC, so no additional conversion is required here.
-    return response.data || [];
+    return entries || [];
   } catch (error: any) {
     console.error('Error fetching time entries:', error.response?.data || error.message);
     // Return empty array on error (graceful degradation)
@@ -196,11 +234,10 @@ export async function getTimeEntriesForDateRange(startDate: Date, endDate: Date)
  */
 export async function getProjects(): Promise<Map<number, string>> {
   try {
-    const response = await withRetry(() =>
-      togglAPI.get('/me/projects')
-    );
-
-    const projects: TogglProject[] = response.data || [];
+    const projects: TogglProject[] = await togglRequest({
+      method: 'GET',
+      url: '/me/projects',
+    }) || [];
 
     const projectMap = new Map<number, string>();
     projects.forEach(project => {

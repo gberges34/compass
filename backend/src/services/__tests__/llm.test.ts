@@ -1,15 +1,25 @@
 // backend/src/services/__tests__/llm.test.ts
 import { enrichTask, setAnthropicClient } from '../llm';
 import Anthropic from '@anthropic-ai/sdk';
-import { withRetry } from '../../utils/retry';
+import {
+  withCircuitBreaker,
+  withJitteredRetry,
+} from '../../../../shared/resilience';
 
-jest.mock('../../utils/retry');
+jest.mock('../../../../shared/resilience', () => {
+  const actual = jest.requireActual('../../../../shared/resilience');
+  return {
+    ...actual,
+    withCircuitBreaker: jest.fn((fn) => fn),
+    withJitteredRetry: jest.fn((fn) => fn),
+  };
+});
 
 describe('enrichTask with Zod validation', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock withRetry to just execute the function immediately
-    (withRetry as jest.Mock).mockImplementation((fn) => fn());
+    (withCircuitBreaker as jest.Mock).mockImplementation((fn) => fn);
+    (withJitteredRetry as jest.Mock).mockImplementation((fn) => fn);
   });
 
   it('should validate and return valid LLM response', async () => {
@@ -72,8 +82,8 @@ describe('enrichTask with Zod validation', () => {
       energy: 'HIGH',
     });
 
-    expect(result.category).toBe('PERSONAL'); // Default fallback
-    expect(result.context).toBe('COMPUTER'); // Valid field kept
+    expect(result.category).toBe('PERSONAL');
+    expect(result.context).toBe('COMPUTER');
     expect(result.rephrasedName).toBe('Complete physics homework');
     expect(result.definitionOfDone).toBe('All problems solved');
   });
@@ -106,7 +116,7 @@ describe('enrichTask with Zod validation', () => {
 
     expect(result.category).toBe('PERSONAL');
     expect(result.context).toBe('ANYWHERE');
-    expect(result.rephrasedName).toBe('original task'); // Falls back to input
-    expect(result.definitionOfDone).toBe('Valid completion criteria'); // Valid field kept
+    expect(result.rephrasedName).toBe('original task');
+    expect(result.definitionOfDone).toBe('Valid completion criteria');
   });
 });

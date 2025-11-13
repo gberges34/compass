@@ -191,29 +191,40 @@ External integrations are in `src/services/`:
 
 Services handle failures gracefully and provide sensible defaults.
 
-#### Retry Logic
+#### Resilience Helpers
 
-All external API calls (LLM, Todoist, Timery) are wrapped with `withRetry()` utility:
+All external API calls (LLM, Todoist, Timery) must compose the shared `withJitteredRetry` and `withCircuitBreaker` helpers from `shared/resilience`:
 
 ```typescript
-import { withRetry } from '../utils/retry';
+import {
+  withCircuitBreaker,
+  withJitteredRetry,
+  defaultShouldRetry,
+} from '../../../shared/resilience';
 
-const result = await withRetry(() => externalAPI.call());
+const callExternal = withCircuitBreaker(
+  withJitteredRetry(() => externalAPI.call(), {
+    maxRetries: 4,
+    baseDelayMs: 500,
+    maxDelayMs: 10_000,
+    jitterStrategy: 'decorrelated',
+    shouldRetry: defaultShouldRetry,
+  }),
+  {
+    failureThreshold: 5,
+    windowMs: 60_000,
+    cooldownMs: 30_000,
+  }
+);
+
+const result = await callExternal();
 ```
 
-**Configuration:**
-- 4 retries with exponential backoff: 1s, 2s, 4s, 8s
-- Retries on: Network errors, 5xx server errors, 429 rate limits
-- Fails immediately on: 4xx client errors
-
-**Custom retry logic:**
-```typescript
-await withRetry(() => someAPI.call(), {
-  maxRetries: 2,
-  initialDelay: 500,
-  shouldRetry: (error) => error.code === 'CUSTOM_ERROR'
-});
-```
+Guidelines:
+- **Retries** use exponential backoff plus jitter (full/equal/decorrelated) to avoid thundering herds.
+- **Circuit breaker** opens after 5 failures within 60s, rejects calls for 30s, then probes via half-open state.
+- Use `defaultShouldRetry` for Axios/HTTP integrations; supply custom predicates for domain-specific errors.
+- Attach `onStateChange`/`onRetry` callbacks to emit structured logs for observability.
 
 #### LLM Response Validation
 

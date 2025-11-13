@@ -1,7 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { APIError, APIConnectionError, RateLimitError } from '@anthropic-ai/sdk/error';
 import { z } from 'zod';
-import { withRetry } from '../utils/retry';
+import {
+  withCircuitBreaker,
+  withJitteredRetry,
+} from '../../../shared/resilience';
 import { env } from '../config/env';
 import { categoryEnum, contextEnum } from '../schemas/enums';
 
@@ -10,9 +13,29 @@ let anthropic = new Anthropic({
   timeout: 30000, // 30 seconds
 });
 
+type MessageCreateParams = Parameters<Anthropic['messages']['create']>[0];
+
+const buildAnthropicExecutor = () =>
+  withCircuitBreaker(
+    withJitteredRetry((payload: MessageCreateParams) => anthropic.messages.create(payload), {
+      maxRetries: 3,
+      baseDelayMs: 750,
+      maxDelayMs: 10_000,
+      jitterStrategy: 'decorrelated',
+    }),
+    {
+      failureThreshold: 3,
+      windowMs: 60_000,
+      cooldownMs: 30_000,
+    }
+  );
+
+let executeAnthropicRequest = buildAnthropicExecutor();
+
 // Export for testing purposes
 export const setAnthropicClient = (client: Anthropic) => {
   anthropic = client;
+  executeAnthropicRequest = buildAnthropicExecutor();
 };
 
 // Zod schemas for validation
@@ -101,18 +124,16 @@ Respond ONLY with valid JSON in this exact format:
 }`;
 
   try {
-    const message = await withRetry(() =>
-      anthropic.messages.create({
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 500,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-      })
-    );
+    const message = await executeAnthropicRequest({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 500,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    });
 
     // Parse response
     const content = message.content[0];
