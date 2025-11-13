@@ -8,6 +8,7 @@ import { NotFoundError, BadRequestError } from '../errors/AppError';
 import { reviewTypeEnum, energyEnum } from '../schemas/enums';
 import { calculateMetrics } from '../utils/reviewMetrics';
 import { paginationSchema } from '../schemas/pagination';
+import { cacheControl, CachePolicies } from '../middleware/cacheControl';
 
 const router = Router();
 
@@ -124,7 +125,7 @@ router.post('/weekly', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 // GET /api/reviews - Get all reviews with pagination
-router.get('/', asyncHandler(async (req: Request, res: Response) => {
+router.get('/', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Request, res: Response) => {
   const { type, cursor, limit } = listReviewsQuerySchema.parse(req.query);
   const pageSize = limit;
 
@@ -151,7 +152,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 // GET /api/reviews/:id - Get single review
-router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:id', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const review = await prisma.review.findUnique({

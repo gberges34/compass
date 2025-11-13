@@ -6,6 +6,7 @@ import { startOfDay } from 'date-fns';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError, ConflictError } from '../errors/AppError';
 import { energyEnum, energyMatchEnum } from '../schemas/enums';
+import { cacheControl, CachePolicies } from '../middleware/cacheControl';
 
 const router = Router();
 
@@ -102,7 +103,7 @@ router.patch('/west/:planId', asyncHandler(async (req: Request, res: Response) =
 }));
 
 // GET /api/orient/today - Get today's daily plan
-router.get('/today', asyncHandler(async (req: Request, res: Response) => {
+router.get('/today', cacheControl(CachePolicies.LONG), asyncHandler(async (req: Request, res: Response) => {
   const today = startOfDay(new Date());
 
   const plan = await prisma.dailyPlan.findUnique({
@@ -117,7 +118,7 @@ router.get('/today', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 // GET /api/orient/:date - Get daily plan for specific date
-router.get('/:date', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:date', cacheControl(CachePolicies.LONG), asyncHandler(async (req: Request, res: Response) => {
   const date = startOfDay(new Date(req.params.date));
 
   const plan = await prisma.dailyPlan.findUnique({

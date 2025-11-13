@@ -7,6 +7,7 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
 import { categoryEnum } from '../schemas/enums';
 import { paginationSchema } from '../schemas/pagination';
+import { cacheControl, CachePolicies } from '../middleware/cacheControl';
 
 const router = Router();
 
@@ -18,7 +19,7 @@ const getPostDoLogsSchema = z.object({
 }).merge(paginationSchema);
 
 // GET /api/postdo - Get Post-Do logs with optional filters
-router.get('/', asyncHandler(async (req: Request, res: Response) => {
+router.get('/', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Request, res: Response) => {
   // Validate query parameters
   const { startDate, endDate, category, cursor, limit } = getPostDoLogsSchema.parse(req.query);
 
@@ -78,7 +79,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 // GET /api/postdo/:id - Get single Post-Do log by ID
-router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:id', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const postDoLog = await prisma.postDoLog.findUnique({
