@@ -9,6 +9,14 @@ import { getCurrentTimestamp, dateToISO } from '../utils/dateHelpers';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
 import { env } from '../config/env';
+import {
+  priorityEnum,
+  statusEnum,
+  categoryEnum,
+  contextEnum,
+  energyEnum,
+  effortEnum,
+} from '../schemas/enums';
 
 // Development-only logging
 const DEBUG = env.NODE_ENV === 'development';
@@ -24,14 +32,14 @@ type ListTasksResponse<TTask> = {
 // Validation schemas
 const createTaskSchema = z.object({
   name: z.string().min(1),
-  priority: z.enum(['MUST', 'SHOULD', 'COULD', 'MAYBE']),
-  category: z.enum(['SCHOOL', 'MUSIC', 'FITNESS', 'GAMING', 'NUTRITION', 'HYGIENE', 'PET', 'SOCIAL', 'PERSONAL', 'ADMIN']),
-  context: z.enum(['HOME', 'OFFICE', 'COMPUTER', 'PHONE', 'ERRANDS', 'ANYWHERE']),
-  energyRequired: z.enum(['HIGH', 'MEDIUM', 'LOW']),
+  priority: priorityEnum,
+  category: categoryEnum,
+  context: contextEnum,
+  energyRequired: energyEnum,
   duration: z.number().positive(),
   definitionOfDone: z.string().min(1),
   dueDate: z.string().datetime().optional(),
-  status: z.enum(['NEXT', 'WAITING', 'ACTIVE', 'DONE', 'SOMEDAY']).optional(),
+  status: statusEnum.optional(),
 });
 
 const updateTaskSchema = createTaskSchema.partial();
@@ -41,19 +49,19 @@ const scheduleTaskSchema = z.object({
 });
 
 const updateStatusSchema = z.object({
-  status: z.enum(['NEXT', 'WAITING', 'ACTIVE', 'DONE', 'SOMEDAY']),
+  status: statusEnum,
 });
 
 const enrichTaskSchema = z.object({
   tempTaskId: z.string().uuid(),
   priority: z.number().min(1).max(4),
   duration: z.number().positive(),
-  energy: z.enum(['HIGH', 'MEDIUM', 'LOW']),
+  energy: energyEnum,
 });
 
 const completeTaskSchema = z.object({
   outcome: z.string().min(1),
-  effortLevel: z.enum(['SMALL', 'MEDIUM', 'LARGE']),
+  effortLevel: effortEnum,
   keyInsight: z.string().min(1),
   actualDuration: z.number().positive(), // minutes
   startTime: z.string().datetime(),

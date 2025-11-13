@@ -6,6 +6,7 @@ import { startOfDay, endOfDay, startOfWeek, endOfWeek, subDays } from 'date-fns'
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
 import { getCategoryBalanceFromToggl, type PostDoLogTimeRange } from '../services/timery';
+import { reviewTypeEnum, energyEnum } from '../schemas/enums';
 
 type PostDoLogWithTask = Prisma.PostDoLogGetPayload<{ include: { task: true } }>;
 type DailyPlanRecord = Prisma.DailyPlanGetPayload<{}>;
@@ -14,12 +15,12 @@ const router = Router();
 
 // Validation schema
 const createReviewSchema = z.object({
-  type: z.enum(['DAILY', 'WEEKLY']),
+  type: reviewTypeEnum,
   wins: z.array(z.string()).max(3),
   misses: z.array(z.string()).max(3),
   lessons: z.array(z.string()).max(3),
   nextGoals: z.array(z.string()).max(3),
-  energyAssessment: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
+  energyAssessment: energyEnum.optional(),
 });
 
 // Helper to merge category balances from Compass tasks and Toggl entries

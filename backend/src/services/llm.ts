@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 import { withRetry } from '../utils/retry';
 import { env } from '../config/env';
+import { categoryEnum, contextEnum } from '../schemas/enums';
 
 let anthropic = new Anthropic({
   apiKey: env.ANTHROPIC_API_KEY,
@@ -15,8 +16,8 @@ export const setAnthropicClient = (client: Anthropic) => {
 
 // Zod schemas for validation
 const taskEnrichmentSchema = z.object({
-  category: z.enum(['SCHOOL', 'MUSIC', 'FITNESS', 'GAMING', 'NUTRITION', 'HYGIENE', 'PET', 'SOCIAL', 'PERSONAL', 'ADMIN']),
-  context: z.enum(['HOME', 'OFFICE', 'COMPUTER', 'PHONE', 'ERRANDS', 'ANYWHERE']),
+  category: categoryEnum,
+  context: contextEnum,
   rephrasedName: z.string().min(1),
   definitionOfDone: z.string().min(1),
 });

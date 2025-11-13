@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { startOfDay, endOfDay } from 'date-fns';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
+import { categoryEnum } from '../schemas/enums';
 
 const router = Router();
 
@@ -12,7 +13,7 @@ const router = Router();
 const getPostDoLogsSchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  category: z.enum(['SCHOOL', 'MUSIC', 'FITNESS', 'GAMING', 'NUTRITION', 'HYGIENE', 'PET', 'SOCIAL', 'PERSONAL', 'ADMIN']).optional(),
+  category: categoryEnum.optional(),
 });
 
 // Pagination schema
