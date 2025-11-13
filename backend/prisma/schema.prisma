@@ -15,22 +15,22 @@ datasource db {
 
 // Tasks Database
 model Task {
-  id                String       @id @default(uuid())
-  name              String
-  status            TaskStatus
-  priority          Priority
-  category          Category
-  context           Context
-  energyRequired    Energy
-  duration          Int          // minutes
-  definitionOfDone  String
-  dueDate           DateTime?
-  scheduledStart    DateTime?
-  activatedAt       DateTime?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  id               String     @id @default(uuid())
+  name             String
+  status           TaskStatus
+  priority         Priority
+  category         Category
+  context          Context
+  energyRequired   Energy
+  duration         Int // minutes
+  definitionOfDone String
+  dueDate          DateTime?
+  scheduledStart   DateTime?
+  activatedAt      DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
-  postDoLog         PostDoLog?
+  postDoLog PostDoLog?
 
   @@index([status, priority])
   @@index([scheduledStart])
@@ -38,97 +38,99 @@ model Task {
   @@index([createdAt])
   @@index([dueDate])
   @@index([status, scheduledStart])
+  @@index([status, priority, scheduledStart]) // Optimize main task list query
 }
 
 // Orient Database (Daily Plans)
 model DailyPlan {
-  id                String       @id @default(uuid())
-  date              DateTime     @unique
+  id   String   @id @default(uuid())
+  date DateTime @unique
 
   // Orient East (Morning)
-  energyLevel       Energy
-  deepWorkBlock1    Json         // {start, end, focus}
-  deepWorkBlock2    Json?
-  adminBlock        Json?
-  bufferBlock       Json?
-  topOutcomes       String[]     // Max 3
-  reward            String?
+  energyLevel    Energy
+  deepWorkBlock1 Json // {start, end, focus}
+  deepWorkBlock2 Json?
+  adminBlock     Json?
+  bufferBlock    Json?
+  topOutcomes    String[] // Max 3
+  reward         String?
 
   // Orient West (Evening)
-  reflection        String?
-  actualOutcomes    Int?         // 0-3
-  energyMatch       EnergyMatch?
+  reflection     String?
+  actualOutcomes Int? // 0-3
+  energyMatch    EnergyMatch?
 
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([date])
 }
 
 // Post-Do Logs
 model PostDoLog {
-  id                String       @id @default(uuid())
-  taskId            String       @unique
-  task              Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  taskId String @unique
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
-  outcome           String
-  effortLevel       Effort
-  keyInsight        String
+  outcome     String
+  effortLevel Effort
+  keyInsight  String
 
-  estimatedDuration Int          // minutes
-  actualDuration    Int          // minutes
-  variance          Int          // calculated: actualDuration - estimatedDuration
-  efficiency        Float        // calculated: (estimatedDuration / actualDuration) * 100
+  estimatedDuration Int // minutes
+  actualDuration    Int // minutes
+  variance          Int // calculated: actualDuration - estimatedDuration
+  efficiency        Float // calculated: (estimatedDuration / actualDuration) * 100
 
-  startTime         DateTime
-  endTime           DateTime
-  timeOfDay         TimeOfDay    // calculated
-  dayOfWeek         String       // calculated
+  startTime DateTime
+  endTime   DateTime
+  timeOfDay TimeOfDay // calculated
+  dayOfWeek String // calculated
 
-  timeryEntryId     String?
-  evidenceLink      String?
-  rewardTaken       Boolean      @default(false)
+  timeryEntryId String?
+  evidenceLink  String?
+  rewardTaken   Boolean @default(false)
 
-  completionDate    DateTime     @default(now())
+  completionDate DateTime @default(now())
 
   @@index([completionDate])
   @@index([timeOfDay])
   @@index([taskId])
+  @@index([completionDate, taskId]) // Optimize date range queries with task joins
 }
 
 // Reviews Database
 model Review {
-  id                String       @id @default(uuid())
-  type              ReviewType   // DAILY or WEEKLY
-  periodStart       DateTime
-  periodEnd         DateTime
+  id          String     @id @default(uuid())
+  type        ReviewType // DAILY or WEEKLY
+  periodStart DateTime
+  periodEnd   DateTime
 
   // 3-3-3 Reflections
-  wins              String[]     // Max 3
-  misses            String[]     // Max 3
-  lessons           String[]     // Max 3
-  nextGoals         String[]     // Max 3
+  wins      String[] // Max 3
+  misses    String[] // Max 3
+  lessons   String[] // Max 3
+  nextGoals String[] // Max 3
 
   // Performance Metrics
-  executionRate     Float?
-  tasksCompleted    Int
-  deepWorkHours     Float
-  categoryBalance   Json         // {category: minutes}
+  executionRate   Float?
+  tasksCompleted  Int
+  deepWorkHours   Float
+  categoryBalance Json // {category: minutes}
 
   // Time Metrics
-  totalTrackedTime  Int          // minutes
-  timeCoverage      Float        // percentage
-  contextSwitches   Int?
+  totalTrackedTime Int // minutes
+  timeCoverage     Float // percentage
+  contextSwitches  Int?
 
   // Energy
-  energyAssessment  Energy?
+  energyAssessment Energy?
 
   // Future: Biometric
-  sleepScore        Int?
-  vitalsScore       Int?
-  activityScore     Int?
+  sleepScore    Int?
+  vitalsScore   Int?
+  activityScore Int?
 
-  createdAt         DateTime     @default(now())
+  createdAt DateTime @default(now())
 
   @@index([periodStart, type])
   @@index([type])
@@ -136,12 +138,12 @@ model Review {
 
 // Temporary Captured Tasks (from Todoist)
 model TempCapturedTask {
-  id         String    @id @default(uuid())
-  name       String
-  dueDate    DateTime?
-  source     String    @default("TODOIST")
-  processed  Boolean   @default(false)
-  createdAt  DateTime  @default(now())
+  id        String    @id @default(uuid())
+  name      String
+  dueDate   DateTime?
+  source    String    @default("TODOIST")
+  processed Boolean   @default(false)
+  createdAt DateTime  @default(now())
 
   @@index([processed])
 }
@@ -159,10 +161,10 @@ enum TaskStatus {
 }
 
 enum Priority {
-  MUST      // 1
-  SHOULD    // 2
-  COULD     // 3
-  MAYBE     // 4
+  MUST // 1
+  SHOULD // 2
+  COULD // 3
+  MAYBE // 4
 }
 
 enum Category {
@@ -200,12 +202,12 @@ enum Effort {
 }
 
 enum TimeOfDay {
-  EARLY_MORNING   // 5-8am
-  MORNING         // 8-11am
-  MIDDAY          // 11am-2pm
-  AFTERNOON       // 2-5pm
-  EVENING         // 5-8pm
-  NIGHT           // 8pm+
+  EARLY_MORNING // 5-8am
+  MORNING // 8-11am
+  MIDDAY // 11am-2pm
+  AFTERNOON // 2-5pm
+  EVENING // 5-8pm
+  NIGHT // 8pm+
 }
 
 enum EnergyMatch {
