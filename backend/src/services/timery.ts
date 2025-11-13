@@ -12,7 +12,8 @@ const togglAPI = axios.create({
   },
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  timeout: 15000, // 15 seconds
 });
 
 // Toggl Project Name → Compass Category mapping.

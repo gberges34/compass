@@ -73,11 +73,6 @@ app.use((req, res, next) => {
 });
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Compass API is running' });
-});
-
-// Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
