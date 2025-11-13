@@ -6,7 +6,7 @@ import { format, parse, startOfWeek, getDay } from 'date-fns';
 import enUS from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
-import type { Task, CalendarEvent } from '../types';
+import type { Task, CalendarEvent, Category } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useFlatTasks } from '../hooks/useTasks';
 import { useTodayPlan } from '../hooks/useDailyPlans';
@@ -45,8 +45,8 @@ const localizer = dateFnsLocalizer({
 const DnDCalendar = withDragAndDrop(Calendar);
 
 // Category color mapping - defined outside component to prevent recreations
-const getCategoryColor = (category: string): string => {
-  return categoryColors[category as keyof typeof categoryColors]?.hex || '#6b7280';
+const getCategoryColor = (category: Category): string => {
+  return categoryColors[category]?.hex || '#6b7280';
 };
 
 // Memoized UnscheduledTaskCard component to prevent unnecessary re-renders

@@ -3,8 +3,18 @@
  * Maps application concepts to design system colors and styles
  */
 
+import { Category } from '../types';
+
+type CategoryConfig = {
+  bg: string;
+  border: string;
+  text: string;
+  label: string;
+  hex: string;
+};
+
 // Category color mapping (use pastel accents)
-export const categoryColors = {
+export const categoryColors: Record<Category, CategoryConfig> = {
   SCHOOL: {
     bg: 'bg-sky',
     border: 'border-sky',
