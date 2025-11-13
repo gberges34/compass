@@ -14,6 +14,8 @@ import reviewsRouter from './routes/reviews';
 import postdoRouter from './routes/postdo';
 import { getCurrentTimestamp } from './utils/dateHelpers';
 import { errorHandler } from './middleware/errorHandler';
+import { runHealthChecks } from './services/health';
+import { asyncHandler } from './middleware/asyncHandler';
 
 const app = express();
 const PORT = env.PORT;
@@ -73,13 +75,20 @@ app.use((req, res, next) => {
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: getCurrentTimestamp(),
-    service: 'compass-backend'
-  });
-});
+app.get(
+  '/api/health',
+  asyncHandler(async (_req, res) => {
+    const result = await runHealthChecks();
+    const statusCode = result.overallStatus === 'ok' ? 200 : 503;
+
+    res.status(statusCode).json({
+      status: result.overallStatus,
+      timestamp: getCurrentTimestamp(),
+      service: 'compass-backend',
+      dependencies: result.dependencies,
+    });
+  })
+);
 
 // Routes
 app.use('/api/tasks', tasksRouter);
