@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { APIError, APIConnectionError, RateLimitError } from '@anthropic-ai/sdk/error';
 import { z } from 'zod';
 import { withRetry } from '../utils/retry';
 import { env } from '../config/env';
@@ -133,15 +134,26 @@ Respond ONLY with valid JSON in this exact format:
 
     // Validate with partial recovery
     return validateWithRecovery(enrichment, input);
-  } catch (error: any) {
-    console.error('Error enriching task:', error);
+  } catch (error: unknown) {
+    // Only provide fallback for Anthropic API errors
+    if (
+      error instanceof APIError ||
+      error instanceof APIConnectionError ||
+      error instanceof RateLimitError
+    ) {
+      console.error('Anthropic API error during task enrichment:', error.message);
 
-    // Fallback enrichment if API fails
-    return {
-      category: 'PERSONAL',
-      context: 'ANYWHERE',
-      rephrasedName: input.rawTaskName,
-      definitionOfDone: 'Task completed as described'
-    };
+      // Fallback enrichment if API fails
+      return {
+        category: 'PERSONAL',
+        context: 'ANYWHERE',
+        rephrasedName: input.rawTaskName,
+        definitionOfDone: 'Task completed as described',
+      };
+    }
+
+    // Re-throw non-API errors (programming errors, validation failures)
+    console.error('Unexpected error enriching task:', error);
+    throw error;
   }
 }
