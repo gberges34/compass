@@ -18,6 +18,8 @@ import type {
   PaginatedResponse,
 } from '../types';
 
+import { ApiErrorPayload, getUserFriendlyError } from './apiErrorUtils';
+
 // Augment Axios error with user-friendly message and error code
 declare module 'axios' {
   export interface AxiosError {
@@ -44,24 +46,45 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Extract error message from new backend format
-    const errorMessage = error.response?.data?.error || 'An error occurred. Please try again.';
-    const errorCode = error.response?.data?.code;
-    const errorDetails = error.response?.data?.details;
+    if (error.response) {
+      const { status, data } = error.response as { status?: number; data?: ApiErrorPayload };
+      const userMessage = getUserFriendlyError(status, data);
 
-    // Attach user-friendly message to error object
-    error.userMessage = errorMessage;
-    error.errorCode = errorCode;
+      error.userMessage = userMessage;
+      error.errorCode = data?.code;
 
-    // Log for debugging in development
-    if (DEBUG) {
-      console.error('API Error:', {
-        status: error.response?.status,
-        code: errorCode,
-        message: errorMessage,
-        details: errorDetails,
-        url: error.config?.url
-      });
+      if (DEBUG) {
+        console.error('API Error:', {
+          status,
+          code: data?.code,
+          message: data?.error || data?.message || userMessage,
+          details: data?.details,
+          url: error.config?.url,
+          method: error.config?.method,
+        });
+      }
+    } else if (error.request) {
+      error.userMessage = 'Network error. Please check your connection.';
+
+      if (DEBUG) {
+        console.error('API Error:', {
+          status: 'NETWORK_ERROR',
+          message: error.message,
+          url: error.config?.url,
+          method: error.config?.method,
+        });
+      }
+    } else {
+      error.userMessage = 'Request configuration failed. Please retry.';
+
+      if (DEBUG) {
+        console.error('API Error:', {
+          status: 'REQUEST_SETUP_FAILED',
+          message: error.message,
+          url: error.config?.url,
+          method: error.config?.method,
+        });
+      }
     }
 
     return Promise.reject(error);

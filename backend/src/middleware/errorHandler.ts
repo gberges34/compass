@@ -8,6 +8,7 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
+
   // Handle Zod validation errors
   if (err instanceof z.ZodError) {
     return res.status(400).json({

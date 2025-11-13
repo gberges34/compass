@@ -1,3 +1,5 @@
+import type { PaginationResponse } from '@compass/dto/pagination';
+
 // Compass Frontend - Type Definitions
 
 export type TaskStatus = 'NEXT' | 'WAITING' | 'ACTIVE' | 'DONE';

@@ -51,6 +51,8 @@ type InfiniteTasksQueryOptions = Omit<
   'queryKey' | 'queryFn' | 'initialPageParam'
 >;
 
+type UseFlatTasksResult = ReturnType<typeof useTasks> & { tasks: Task[] };
+
 // Keep useTasks backwards compatible (returns just data array)
 export function useTasks(filters?: TaskFilters, options?: TasksQueryOptions) {
   return useQuery({

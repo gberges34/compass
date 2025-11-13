@@ -25,6 +25,12 @@ export class NotFoundError extends AppError {
   }
 }
 
+export class ConflictError extends AppError {
+  constructor(message: string, details?: any) {
+    super(message, 409, 'CONFLICT', details);
+  }
+}
+
 export class BadRequestError extends AppError {
   constructor(message: string) {
     super(message, 400, 'BAD_REQUEST');

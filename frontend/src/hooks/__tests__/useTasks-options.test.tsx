@@ -35,7 +35,7 @@ describe('useTasks with options', () => {
 
   it('accepts and applies refetchInterval option', async () => {
     const mockTasks = [{ id: '1', name: 'Test Task' }];
-    (api.getTasks as jest.Mock).mockResolvedValue(mockTasks);
+    (api.getTasks as jest.Mock).mockResolvedValue({ items: mockTasks, nextCursor: null });
 
     const { result } = renderHook(
       () => useTasks({ status: 'NEXT' }, { refetchInterval: 1000 }),
@@ -48,7 +48,7 @@ describe('useTasks with options', () => {
 
   it('accepts and applies refetchOnWindowFocus option', async () => {
     const mockTasks = [{ id: '1', name: 'Test Task' }];
-    (api.getTasks as jest.Mock).mockResolvedValue(mockTasks);
+    (api.getTasks as jest.Mock).mockResolvedValue({ items: mockTasks, nextCursor: null });
 
     const { result } = renderHook(
       () => useTasks({ status: 'NEXT' }, { refetchOnWindowFocus: false }),
@@ -61,7 +61,7 @@ describe('useTasks with options', () => {
 
   it('works without options parameter (backward compatibility)', async () => {
     const mockTasks = [{ id: '1', name: 'Test Task' }];
-    (api.getTasks as jest.Mock).mockResolvedValue(mockTasks);
+    (api.getTasks as jest.Mock).mockResolvedValue({ items: mockTasks, nextCursor: null });
 
     const { result } = renderHook(
       () => useTasks({ status: 'NEXT' }),
