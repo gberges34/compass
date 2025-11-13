@@ -3,7 +3,7 @@ import { prisma } from '../prisma';
 import { z } from 'zod';
 import { startOfDay } from 'date-fns';
 import { asyncHandler } from '../middleware/asyncHandler';
-import { NotFoundError, BadRequestError } from '../errors/AppError';
+import { NotFoundError, BadRequestError, ConflictError } from '../errors/AppError';
 
 const router = Router();
 
@@ -49,11 +49,7 @@ router.post('/east', asyncHandler(async (req: Request, res: Response) => {
   });
 
   if (existing) {
-    res.status(409).json({
-      error: 'Daily plan already exists for today',
-      plan: existing
-    });
-    return;
+    throw new ConflictError('Daily plan already exists for today', { plan: existing });
   }
 
   const dailyPlan = await prisma.dailyPlan.create({
