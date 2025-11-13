@@ -264,19 +264,6 @@ router.patch('/:id/schedule', asyncHandler(async (req: Request, res: Response) =
 
   log('[PATCH /schedule] Request for task:', { id, scheduledStart: validatedData.scheduledStart });
 
-  // Get task BEFORE update for logging
-  // Note: No explicit existence check needed - the subsequent update will throw NotFoundError via Prisma extension
-  const taskBefore = await prisma.task.findUnique({
-    where: { id },
-  });
-
-  log('[PATCH /schedule] Task state BEFORE:', {
-    id: taskBefore?.id,
-    name: taskBefore?.name,
-    scheduledStart: taskBefore?.scheduledStart,
-    updatedAt: taskBefore?.updatedAt,
-  });
-
   // Validate not scheduling in the past
   const scheduledDate = new Date(validatedData.scheduledStart);
   const now = new Date();
@@ -306,7 +293,6 @@ router.patch('/:id/schedule', asyncHandler(async (req: Request, res: Response) =
 
   log('[PATCH /schedule] Success - task scheduled:', {
     taskId: id,
-    previousScheduledStart: taskBefore?.scheduledStart,
     newScheduledStart: task.scheduledStart,
     durationMinutes: task.duration,
   });
@@ -319,19 +305,6 @@ router.patch('/:id/unschedule', asyncHandler(async (req: Request, res: Response)
   const { id } = req.params;
 
   log('[PATCH /unschedule] Request for task:', { id });
-
-  // Get task BEFORE update for logging
-  // Note: No explicit existence check needed - the subsequent update will throw NotFoundError via Prisma extension
-  const taskBefore = await prisma.task.findUnique({
-    where: { id },
-  });
-
-  log('[PATCH /unschedule] Task state BEFORE:', {
-    id: taskBefore?.id,
-    name: taskBefore?.name,
-    scheduledStart: taskBefore?.scheduledStart,
-    updatedAt: taskBefore?.updatedAt,
-  });
 
   // Update task
   const task = await prisma.task.update({
@@ -350,7 +323,6 @@ router.patch('/:id/unschedule', asyncHandler(async (req: Request, res: Response)
 
   log('[PATCH /unschedule] Success - task unscheduled:', {
     taskId: id,
-    previousScheduledStart: taskBefore?.scheduledStart,
     newScheduledStart: task.scheduledStart,
   });
 
