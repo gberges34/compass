@@ -48,6 +48,7 @@ async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date) {
     startDate: weekStart,
     endDate: weekEnd,
     dailyPlan: null, // No daily plan for weekly reviews
+    isWeekly: true, // Flag to query all daily plans in the range
   });
 
   return metrics;

@@ -10,6 +10,7 @@ interface MetricsInput {
   dailyPlan?: {
     topOutcomes: string[];
   } | null;
+  isWeekly?: boolean;
 }
 
 interface MetricsResult {
@@ -27,7 +28,7 @@ interface MetricsResult {
  * Works for both daily and weekly periods.
  */
 export async function calculateMetrics(input: MetricsInput): Promise<MetricsResult> {
-  const { startDate, endDate, dailyPlan } = input;
+  const { startDate, endDate, dailyPlan, isWeekly = false } = input;
 
   // Get completed tasks count
   const completedTasks = await prisma.task.count({
@@ -41,7 +42,25 @@ export async function calculateMetrics(input: MetricsInput): Promise<MetricsResu
   });
 
   // Calculate execution rate
-  const plannedTasks = dailyPlan?.topOutcomes.length || 0;
+  let plannedTasks = 0;
+  if (isWeekly) {
+    // For weekly reviews, query all daily plans in the date range
+    const dailyPlans = await prisma.dailyPlan.findMany({
+      where: {
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      select: {
+        topOutcomes: true,
+      },
+    });
+    plannedTasks = dailyPlans.reduce((sum, plan) => sum + plan.topOutcomes.length, 0);
+  } else {
+    // For daily reviews, use the provided daily plan
+    plannedTasks = dailyPlan?.topOutcomes.length || 0;
+  }
   const executionRate = plannedTasks > 0 ? (completedTasks / plannedTasks) * 100 : 0;
 
   // Get PostDo logs
