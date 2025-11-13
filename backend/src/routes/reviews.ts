@@ -7,6 +7,9 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
 import { getCategoryBalanceFromToggl } from '../services/timery';
 
+type PostDoLogWithTask = Prisma.PostDoLogGetPayload<{ include: { task: true } }>;
+type DailyPlanRecord = Prisma.DailyPlanGetPayload<{}>;
+
 const router = Router();
 
 // Validation schema
@@ -51,7 +54,7 @@ async function calculateDailyMetrics(date: Date) {
   });
 
   // Get daily plan (if exists) to determine planned outcomes
-  const dailyPlan = await prisma.dailyPlan.findUnique({
+  const dailyPlan: DailyPlanRecord | null = await prisma.dailyPlan.findUnique({
     where: { date: dayStart }
   });
 
@@ -61,7 +64,7 @@ async function calculateDailyMetrics(date: Date) {
     : 0;
 
   // Get all post-do logs for the day
-  const postDoLogs = await prisma.postDoLog.findMany({
+  const postDoLogs: PostDoLogWithTask[] = await prisma.postDoLog.findMany({
     where: {
       completionDate: {
         gte: dayStart,
@@ -73,14 +76,14 @@ async function calculateDailyMetrics(date: Date) {
 
   // Calculate deep work hours (tasks with HIGH energy)
   const deepWorkMinutes = postDoLogs
-    .filter((log: any) => log.task.energyRequired === 'HIGH')
-    .reduce((sum: number, log: any) => sum + log.actualDuration, 0);
+    .filter((log) => log.task.energyRequired === 'HIGH')
+    .reduce((sum: number, log) => sum + log.actualDuration, 0);
 
   const deepWorkHours = Math.round((deepWorkMinutes / 60) * 10) / 10;
 
   // Calculate category balance from Compass tasks
   const compassCategoryBalance: Record<string, number> = {};
-  postDoLogs.forEach((log: any) => {
+  postDoLogs.forEach((log) => {
     const category = log.task.category;
     compassCategoryBalance[category] = (compassCategoryBalance[category] || 0) + log.actualDuration;
   });
@@ -131,7 +134,7 @@ async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date) {
   });
 
   // Get all daily plans for the week
-  const dailyPlans = await prisma.dailyPlan.findMany({
+  const dailyPlans: DailyPlanRecord[] = await prisma.dailyPlan.findMany({
     where: {
       date: {
         gte: weekStart,
@@ -141,7 +144,7 @@ async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date) {
   });
 
   const totalPlannedOutcomes = dailyPlans.reduce(
-    (sum: number, plan: any) => sum + plan.topOutcomes.length,
+    (sum: number, plan) => sum + plan.topOutcomes.length,
     0
   );
 
@@ -150,7 +153,7 @@ async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date) {
     : 0;
 
   // Get all post-do logs for the week
-  const postDoLogs = await prisma.postDoLog.findMany({
+  const postDoLogs: PostDoLogWithTask[] = await prisma.postDoLog.findMany({
     where: {
       completionDate: {
         gte: weekStart,
@@ -162,14 +165,14 @@ async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date) {
 
   // Calculate deep work hours
   const deepWorkMinutes = postDoLogs
-    .filter((log: any) => log.task.energyRequired === 'HIGH')
-    .reduce((sum: number, log: any) => sum + log.actualDuration, 0);
+    .filter((log) => log.task.energyRequired === 'HIGH')
+    .reduce((sum: number, log) => sum + log.actualDuration, 0);
 
   const deepWorkHours = Math.round((deepWorkMinutes / 60) * 10) / 10;
 
   // Calculate category balance from Compass tasks
   const compassCategoryBalance: Record<string, number> = {};
-  postDoLogs.forEach((log: any) => {
+  postDoLogs.forEach((log) => {
     const category = log.task.category;
     compassCategoryBalance[category] = (compassCategoryBalance[category] || 0) + log.actualDuration;
   });
