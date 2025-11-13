@@ -34,6 +34,7 @@ const TOGGL_PROJECT_CATEGORY_MAP: Record<string, Category> = {
 export const TOGGL_OVERLAP_TOLERANCE_MINUTES = 15;
 
 export interface TimeryEntry {
+  id: string;
   duration: number; // minutes
   startTime: Date;
   endTime: Date;
@@ -51,6 +52,7 @@ export async function fetchTimeryEntry(entryId: string): Promise<TimeryEntry> {
     const durationMinutes = Math.floor(durationSeconds / 60);
 
     return {
+      id: data.id.toString(),
       duration: durationMinutes,
       startTime: new Date(data.start),
       endTime: new Date(data.stop || new Date()),
@@ -78,6 +80,7 @@ export async function getCurrentRunningEntry(): Promise<TimeryEntry | null> {
     const durationMinutes = Math.floor(durationSeconds / 60);
 
     return {
+      id: data.id.toString(),
       duration: durationMinutes,
       startTime,
       endTime: now,
@@ -97,19 +100,9 @@ export async function stopRunningEntry(): Promise<TimeryEntry | null> {
       return null;
     }
 
-    // Get the running entry ID
-    const response = await togglAPI.get('/time_entries/current');
-    const entryId = response.data?.id;
-
-    if (entryId) {
-      // Stop the entry by setting the stop time
-      await togglAPI.patch(`/time_entries/${entryId}/stop`);
-
-      // Fetch the stopped entry
-      return await fetchTimeryEntry(entryId.toString());
-    }
-
-    return null;
+    // Use the entry ID from currentEntry (no duplicate API call)
+    await togglAPI.patch(`/time_entries/${currentEntry.id}/stop`);
+    return await fetchTimeryEntry(currentEntry.id);
   } catch (error: any) {
     console.error('Error stopping entry:', error.response?.data || error.message);
     throw new Error(`Failed to stop Timery entry: ${error.message}`);
