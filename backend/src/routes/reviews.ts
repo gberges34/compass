@@ -89,7 +89,7 @@ async function calculateDailyMetrics(date: Date) {
   const togglCategoryBalance = await getCategoryBalanceFromToggl(
     dayStart,
     dayEnd,
-    postDoLogs
+    postDoLogs.map((log) => ({ startTime: log.startTime, endTime: log.endTime }))
   );
 
   // Merge both sources
@@ -178,7 +178,7 @@ async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date) {
   const togglCategoryBalance = await getCategoryBalanceFromToggl(
     weekStart,
     weekEnd,
-    postDoLogs
+    postDoLogs.map((log) => ({ startTime: log.startTime, endTime: log.endTime }))
   );
 
   // Merge both sources
