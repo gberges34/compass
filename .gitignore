@@ -59,6 +59,7 @@ Thumbs.db
 .codex/
 codex.log
 log/
+.worktrees/
 
 # Claude Code sensitive settings
 .claude/settings.local.json
