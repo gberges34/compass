@@ -49,7 +49,9 @@ export interface TimeryEntry {
  */
 export async function fetchTimeryEntry(entryId: string): Promise<TimeryEntry> {
   try {
-    const response = await togglAPI.get(`/time_entries/${entryId}`);
+    const response = await withRetry(() =>
+      togglAPI.get(`/time_entries/${entryId}`)
+    );
     const data = response.data;
 
     // Toggl returns duration in seconds (negative if running)
@@ -76,7 +78,9 @@ export async function fetchTimeryEntry(entryId: string): Promise<TimeryEntry> {
  */
 export async function getCurrentRunningEntry(): Promise<TimeryEntry | null> {
   try {
-    const response = await togglAPI.get('/time_entries/current');
+    const response = await withRetry(() =>
+      togglAPI.get('/time_entries/current')
+    );
 
     if (!response.data) {
       return null; // No running entry
@@ -115,7 +119,9 @@ export async function stopRunningEntry(): Promise<TimeryEntry | null> {
     }
 
     // Use the entry ID from currentEntry (no duplicate API call)
-    await togglAPI.patch(`/time_entries/${currentEntry.id}/stop`);
+    await withRetry(() =>
+      togglAPI.patch(`/time_entries/${currentEntry.id}/stop`)
+    );
     return await fetchTimeryEntry(currentEntry.id);
   } catch (error: any) {
     console.error('Error stopping entry:', error.response?.data || error.message);
