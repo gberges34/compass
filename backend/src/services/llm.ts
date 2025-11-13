@@ -130,7 +130,22 @@ Respond ONLY with valid JSON in this exact format:
       jsonText = jsonText.replace(/```\n?/g, '');
     }
 
-    const enrichment = JSON.parse(jsonText);
+    // Parse JSON with fallback for malformed responses
+    let enrichment;
+    try {
+      enrichment = JSON.parse(jsonText);
+    } catch (parseError) {
+      console.error('LLM returned invalid JSON:', jsonText.substring(0, 200));
+      console.error('Parse error:', parseError instanceof Error ? parseError.message : parseError);
+
+      // Return fallback enrichment for malformed JSON
+      return {
+        category: 'PERSONAL',
+        context: 'ANYWHERE',
+        rephrasedName: input.rawTaskName,
+        definitionOfDone: 'Task completed as described',
+      };
+    }
 
     // Validate with partial recovery
     return validateWithRecovery(enrichment, input);
