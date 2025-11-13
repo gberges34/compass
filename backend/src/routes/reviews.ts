@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, subDays } from 'date-fns';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
-import { getCategoryBalanceFromToggl } from '../services/timery';
+import { getCategoryBalanceFromToggl, type PostDoLogTimeRange } from '../services/timery';
 
 type PostDoLogWithTask = Prisma.PostDoLogGetPayload<{ include: { task: true } }>;
 type DailyPlanRecord = Prisma.DailyPlanGetPayload<{}>;
@@ -88,12 +88,13 @@ async function calculateDailyMetrics(date: Date) {
     compassCategoryBalance[category] = (compassCategoryBalance[category] || 0) + log.actualDuration;
   });
 
+  const postDoLogRanges: PostDoLogTimeRange[] = postDoLogs.map((log) => ({
+    startTime: log.startTime,
+    endTime: log.endTime,
+  }));
+
   // Get category balance from Toggl (gracefully handles errors)
-  const togglCategoryBalance = await getCategoryBalanceFromToggl(
-    dayStart,
-    dayEnd,
-    postDoLogs.map((log) => ({ startTime: log.startTime, endTime: log.endTime }))
-  );
+  const togglCategoryBalance = await getCategoryBalanceFromToggl(dayStart, dayEnd, postDoLogRanges);
 
   // Merge both sources
   const categoryBreakdown = mergeCategoryBalances(compassCategoryBalance, togglCategoryBalance);
@@ -177,11 +178,16 @@ async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date) {
     compassCategoryBalance[category] = (compassCategoryBalance[category] || 0) + log.actualDuration;
   });
 
+  const weeklyPostDoLogRanges: PostDoLogTimeRange[] = postDoLogs.map((log) => ({
+    startTime: log.startTime,
+    endTime: log.endTime,
+  }));
+
   // Get category balance from Toggl (gracefully handles errors)
   const togglCategoryBalance = await getCategoryBalanceFromToggl(
     weekStart,
     weekEnd,
-    postDoLogs.map((log) => ({ startTime: log.startTime, endTime: log.endTime }))
+    weeklyPostDoLogRanges
   );
 
   // Merge both sources

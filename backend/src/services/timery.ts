@@ -15,7 +15,8 @@ const togglAPI = axios.create({
   }
 });
 
-// Toggl Project Name → Compass Category mapping
+// Toggl Project Name → Compass Category mapping.
+// Keep this in sync with docs/timery-projects.md so Compass knows how to bucket Timery data.
 const TOGGL_PROJECT_CATEGORY_MAP: Record<string, Category> = {
   'School': 'SCHOOL',
   'Music': 'MUSIC',
@@ -28,6 +29,8 @@ const TOGGL_PROJECT_CATEGORY_MAP: Record<string, Category> = {
   'Personal': 'PERSONAL',
   'Admin': 'ADMIN',
 };
+
+export const TOGGL_OVERLAP_TOLERANCE_MINUTES = 15;
 
 export interface TimeryEntry {
   duration: number; // minutes
@@ -112,15 +115,14 @@ export async function stopRunningEntry(): Promise<TimeryEntry | null> {
   }
 }
 
-type PostDoLogTimeRange = Pick<PostDoLog, 'startTime' | 'endTime'>;
+export type PostDoLogTimeRange = Pick<PostDoLog, 'startTime' | 'endTime'>;
 
 // Helper to detect if a Toggl entry overlaps with any Compass PostDoLog
 export function isTogglEntryDuplicate(
   togglEntry: { start: string; stop: string | null },
   postDoLogs: PostDoLogTimeRange[]
 ): boolean {
-  const TOLERANCE_MINUTES = 15;
-  const toleranceMs = TOLERANCE_MINUTES * 60 * 1000;
+  const toleranceMs = TOGGL_OVERLAP_TOLERANCE_MINUTES * 60 * 1000;
 
   const togglStart = new Date(togglEntry.start);
   const togglEnd = togglEntry.stop ? new Date(togglEntry.stop) : new Date();
@@ -166,6 +168,9 @@ export async function getTimeEntriesForDateRange(startDate: Date, endDate: Date)
       })
     );
 
+    // Toggl Track responses are documented as ISO 8601 UTC timestamps:
+    // https://developers.track.toggl.com/docs/time_entries#response
+    // Compass also stores UTC, so no additional conversion is required here.
     return response.data || [];
   } catch (error: any) {
     console.error('Error fetching time entries:', error.response?.data || error.message);
@@ -175,7 +180,7 @@ export async function getTimeEntriesForDateRange(startDate: Date, endDate: Date)
 }
 
 // Get all projects to map project_id → project name
-async function getProjects(): Promise<Map<number, string>> {
+export async function getProjects(): Promise<Map<number, string>> {
   try {
     const response = await withRetry(() =>
       togglAPI.get('/me/projects')
