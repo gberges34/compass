@@ -1,7 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { APIError, APIConnectionError, RateLimitError } from '@anthropic-ai/sdk/error';
 import { z } from 'zod';
 import { withRetry } from '../utils/retry';
 import { env } from '../config/env';
+import { categoryEnum, contextEnum } from '../schemas/enums';
 
 let anthropic = new Anthropic({
   apiKey: env.ANTHROPIC_API_KEY,
@@ -15,8 +17,8 @@ export const setAnthropicClient = (client: Anthropic) => {
 
 // Zod schemas for validation
 const taskEnrichmentSchema = z.object({
-  category: z.enum(['SCHOOL', 'MUSIC', 'FITNESS', 'GAMING', 'NUTRITION', 'HYGIENE', 'PET', 'SOCIAL', 'PERSONAL', 'ADMIN']),
-  context: z.enum(['HOME', 'OFFICE', 'COMPUTER', 'PHONE', 'ERRANDS', 'ANYWHERE']),
+  category: categoryEnum,
+  context: contextEnum,
   rephrasedName: z.string().min(1),
   definitionOfDone: z.string().min(1),
 });
@@ -128,19 +130,45 @@ Respond ONLY with valid JSON in this exact format:
       jsonText = jsonText.replace(/```\n?/g, '');
     }
 
-    const enrichment = JSON.parse(jsonText);
+    // Parse JSON with fallback for malformed responses
+    let enrichment;
+    try {
+      enrichment = JSON.parse(jsonText);
+    } catch (parseError) {
+      console.error('LLM returned invalid JSON:', jsonText.substring(0, 200));
+      console.error('Parse error:', parseError instanceof Error ? parseError.message : parseError);
+
+      // Return fallback enrichment for malformed JSON
+      return {
+        category: 'PERSONAL',
+        context: 'ANYWHERE',
+        rephrasedName: input.rawTaskName,
+        definitionOfDone: 'Task completed as described',
+      };
+    }
 
     // Validate with partial recovery
     return validateWithRecovery(enrichment, input);
-  } catch (error: any) {
-    console.error('Error enriching task:', error);
+  } catch (error: unknown) {
+    // Only provide fallback for Anthropic API errors
+    if (
+      error instanceof APIError ||
+      error instanceof APIConnectionError ||
+      error instanceof RateLimitError
+    ) {
+      console.error('Anthropic API error during task enrichment:', error.message);
 
-    // Fallback enrichment if API fails
-    return {
-      category: 'PERSONAL',
-      context: 'ANYWHERE',
-      rephrasedName: input.rawTaskName,
-      definitionOfDone: 'Task completed as described'
-    };
+      // Fallback enrichment if API fails
+      return {
+        category: 'PERSONAL',
+        context: 'ANYWHERE',
+        rephrasedName: input.rawTaskName,
+        definitionOfDone: 'Task completed as described',
+      };
+    }
+
+    // Re-throw non-API errors (programming errors, validation failures)
+    console.error('Unexpected error enriching task:', error);
+    throw error;
   }
 }

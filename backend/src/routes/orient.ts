@@ -5,12 +5,13 @@ import { z } from 'zod';
 import { startOfDay } from 'date-fns';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError, ConflictError } from '../errors/AppError';
+import { energyEnum, energyMatchEnum } from '../schemas/enums';
 
 const router = Router();
 
 // Validation schemas
 const orientEastSchema = z.object({
-  energyLevel: z.enum(['HIGH', 'MEDIUM', 'LOW']),
+  energyLevel: energyEnum,
   deepWorkBlock1: z.object({
     start: z.string(),
     end: z.string(),
@@ -36,7 +37,7 @@ const orientEastSchema = z.object({
 const orientWestSchema = z.object({
   reflection: z.string().min(1),
   actualOutcomes: z.number().min(0).max(3),
-  energyMatch: z.enum(['PERFECT', 'MOSTLY_ALIGNED', 'SOME_MISMATCH', 'POOR']),
+  energyMatch: energyMatchEnum,
 });
 
 // POST /api/orient/east - Create morning daily plan (Orient East)

@@ -194,9 +194,8 @@ export const getTodoistPending = async (): Promise<{ count: number; tasks: TempC
 export const importTodoistTasks = async (tasks: Array<{ name: string; due?: string }>): Promise<{
   success: boolean;
   count: number;
-  tasks: TempCapturedTask[];
 }> => {
-  const response = await api.post<{ success: boolean; count: number; tasks: TempCapturedTask[] }>(
+  const response = await api.post<{ success: boolean; count: number }>(
     '/todoist/import',
     { tasks }
   );

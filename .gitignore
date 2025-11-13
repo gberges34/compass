@@ -43,7 +43,7 @@ frontend.log
 Thumbs.db
 
 # Prisma
-backend/prisma/migrations/
+# (migrations directory removed - migrations should be committed)
 
 # Build artifacts
 *.tsbuildinfo

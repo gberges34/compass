@@ -21,24 +21,19 @@ const importTasksSchema = z.object({
 router.post('/import', asyncHandler(async (req: Request, res: Response) => {
   const { tasks } = importTasksSchema.parse(req.body);
 
-  // Store tasks temporarily for Northbound processing
-  const tempTasks = await Promise.all(
-    tasks.map(task =>
-      prisma.tempCapturedTask.create({
-        data: {
-          name: task.name,
-          dueDate: task.due ? new Date(task.due) : null,
-          source: 'TODOIST',
-          processed: false,
-        }
-      })
-    )
-  );
+  // Store tasks temporarily for Northbound processing using batch insert
+  const result = await prisma.tempCapturedTask.createMany({
+    data: tasks.map(task => ({
+      name: task.name,
+      dueDate: task.due ? new Date(task.due) : null,
+      source: 'TODOIST',
+      processed: false,
+    })),
+  });
 
   res.json({
     success: true,
-    count: tempTasks.length,
-    tasks: tempTasks,
+    count: result.count,
   });
 }));
 
