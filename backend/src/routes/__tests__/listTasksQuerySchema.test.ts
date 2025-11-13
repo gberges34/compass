@@ -4,7 +4,7 @@ describe('listTasksQuerySchema', () => {
   it('applies sane defaults when no filters are provided', () => {
     const parsed = listTasksQuerySchema.parse({});
 
-    expect(parsed.limit).toBe(50);
+    expect(parsed.limit).toBe(30);
     expect(parsed.cursor).toBeUndefined();
     expect(parsed.status).toBeUndefined();
   });

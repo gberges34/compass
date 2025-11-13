@@ -2,6 +2,7 @@ import request from 'supertest';
 import express from 'express';
 import reviewsRouter from '../reviews';
 import { prisma } from '../../prisma';
+import { createTestUUID } from '../../utils/testHelpers';
 
 const app = express();
 app.use(express.json());
@@ -22,7 +23,7 @@ describe('GET /api/reviews - Pagination', () => {
 
   it('should return first page with nextCursor', async () => {
     const mockReviews = Array.from({ length: 31 }, (_, i) => ({
-      id: `review-${i}`,
+      id: createTestUUID(i),
       type: 'DAILY',
       periodStart: new Date(),
     }));
@@ -36,12 +37,12 @@ describe('GET /api/reviews - Pagination', () => {
     expect(response.body).toHaveProperty('items');
     expect(response.body).toHaveProperty('nextCursor');
     expect(response.body.items).toHaveLength(30);
-    expect(response.body.nextCursor).toBe('review-29');
+    expect(response.body.nextCursor).toBe(createTestUUID(29));
   });
 
   it('should return last page with null nextCursor', async () => {
     const mockReviews = Array.from({ length: 15 }, (_, i) => ({
-      id: `review-${i}`,
+      id: createTestUUID(i),
       type: 'DAILY',
       periodStart: new Date(),
     }));
@@ -60,13 +61,13 @@ describe('GET /api/reviews - Pagination', () => {
     (prisma.review.findMany as jest.Mock).mockResolvedValue([]);
 
     await request(app)
-      .get('/api/reviews?cursor=review-29')
+      .get(`/api/reviews?cursor=${createTestUUID(29)}`)
       .expect(200);
 
     expect(prisma.review.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          id: { lt: 'review-29' },
+          id: { lt: createTestUUID(29) },
         }),
       })
     );
@@ -76,14 +77,14 @@ describe('GET /api/reviews - Pagination', () => {
     (prisma.review.findMany as jest.Mock).mockResolvedValue([]);
 
     await request(app)
-      .get('/api/reviews?type=WEEKLY&cursor=review-10')
+      .get(`/api/reviews?type=WEEKLY&cursor=${createTestUUID(10)}`)
       .expect(200);
 
     expect(prisma.review.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
           type: 'WEEKLY',
-          id: { lt: 'review-10' },
+          id: { lt: createTestUUID(10) },
         }),
       })
     );
