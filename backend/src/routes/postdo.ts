@@ -48,11 +48,6 @@ router.get('/', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Req
     };
   }
 
-  // Add cursor filter for descending order pagination
-  if (cursor) {
-    where.id = { lt: cursor };
-  }
-
   // Query PostDoLog records with related Task data (cursor-based pagination)
   const postDoLogs = await prisma.postDoLog.findMany({
     where,

@@ -98,10 +98,6 @@ router.get('/', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Requ
     };
   }
 
-  if (query.cursor) {
-    where.id = { gt: query.cursor };
-  }
-
   log('[GET /tasks] Query where clause:', JSON.stringify(where));
 
   // Cursor-based pagination
