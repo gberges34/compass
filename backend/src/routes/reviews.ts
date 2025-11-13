@@ -131,9 +131,6 @@ router.get('/', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Req
 
   const where: Prisma.ReviewWhereInput = {};
   if (type) where.type = type;
-  if (cursor) {
-    where.id = { lt: cursor as string }; // Use 'lt' for DESC ordering
-  }
 
   const reviews = await prisma.review.findMany({
     where,
@@ -142,6 +139,7 @@ router.get('/', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Req
       { periodStart: 'desc' }, // Newest first
       { id: 'desc' }, // Stable sort
     ],
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
   });
 
   const hasMore = reviews.length > pageSize;
