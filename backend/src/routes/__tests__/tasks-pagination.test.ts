@@ -3,6 +3,7 @@ import request from 'supertest';
 import express from 'express';
 import tasksRouter from '../tasks';
 import { prisma } from '../../prisma';
+import { createTestUUID } from '../../utils/testHelpers';
 
 const app = express();
 app.use(express.json());
@@ -23,7 +24,7 @@ describe('GET /api/tasks - Pagination', () => {
 
   it('should return first page with nextCursor when more items exist', async () => {
     const mockTasks = Array.from({ length: 31 }, (_, i) => ({
-      id: `task-${i}`,
+      id: createTestUUID(i),
       name: `Task ${i}`,
       status: 'NEXT',
       priority: 'MUST',
@@ -38,12 +39,12 @@ describe('GET /api/tasks - Pagination', () => {
     expect(response.body).toHaveProperty('items');
     expect(response.body).toHaveProperty('nextCursor');
     expect(response.body.items).toHaveLength(30);
-    expect(response.body.nextCursor).toBe('task-29');
+    expect(response.body.nextCursor).toBe(createTestUUID(29));
   });
 
   it('should return last page with null nextCursor', async () => {
     const mockTasks = Array.from({ length: 20 }, (_, i) => ({
-      id: `task-${i}`,
+      id: createTestUUID(i),
       name: `Task ${i}`,
       status: 'NEXT',
       priority: 'MUST',
@@ -61,7 +62,7 @@ describe('GET /api/tasks - Pagination', () => {
 
   it('should use cursor to fetch next page', async () => {
     const mockTasks = Array.from({ length: 10 }, (_, i) => ({
-      id: `task-${30 + i}`,
+      id: createTestUUID(30 + i),
       name: `Task ${30 + i}`,
       status: 'NEXT',
       priority: 'MUST',
@@ -70,14 +71,13 @@ describe('GET /api/tasks - Pagination', () => {
     (prisma.task.findMany as jest.Mock).mockResolvedValue(mockTasks);
 
     await request(app)
-      .get('/api/tasks?cursor=task-29&limit=30')
+      .get(`/api/tasks?cursor=${createTestUUID(29)}&limit=30`)
       .expect(200);
 
     expect(prisma.task.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({
-          id: { gt: 'task-29' },
-        }),
+        cursor: { id: createTestUUID(29) },
+        skip: 1,
       })
     );
   });
@@ -100,7 +100,7 @@ describe('GET /api/tasks - Pagination', () => {
     (prisma.task.findMany as jest.Mock).mockResolvedValue([]);
 
     await request(app)
-      .get('/api/tasks?status=NEXT&priority=MUST&cursor=task-10')
+      .get(`/api/tasks?status=NEXT&priority=MUST&cursor=${createTestUUID(10)}`)
       .expect(200);
 
     expect(prisma.task.findMany).toHaveBeenCalledWith(
@@ -108,8 +108,9 @@ describe('GET /api/tasks - Pagination', () => {
         where: expect.objectContaining({
           status: 'NEXT',
           priority: 'MUST',
-          id: { gt: 'task-10' },
         }),
+        cursor: { id: createTestUUID(10) },
+        skip: 1,
       })
     );
   });

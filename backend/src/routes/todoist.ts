@@ -3,6 +3,7 @@ import { prisma } from '../prisma';
 import { z } from 'zod';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
+import { cacheControl, CachePolicies } from '../middleware/cacheControl';
 
 const router = Router();
 
@@ -39,7 +40,7 @@ router.post('/import', asyncHandler(async (req: Request, res: Response) => {
 
 // GET /api/todoist/pending
 // Returns tasks waiting for Northbound processing
-router.get('/pending', asyncHandler(async (req: Request, res: Response) => {
+router.get('/pending', cacheControl(CachePolicies.EXTERNAL), asyncHandler(async (req: Request, res: Response) => {
   const pending = await prisma.tempCapturedTask.findMany({
     where: { processed: false },
     orderBy: { createdAt: 'asc' },

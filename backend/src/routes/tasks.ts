@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
-import { Prisma, $Enums } from '@prisma/client';
+import { Prisma, $Enums, Task } from '@prisma/client';
 import { z } from 'zod';
 import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { enrichTask } from '../services/llm';
@@ -9,6 +9,7 @@ import { getCurrentTimestamp, dateToISO } from '../utils/dateHelpers';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
 import { env } from '../config/env';
+import { cacheControl, CachePolicies } from '../middleware/cacheControl';
 import {
   priorityEnum,
   statusEnum,
@@ -17,6 +18,7 @@ import {
   energyEnum,
   effortEnum,
 } from '../schemas/enums';
+import { paginationSchema, PaginatedResponse } from '../schemas/pagination';
 
 // Development-only logging
 const DEBUG = env.NODE_ENV === 'development';
@@ -75,12 +77,10 @@ export const listTasksQuerySchema = z.object({
   priority: z.nativeEnum($Enums.Priority).optional(),
   category: z.nativeEnum($Enums.Category).optional(),
   scheduledDate: z.string().datetime().optional(),
-  cursor: z.string().uuid().optional(),
-  limit: z.coerce.number().min(1).max(100).default(50),
-});
+}).merge(paginationSchema);
 
 // GET /api/tasks - List tasks with filters and pagination
-router.get('/', asyncHandler(async (req: Request, res: Response) => {
+router.get('/', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Request, res: Response) => {
   const query = listTasksQuerySchema.parse(req.query);
 
   log('[GET /tasks] Query params:', query);
@@ -96,10 +96,6 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
       gte: startOfDay(date),
       lte: endOfDay(date),
     };
-  }
-
-  if (query.cursor) {
-    where.id = { gt: query.cursor };
   }
 
   log('[GET /tasks] Query where clause:', JSON.stringify(where));
@@ -124,7 +120,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 
   log('[GET /tasks] Found tasks:', results.length, 'hasMore:', hasMore);
 
-  const response: ListTasksResponse<typeof results[number]> = {
+  const response: PaginatedResponse<Task> = {
     items: results,
     nextCursor,
   };
@@ -133,7 +129,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 // GET /api/tasks/:id - Get single task
-router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:id', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const task = await prisma.task.findUnique({
@@ -344,7 +340,7 @@ router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 // GET /api/tasks/calendar/:date - Get tasks for calendar view (week)
-router.get('/calendar/:date', asyncHandler(async (req: Request, res: Response) => {
+router.get('/calendar/:date', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Request, res: Response) => {
   const { date } = req.params;
   const targetDate = new Date(date);
 
@@ -367,7 +363,7 @@ router.get('/calendar/:date', asyncHandler(async (req: Request, res: Response) =
 }));
 
 // GET /api/tasks/scheduled/:date - Get scheduled tasks for a specific date
-router.get('/scheduled/:date', asyncHandler(async (req: Request, res: Response) => {
+router.get('/scheduled/:date', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Request, res: Response) => {
   const { date } = req.params;
   const targetDate = new Date(date);
   const dayStart = startOfDay(targetDate);

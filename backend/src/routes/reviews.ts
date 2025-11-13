@@ -1,12 +1,14 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
-import { Prisma, ReviewType } from '@prisma/client';
+import { Prisma, ReviewType, Review } from '@prisma/client';
 import { z } from 'zod';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, subDays } from 'date-fns';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
 import { reviewTypeEnum, energyEnum } from '../schemas/enums';
 import { calculateMetrics } from '../utils/reviewMetrics';
+import { paginationSchema, PaginatedResponse } from '../schemas/pagination';
+import { cacheControl, CachePolicies } from '../middleware/cacheControl';
 
 const router = Router();
 
@@ -19,6 +21,10 @@ const createReviewSchema = z.object({
   nextGoals: z.array(z.string()).max(3),
   energyAssessment: energyEnum.optional(),
 });
+
+const listReviewsQuerySchema = z.object({
+  type: z.nativeEnum(ReviewType).optional(),
+}).merge(paginationSchema);
 
 // Helper function to calculate daily metrics
 async function calculateDailyMetrics(date: Date) {
@@ -119,19 +125,12 @@ router.post('/weekly', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 // GET /api/reviews - Get all reviews with pagination
-router.get('/', asyncHandler(async (req: Request, res: Response) => {
-  const { type, cursor, limit } = req.query;
-
-  const pageSize = Math.min(
-    parseInt(limit as string) || 30,
-    100
-  );
+router.get('/', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Request, res: Response) => {
+  const { type, cursor, limit } = listReviewsQuerySchema.parse(req.query);
+  const pageSize = limit;
 
   const where: Prisma.ReviewWhereInput = {};
-  if (type) where.type = type as ReviewType;
-  if (cursor) {
-    where.id = { lt: cursor as string }; // Use 'lt' for DESC ordering
-  }
+  if (type) where.type = type;
 
   const reviews = await prisma.review.findMany({
     where,
@@ -140,17 +139,19 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
       { periodStart: 'desc' }, // Newest first
       { id: 'desc' }, // Stable sort
     ],
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
   });
 
   const hasMore = reviews.length > pageSize;
   const items = hasMore ? reviews.slice(0, pageSize) : reviews;
   const nextCursor = hasMore ? items[items.length - 1].id : null;
 
-  res.json({ items, nextCursor });
+  const response: PaginatedResponse<Review> = { items, nextCursor };
+  res.json(response);
 }));
 
 // GET /api/reviews/:id - Get single review
-router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:id', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const review = await prisma.review.findUnique({
