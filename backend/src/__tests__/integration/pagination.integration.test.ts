@@ -13,7 +13,7 @@
  *   npx prisma migrate deploy
  *   npm test -- src/__tests__/integration/pagination.integration.test.ts
  */
-import request from 'supertest';
+import request, { type Response } from 'supertest';
 import { app } from '../../index';
 import { prisma } from '../../prisma';
 
