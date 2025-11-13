@@ -61,7 +61,8 @@ export async function calculateMetrics(input: MetricsInput): Promise<MetricsResu
     // For daily reviews, use the provided daily plan
     plannedTasks = dailyPlan?.topOutcomes.length || 0;
   }
-  const executionRate = plannedTasks > 0 ? (completedTasks / plannedTasks) * 100 : 0;
+  // Safeguard against division by zero when no tasks are planned
+  const executionRate = plannedTasks > 0 ? Math.round((completedTasks / plannedTasks) * 100) : 0;
 
   // Get PostDo logs
   const postDoLogs: PostDoLogWithTask[] = await prisma.postDoLog.findMany({
@@ -116,7 +117,7 @@ export async function calculateMetrics(input: MetricsInput): Promise<MetricsResu
   const contextSwitches = postDoLogs.length > 1 ? postDoLogs.length - 1 : 0;
 
   return {
-    executionRate: Math.round(executionRate * 10) / 10,
+    executionRate,
     tasksCompleted: completedTasks,
     deepWorkHours,
     categoryBalance: categoryBreakdown,
