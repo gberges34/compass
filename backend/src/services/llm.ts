@@ -5,6 +5,7 @@ import { env } from '../config/env';
 
 let anthropic = new Anthropic({
   apiKey: env.ANTHROPIC_API_KEY,
+  timeout: 30000, // 30 seconds
 });
 
 // Export for testing purposes
