@@ -8,15 +8,6 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  // P2025 is now caught by Prisma middleware, but keep as fallback
-  // This handles any P2025 errors that might escape middleware
-  if (err.code === 'P2025') {
-    return res.status(404).json({
-      error: 'Resource not found',
-      code: 'NOT_FOUND'
-    });
-  }
-
   // Handle Zod validation errors
   if (err instanceof z.ZodError) {
     return res.status(400).json({
