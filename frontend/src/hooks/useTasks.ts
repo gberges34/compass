@@ -12,6 +12,11 @@ import * as api from '../lib/api';
 import type { Task, TaskFilters, EnrichTaskRequest, CompleteTaskRequest, PaginatedResponse } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useMemo } from 'react';
+import {
+  restoreInfiniteTasksCache,
+  updateInfiniteTasksCache,
+  type TasksInfiniteData,
+} from './taskCache';
 
 // Development-only logging
 const DEBUG = process.env.NODE_ENV === 'development';
@@ -52,6 +57,72 @@ type InfiniteTasksQueryOptions = Omit<
 >;
 
 type UseFlatTasksResult = ReturnType<typeof useTasks> & { tasks: Task[] };
+
+type CacheSnapshot = {
+  key: InfiniteTasksQueryKey;
+  snapshot: TasksInfiniteData;
+  updatedCount: number;
+};
+
+type TaskMutationContext = {
+  cacheSnapshots?: CacheSnapshot[];
+};
+
+const buildInfiniteKey = (filters?: TaskFilters) =>
+  [...taskKeys.list(filters), 'infinite'] as InfiniteTasksQueryKey;
+
+const nextInfiniteKey = buildInfiniteKey({ status: 'NEXT' });
+
+const describeKey = (key: InfiniteTasksQueryKey) => {
+  try {
+    return JSON.stringify(key);
+  } catch {
+    return '[unserializable-key]';
+  }
+};
+
+const applyOptimisticTaskUpdates = (
+  queryClient: QueryClient,
+  queryKeys: InfiniteTasksQueryKey[],
+  predicate: (task: Task) => boolean,
+  updater: (task: Task) => Task,
+  scope: string
+): CacheSnapshot[] => {
+  return queryKeys
+    .map((key) => {
+      const result = updateInfiniteTasksCache({
+        queryClient,
+        queryKey: key,
+        predicate,
+        updater,
+      });
+
+      if (!result) {
+        log(`[${scope}] No cache hit for key ${describeKey(key)} when applying optimistic update`);
+        return null;
+      }
+
+      log(
+        `[${scope}] Optimistically updated ${result.updatedCount} item(s) for key ${describeKey(key)}`
+      );
+
+      return {
+        key,
+        snapshot: result.snapshot,
+        updatedCount: result.updatedCount,
+      };
+    })
+    .filter(Boolean) as CacheSnapshot[];
+};
+
+const restoreCacheSnapshots = (
+  queryClient: QueryClient,
+  snapshots?: CacheSnapshot[]
+) => {
+  snapshots?.forEach(({ key, snapshot }) => {
+    restoreInfiniteTasksCache(queryClient, key, snapshot);
+  });
+};
 
 // Keep useTasks backwards compatible (returns just data array)
 export function useTasks(filters?: TaskFilters, options?: TasksQueryOptions) {
@@ -120,55 +191,28 @@ export function useUpdateTask() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Task> }) =>
-      api.updateTask(id, updates),
+  return useMutation<Task, AxiosError, { id: string; updates: Partial<Task> }, TaskMutationContext>({
+    mutationFn: ({ id, updates }) => api.updateTask(id, updates),
     onMutate: async ({ id, updates }) => {
-      // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
 
-      // Snapshot the previous value for rollback
-      const previousInfiniteData = queryClient.getQueryData(
-        [...taskKeys.list({ status: 'NEXT' }), 'infinite']
+      const cacheSnapshots = applyOptimisticTaskUpdates(
+        queryClient,
+        [nextInfiniteKey],
+        (task) => task.id === id,
+        (task) => ({ ...task, ...updates }),
+        'useUpdateTask'
       );
 
-      // Optimistically update the cache - merge updates into task
-      queryClient.setQueryData(
-        [...taskKeys.list({ status: 'NEXT' }), 'infinite'],
-        (old: any) => {
-          if (!old) return old;
-
-          return {
-            ...old,
-            pages: old.pages.map((page: any) => ({
-              ...page,
-              items: page.items.map((task: Task) =>
-                task.id === id ? { ...task, ...updates } : task
-              ),
-            })),
-          };
-        }
-      );
-
-      log('[useUpdateTask] Optimistically updated cache for task:', id, updates);
-
-      return { previousInfiniteData };
+      return { cacheSnapshots };
     },
     onError: (err: AxiosError, variables, context) => {
-      // Rollback to previous state on error
-      if (context?.previousInfiniteData) {
-        queryClient.setQueryData(
-          [...taskKeys.list({ status: 'NEXT' }), 'infinite'],
-          context.previousInfiniteData
-        );
-      }
+      restoreCacheSnapshots(queryClient, context?.cacheSnapshots);
       console.error('[useUpdateTask] Error, rolled back:', err);
       toast.showError(err.userMessage || 'Failed to update task');
     },
     onSuccess: (_, variables) => {
       log('[useUpdateTask] Success');
-      // Don't invalidate - trust the optimistic update
-      // Only invalidate the specific task detail if needed
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(variables.id) });
     },
   });
@@ -195,56 +239,32 @@ export function useScheduleTask() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  return useMutation({
-    mutationFn: ({ id, scheduledStart }: { id: string; scheduledStart: string }) =>
-      api.scheduleTask(id, scheduledStart),
+  return useMutation<Task, AxiosError, { id: string; scheduledStart: string }, TaskMutationContext>({
+    mutationFn: ({ id, scheduledStart }) => api.scheduleTask(id, scheduledStart),
     onMutate: async ({ id, scheduledStart }) => {
-      // Cancel any outgoing refetches to prevent race conditions
       await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
 
-      // Snapshot the previous value for rollback
-      const previousInfiniteData = queryClient.getQueryData(
-        [...taskKeys.list({ status: 'NEXT' }), 'infinite']
+      const cacheSnapshots = applyOptimisticTaskUpdates(
+        queryClient,
+        [nextInfiniteKey],
+        (task) => task.id === id,
+        (task) => ({
+          ...task,
+          scheduledStart,
+          updatedAt: new Date().toISOString(),
+        }),
+        'useScheduleTask'
       );
 
-      // Optimistically update the cache - update task in all pages
-      queryClient.setQueryData(
-        [...taskKeys.list({ status: 'NEXT' }), 'infinite'],
-        (old: any) => {
-          if (!old) return old;
-
-          return {
-            ...old,
-            pages: old.pages.map((page: any) => ({
-              ...page,
-              items: page.items.map((task: Task) =>
-                task.id === id ? { ...task, scheduledStart } : task
-              ),
-            })),
-          };
-        }
-      );
-
-      log('[useScheduleTask] Optimistically updated cache for task:', id);
-
-      return { previousInfiniteData };
+      return { cacheSnapshots };
     },
     onError: (err: AxiosError, variables, context) => {
-      // Rollback to previous state on error
-      if (context?.previousInfiniteData) {
-        queryClient.setQueryData(
-          [...taskKeys.list({ status: 'NEXT' }), 'infinite'],
-          context.previousInfiniteData
-        );
-      }
+      restoreCacheSnapshots(queryClient, context?.cacheSnapshots);
       console.error('[useScheduleTask] Error, rolled back:', err);
       toast.showError(err.userMessage || 'Failed to schedule task');
     },
     onSuccess: (data) => {
       log('[useScheduleTask] Success response:', data);
-      // Don't invalidate - trust the optimistic update
-      // The optimistic update is now the source of truth
-      // Server has confirmed the change, no need to refetch
     },
   });
 }
@@ -253,54 +273,32 @@ export function useUnscheduleTask() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  return useMutation({
+  return useMutation<Task, AxiosError, string, TaskMutationContext>({
     mutationFn: (id: string) => api.unscheduleTask(id),
     onMutate: async (id) => {
-      // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
 
-      // Snapshot the previous value for rollback
-      const previousInfiniteData = queryClient.getQueryData(
-        [...taskKeys.list({ status: 'NEXT' }), 'infinite']
+      const cacheSnapshots = applyOptimisticTaskUpdates(
+        queryClient,
+        [nextInfiniteKey],
+        (task) => task.id === id,
+        (task) => ({
+          ...task,
+          scheduledStart: undefined,
+          updatedAt: new Date().toISOString(),
+        }),
+        'useUnscheduleTask'
       );
 
-      // Optimistically update the cache - remove scheduledStart
-      queryClient.setQueryData(
-        [...taskKeys.list({ status: 'NEXT' }), 'infinite'],
-        (old: any) => {
-          if (!old) return old;
-
-          return {
-            ...old,
-            pages: old.pages.map((page: any) => ({
-              ...page,
-              items: page.items.map((task: Task) =>
-                task.id === id ? { ...task, scheduledStart: undefined } : task
-              ),
-            })),
-          };
-        }
-      );
-
-      log('[useUnscheduleTask] Optimistically updated cache for task:', id);
-
-      return { previousInfiniteData };
+      return { cacheSnapshots };
     },
     onError: (err: AxiosError, variables, context) => {
-      // Rollback to previous state on error
-      if (context?.previousInfiniteData) {
-        queryClient.setQueryData(
-          [...taskKeys.list({ status: 'NEXT' }), 'infinite'],
-          context.previousInfiniteData
-        );
-      }
+      restoreCacheSnapshots(queryClient, context?.cacheSnapshots);
       console.error('[useUnscheduleTask] Error, rolled back:', err);
       toast.showError(err.userMessage || 'Failed to unschedule task');
     },
     onSuccess: (data) => {
       log('[useUnscheduleTask] Success response:', data);
-      // Don't invalidate - trust the optimistic update
-      // The optimistic update is now the source of truth
     },
   });
 }
