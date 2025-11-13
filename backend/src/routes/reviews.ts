@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
-import { Prisma, ReviewType } from '@prisma/client';
+import { Prisma, ReviewType, Review } from '@prisma/client';
 import { z } from 'zod';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, subDays } from 'date-fns';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
 import { reviewTypeEnum, energyEnum } from '../schemas/enums';
 import { calculateMetrics } from '../utils/reviewMetrics';
-import { paginationSchema } from '../schemas/pagination';
+import { paginationSchema, PaginatedResponse } from '../schemas/pagination';
 import { cacheControl, CachePolicies } from '../middleware/cacheControl';
 
 const router = Router();
@@ -130,7 +130,7 @@ router.get('/', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Req
   const pageSize = limit;
 
   const where: Prisma.ReviewWhereInput = {};
-  if (type) where.type = type as ReviewType;
+  if (type) where.type = type;
   if (cursor) {
     where.id = { lt: cursor as string }; // Use 'lt' for DESC ordering
   }
@@ -148,7 +148,8 @@ router.get('/', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Req
   const items = hasMore ? reviews.slice(0, pageSize) : reviews;
   const nextCursor = hasMore ? items[items.length - 1].id : null;
 
-  res.json({ items, nextCursor });
+  const response: PaginatedResponse<Review> = { items, nextCursor };
+  res.json(response);
 }));
 
 // GET /api/reviews/:id - Get single review

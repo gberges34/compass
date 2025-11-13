@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
-import { Prisma, $Enums } from '@prisma/client';
+import { Prisma, $Enums, Task } from '@prisma/client';
 import { z } from 'zod';
 import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { enrichTask } from '../services/llm';
@@ -18,7 +18,7 @@ import {
   energyEnum,
   effortEnum,
 } from '../schemas/enums';
-import { paginationSchema } from '../schemas/pagination';
+import { paginationSchema, PaginatedResponse } from '../schemas/pagination';
 
 // Development-only logging
 const DEBUG = env.NODE_ENV === 'development';
@@ -120,7 +120,7 @@ router.get('/', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Requ
 
   log('[GET /tasks] Found tasks:', results.length, 'hasMore:', hasMore);
 
-  const response: ListTasksResponse<typeof results[number]> = {
+  const response: PaginatedResponse<Task> = {
     items: results,
     nextCursor,
   };

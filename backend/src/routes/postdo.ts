@@ -1,12 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, PostDoLog } from '@prisma/client';
 import { z } from 'zod';
 import { startOfDay, endOfDay } from 'date-fns';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
 import { categoryEnum } from '../schemas/enums';
-import { paginationSchema } from '../schemas/pagination';
+import { paginationSchema, PaginatedResponse } from '../schemas/pagination';
 import { cacheControl, CachePolicies } from '../middleware/cacheControl';
 
 const router = Router();
@@ -67,10 +67,11 @@ router.get('/', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Req
   const results = hasMore ? postDoLogs.slice(0, limit) : postDoLogs;
   const nextCursor = hasMore ? results[results.length - 1].id : null;
 
-  res.json({
+  const response: PaginatedResponse<PostDoLog> = {
     items: results,
     nextCursor,
-  });
+  };
+  res.json(response);
 }));
 
 // GET /api/postdo/:id - Get single Post-Do log by ID
