@@ -14,6 +14,13 @@
 | `COMPASS_ANTHROPIC_API_KEY=dummy npm run check:anthropic` | Fails with `Failed (000)` (expected — network blocked) but proves sanitized logging and non-zero exit |
 | `npm run verify` | Fails because local PostgreSQL isn’t reachable (expected in this sandbox) but now reports the new “Forbidden files (REQ-SEC-001)” check |
 
+## 2025-11-13 — Task Cache Safety & Observability
+
+- Added `frontend/src/hooks/taskCache.ts`, a typed helper for React Query's infinite task caches that centralizes pagination-aware updates, tracks how many tasks were touched, and exposes rollback-friendly snapshots.
+- Refactored `useUpdateTask`, `useScheduleTask`, and `useUnscheduleTask` to rely on the helper so only the targeted `NEXT` infinite query mutates optimistically while other filters fall back to invalidation.
+- Introduced structured debug logging (still gated by `DEBUG`) to surface cache misses or zero-update scenarios without sprinkling ad-hoc `console.log` calls across mutations.
+- Captured the end-to-end plan (and future extension guidance) in `docs/plans/2025-11-13-task-cache-optimistic-plan.md`.
+
 ## What Was Analyzed
 - **7 Pages**: TodayPage, TasksPage, ReviewsPage, CalendarPage, ClarifyPage, OrientEastPage, OrientWestPage
 - **5 Hooks**: useTasks, useReviews, useDailyPlans, usePostDoLogs, useTodoist

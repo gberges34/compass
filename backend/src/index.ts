@@ -1,21 +1,6 @@
-import dotenv from 'dotenv';
-
-// Load .env before validating (must be first)
-dotenv.config();
-
-// MUST be first import after dotenv - validates environment before anything else
+import { app } from './app';
 import { env } from './config/env';
-import express from 'express';
-import cors from 'cors';
-import tasksRouter from './routes/tasks';
-import todoistRouter from './routes/todoist';
-import orientRouter from './routes/orient';
-import reviewsRouter from './routes/reviews';
-import postdoRouter from './routes/postdo';
-import { getCurrentTimestamp } from './utils/dateHelpers';
-import { errorHandler } from './middleware/errorHandler';
 
-const app = express();
 const PORT = env.PORT;
 
 // Middleware
@@ -56,3 +41,5 @@ if (env.NODE_ENV !== 'test') {
     console.log(`🚀 Compass API server running on port ${PORT}`);
   });
 }
+
+export { app };

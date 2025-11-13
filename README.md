@@ -132,6 +132,9 @@ The application uses Prisma with PostgreSQL. Main models:
 - `GET /api/todoist/pending` - Get pending tasks from Todoist
 - `POST /api/todoist/import` - Import tasks from Todoist
 
+### Health & Observability
+- `GET /api/health` - Returns overall status plus dependency breakdown (database, Todoist bridge, HealthKit stub, Toggl stub). Responds with HTTP 200 when all required deps are `up`, otherwise 503 with the failing dependency list in the payload for fast triage.
+
 ## Contributing
 
 This is a personal productivity system, but suggestions and improvements are welcome!

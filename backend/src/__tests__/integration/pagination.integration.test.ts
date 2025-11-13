@@ -14,7 +14,7 @@
  *   npm test -- src/__tests__/integration/pagination.integration.test.ts
  */
 import request, { type Response } from 'supertest';
-import { app } from '../../index';
+import { app } from '../../app';
 import { prisma } from '../../prisma';
 
 describe('Pagination Integration Tests', () => {
