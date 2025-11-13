@@ -12,7 +12,9 @@ const envSchema = z.object({
   FRONTEND_URL: z.string().url().default('http://localhost:3000'),
 
   // Optional (for features)
+  TODOIST_API_TOKEN: z.string().optional(),
   TOGGL_API_TOKEN: z.string().optional(),
+  HEALTHKIT_API_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
