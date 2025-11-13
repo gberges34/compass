@@ -19,6 +19,7 @@ import { useToast } from '../contexts/ToastContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import CreateReviewModal from '../components/CreateReviewModal';
+import { categoryColors } from '../lib/designTokens';
 
 const ReviewsPage: React.FC = () => {
   const toast = useToast();
@@ -125,18 +126,7 @@ const ReviewsPage: React.FC = () => {
       }));
   };
 
-  const COLORS = [
-    '#3b82f6',
-    '#10b981',
-    '#f59e0b',
-    '#ef4444',
-    '#8b5cf6',
-    '#ec4899',
-    '#14b8a6',
-    '#f97316',
-    '#6366f1',
-    '#84cc16',
-  ];
+  const CATEGORY_COLORS = Object.values(categoryColors).map(config => config.hex);
 
   if (loading) {
     return (
@@ -240,7 +230,7 @@ const ReviewsPage: React.FC = () => {
                   dataKey="value"
                 >
                   {getCategoryBalanceChartData().map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />

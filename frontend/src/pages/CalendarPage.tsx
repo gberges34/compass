@@ -16,6 +16,7 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
+import { categoryColors } from '../lib/designTokens';
 import {
   getTodayDateString,
   combineISODateAndTime,
@@ -45,19 +46,7 @@ const DnDCalendar = withDragAndDrop(Calendar);
 
 // Category color mapping - defined outside component to prevent recreations
 const getCategoryColor = (category: string): string => {
-  const colors: Record<string, string> = {
-    SCHOOL: '#3b82f6',
-    MUSIC: '#8b5cf6',
-    FITNESS: '#10b981',
-    GAMING: '#f59e0b',
-    NUTRITION: '#14b8a6',
-    HYGIENE: '#06b6d4',
-    PET: '#ec4899',
-    SOCIAL: '#f97316',
-    PERSONAL: '#6366f1',
-    ADMIN: '#84cc16',
-  };
-  return colors[category] || '#6b7280';
+  return categoryColors[category as keyof typeof categoryColors]?.hex || '#6b7280';
 };
 
 // Memoized UnscheduledTaskCard component to prevent unnecessary re-renders
@@ -547,24 +536,13 @@ const CalendarPage: React.FC = () => {
               <div className="pt-8 border-t border-fog">
                 <p className="text-slate font-medium mb-8 text-small">Task Categories:</p>
                 <div className="grid grid-cols-2 gap-4">
-                  {Object.entries({
-                    SCHOOL: '#3b82f6',
-                    MUSIC: '#8b5cf6',
-                    FITNESS: '#10b981',
-                    GAMING: '#f59e0b',
-                    NUTRITION: '#14b8a6',
-                    HYGIENE: '#06b6d4',
-                    PET: '#ec4899',
-                    SOCIAL: '#f97316',
-                    PERSONAL: '#6366f1',
-                    ADMIN: '#84cc16',
-                  }).map(([category, color]) => (
+                  {Object.entries(categoryColors).map(([category, config]) => (
                     <div key={category} className="flex items-center">
                       <div
                         className="w-12 h-12 rounded mr-4"
-                        style={{ backgroundColor: color }}
+                        style={{ backgroundColor: config.hex }}
                       ></div>
-                      <span className="text-ink text-micro">{category}</span>
+                      <span className="text-ink text-micro">{config.label}</span>
                     </div>
                   ))}
                 </div>
