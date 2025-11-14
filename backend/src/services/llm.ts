@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { APIError, APIConnectionError, RateLimitError } from '@anthropic-ai/sdk/error';
+import type { Message as AnthropicMessage } from '@anthropic-ai/sdk/resources/messages';
 import { z } from 'zod';
 import {
   withCircuitBreaker,
@@ -14,6 +15,8 @@ let anthropic = new Anthropic({
 });
 
 type MessageCreateParams = Parameters<Anthropic['messages']['create']>[0];
+
+type AnthropicResponse = Awaited<ReturnType<Anthropic['messages']['create']>>;
 
 const buildAnthropicExecutor = () =>
   withCircuitBreaker(
@@ -31,6 +34,10 @@ const buildAnthropicExecutor = () =>
   );
 
 let executeAnthropicRequest = buildAnthropicExecutor();
+
+function isAnthropicMessage(response: AnthropicResponse): response is AnthropicMessage {
+  return Array.isArray((response as Partial<AnthropicMessage>).content);
+}
 
 // Export for testing purposes
 export const setAnthropicClient = (client: Anthropic) => {
@@ -135,9 +142,13 @@ Respond ONLY with valid JSON in this exact format:
       ],
     });
 
+    if (!isAnthropicMessage(message)) {
+      throw new Error('Streaming responses are not supported');
+    }
+
     // Parse response
     const content = message.content[0];
-    if (content.type !== 'text') {
+    if (!content || content.type !== 'text') {
       throw new Error('Unexpected response format from Claude API');
     }
 

@@ -124,13 +124,15 @@ async function executeCheck(
       `[health] ${check.name} failed after ${latencyMs}ms: ${errMessage}`
     );
 
+    const failureResult: DependencyResult = {
+      status: 'down',
+      latencyMs,
+      error: errMessage,
+    };
+
     return {
       name: check.name,
-      result: {
-        status: 'down',
-        latencyMs,
-        error: errMessage,
-      },
+      result: failureResult,
     };
   }
 }

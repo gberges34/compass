@@ -119,4 +119,23 @@ describe('enrichTask with Zod validation', () => {
     expect(result.rephrasedName).toBe('original task');
     expect(result.definitionOfDone).toBe('Valid completion criteria');
   });
+
+  it('throws when Anthropic returns a streaming response', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({ stream: true } as any);
+
+    const mockAnthropicClient = {
+      messages: { create: mockCreate },
+    } as any;
+
+    setAnthropicClient(mockAnthropicClient);
+
+    await expect(
+      enrichTask({
+        rawTaskName: 'streaming test',
+        priority: 2,
+        duration: 15,
+        energy: 'LOW',
+      })
+    ).rejects.toThrow('Streaming responses are not supported');
+  });
 });
