@@ -115,6 +115,18 @@ router.post('/weekly', asyncHandler(async (req: Request, res: Response) => {
   const periodStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
   const periodEnd = endOfWeek(today, { weekStartsOn: 0 });
 
+  // Check for existing review for this period
+  const existingReview = await prisma.review.findFirst({
+    where: {
+      type: 'WEEKLY',
+      periodStart: periodStart
+    }
+  });
+
+  if (existingReview) {
+    throw new BadRequestError('A weekly review already exists for this period');
+  }
+
   // Calculate metrics
   const metrics = await calculateWeeklyMetrics(periodStart, periodEnd);
 
