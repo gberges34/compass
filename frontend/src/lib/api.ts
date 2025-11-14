@@ -270,8 +270,8 @@ export const getPostDoLogs = async (filters?: {
   if (filters?.endDate) params.append('endDate', filters.endDate);
   if (filters?.category) params.append('category', filters.category);
 
-  const response = await api.get<PostDoLog[]>(`/postdo?${params.toString()}`);
-  return response.data;
+  const response = await api.get<PaginatedResponse<PostDoLog>>(`/postdo?${params.toString()}`);
+  return response.data.items; // Extract items from paginated response
 };
 
 // Health Check
