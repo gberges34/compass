@@ -69,6 +69,23 @@ Utilities:
 - `npm run verify` - Environment health check
 - `npm run build` - Production build
 
+## Production Deployment
+
+**Live URLs:**
+- Frontend: https://compass-wt6j.vercel.app
+- Backend API: https://compass-production-1795.up.railway.app
+- Documentation: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+
+Both frontend and backend automatically deploy from the `main` branch.
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment information, including:
+- Architecture overview
+- Environment configuration
+- Database migrations
+- Monitoring and health checks
+- Rollback procedures
+- Troubleshooting guide
+
 ### Troubleshooting
 
 Run environment diagnostics:
