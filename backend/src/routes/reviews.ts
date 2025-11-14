@@ -71,6 +71,18 @@ router.post('/daily', asyncHandler(async (req: Request, res: Response) => {
   const periodStart = startOfDay(today);
   const periodEnd = endOfDay(today);
 
+  // Check for existing review for this period
+  const existingReview = await prisma.review.findFirst({
+    where: {
+      type: 'DAILY',
+      periodStart: periodStart
+    }
+  });
+
+  if (existingReview) {
+    throw new BadRequestError('A daily review already exists for this period');
+  }
+
   // Calculate metrics
   const metrics = await calculateDailyMetrics(today);
 
