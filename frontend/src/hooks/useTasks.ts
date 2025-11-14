@@ -56,8 +56,6 @@ type InfiniteTasksQueryOptions = Omit<
   'queryKey' | 'queryFn' | 'initialPageParam'
 >;
 
-type UseFlatTasksResult = ReturnType<typeof useTasks> & { tasks: Task[] };
-
 type CacheSnapshot = {
   key: InfiniteTasksQueryKey;
   snapshot: TasksInfiniteData;
