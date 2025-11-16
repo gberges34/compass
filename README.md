@@ -95,6 +95,17 @@ npm run verify
 
 For common issues and solutions, see [Quick Start Guide](docs/QUICK_START.md#troubleshooting).
 
+## Codex AI Pull-Request Reviews
+
+Every pull request automatically triggers `.github/workflows/ai-review.yml`, which gathers the diff, summarizes intent, and posts Codex feedback as a PR comment. To ensure the workflow runs on your next PR:
+
+- Add a **repository secret** named `CODEX_API_KEY` that contains your Codex/OpenAI token.
+- (Optional) Add a **repository variable** `CODEX_MODEL` if you want to override the default `gpt-4.1-mini` model, and `CODEX_MAX_DIFF` to customize how many diff characters are sent to Codex.
+- Confirm that the workflow file remains on the default branch so it is picked up for new pull requests.
+- If you need to dry-run locally, execute `node scripts/codex-review.js --output /tmp/review.md` after setting the environment variables from the workflow step (see the yaml for reference).
+
+Once those values are in place, the workflow will comment on any newly opened, synchronized, or reopened pull request.
+
 ## Project Structure
 
 ```
