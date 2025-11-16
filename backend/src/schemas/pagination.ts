@@ -17,11 +17,6 @@ export const paginationSchema = z.object({
 export type PaginationParams = z.infer<typeof paginationSchema>;
 
 /**
- * Standard paginated response structure.
- *
- * @template T - The type of items in the response
+ * Note: Pagination response type is defined in the shared @compass/dto module.
+ * Import PaginationResponse<TItem> from '@compass/dto/pagination' for response typing.
  */
-export interface PaginatedResponse<T> {
-  items: T[];
-  nextCursor: string | null;
-}

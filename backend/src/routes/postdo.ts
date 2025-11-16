@@ -6,7 +6,8 @@ import { startOfDay, endOfDay } from 'date-fns';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
 import { categoryEnum } from '../schemas/enums';
-import { paginationSchema, PaginatedResponse } from '../schemas/pagination';
+import { paginationSchema } from '../schemas/pagination';
+import type { PaginationResponse } from '@compass/dto/pagination';
 import { cacheControl, CachePolicies } from '../middleware/cacheControl';
 
 const router = Router();
@@ -67,7 +68,7 @@ router.get('/', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Req
   const results = hasMore ? postDoLogs.slice(0, limit) : postDoLogs;
   const nextCursor = hasMore ? results[results.length - 1].id : null;
 
-  const response: PaginatedResponse<PostDoLog> = {
+  const response: PaginationResponse<PostDoLog> = {
     items: results,
     nextCursor,
   };

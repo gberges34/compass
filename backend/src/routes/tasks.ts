@@ -18,18 +18,14 @@ import {
   energyEnum,
   effortEnum,
 } from '../schemas/enums';
-import { paginationSchema, PaginatedResponse } from '../schemas/pagination';
+import { paginationSchema } from '../schemas/pagination';
+import type { PaginationResponse } from '@compass/dto/pagination';
 
 // Development-only logging
 const DEBUG = env.NODE_ENV === 'development';
 const log = DEBUG ? console.log : () => {};
 
 const router = Router();
-
-type ListTasksResponse<TTask> = {
-  items: TTask[];
-  nextCursor: string | null;
-};
 
 // Validation schemas
 const createTaskSchema = z.object({
@@ -76,7 +72,7 @@ export const listTasksQuerySchema = z.object({
   status: z.nativeEnum($Enums.TaskStatus).optional(),
   priority: z.nativeEnum($Enums.Priority).optional(),
   category: z.nativeEnum($Enums.Category).optional(),
-  scheduledDate: z.string().datetime().optional(),
+  scheduledFilter: z.string().optional(),
 }).merge(paginationSchema);
 
 // GET /api/tasks - List tasks with filters and pagination
@@ -90,12 +86,21 @@ router.get('/', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Requ
   if (query.status) where.status = query.status;
   if (query.priority) where.priority = query.priority;
   if (query.category) where.category = query.category;
-  if (query.scheduledDate) {
-    const date = new Date(query.scheduledDate);
-    where.scheduledStart = {
-      gte: startOfDay(date),
-      lte: endOfDay(date),
-    };
+  if (query.scheduledFilter) {
+    if (query.scheduledFilter === 'true') {
+      // All scheduled tasks (scheduledStart is not null)
+      where.scheduledStart = { not: null };
+    } else if (query.scheduledFilter === 'false') {
+      // Unscheduled tasks only (scheduledStart is null)
+      where.scheduledStart = null;
+    } else {
+      // Specific date (e.g., '2025-11-16')
+      const date = new Date(query.scheduledFilter);
+      where.scheduledStart = {
+        gte: startOfDay(date),
+        lte: endOfDay(date),
+      };
+    }
   }
 
   log('[GET /tasks] Query where clause:', JSON.stringify(where));
@@ -120,7 +125,7 @@ router.get('/', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Requ
 
   log('[GET /tasks] Found tasks:', results.length, 'hasMore:', hasMore);
 
-  const response: PaginatedResponse<Task> = {
+  const response: PaginationResponse<Task> = {
     items: results,
     nextCursor,
   };
@@ -426,27 +431,26 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
   const { id } = req.params;
   const validatedData = completeTaskSchema.parse(req.body);
 
-  // Get task for calculations
-  // Note: We still need findUnique here to get task data for metric calculations
-  // If task doesn't exist, the subsequent update in transaction will throw NotFoundError via Prisma extension
-  const task = await prisma.task.findUnique({
-    where: { id }
-  });
-
-  if (!task) {
-    throw new NotFoundError('Task');
-  }
-
-  // Calculate metrics
-  const variance = validatedData.actualDuration - task.duration;
-  const efficiency = (task.duration / validatedData.actualDuration) * 100;
   const startTime = new Date(validatedData.startTime);
   const endTime = new Date(validatedData.endTime);
-  const timeOfDay = calculateTimeOfDay(startTime);
-  const dayOfWeek = getDayOfWeek(startTime);
 
-  // TRANSACTION: Atomic task completion
+  // TRANSACTION: Atomic task completion with consistent read
   const result = await prisma.$transaction(async (tx) => {
+    // Get task for calculations inside transaction to ensure consistent read
+    const task = await tx.task.findUnique({
+      where: { id }
+    });
+
+    if (!task) {
+      throw new NotFoundError('Task');
+    }
+
+    // Calculate metrics using task data fetched within transaction
+    const variance = validatedData.actualDuration - task.duration;
+    const efficiency = (task.duration / validatedData.actualDuration) * 100;
+    const timeOfDay = calculateTimeOfDay(startTime);
+    const dayOfWeek = getDayOfWeek(startTime);
+
     // Create Post-Do Log
     const postDoLog = await tx.postDoLog.create({
       data: {
@@ -472,18 +476,18 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
       data: { status: 'DONE' }
     });
 
-    return { updatedTask, postDoLog };
+    return { updatedTask, postDoLog, variance, efficiency, timeOfDay, dayOfWeek };
   });
 
-  log('[POST /tasks/:id/complete] Completed task:', task.id);
+  log('[POST /tasks/:id/complete] Completed task:', id);
   res.json({
     task: result.updatedTask,
     postDoLog: result.postDoLog,
     metrics: {
-      variance,
-      efficiency: Math.round(efficiency * 100) / 100,
-      timeOfDay,
-      dayOfWeek
+      variance: result.variance,
+      efficiency: Math.round(result.efficiency * 100) / 100,
+      timeOfDay: result.timeOfDay,
+      dayOfWeek: result.dayOfWeek
     }
   });
 }));

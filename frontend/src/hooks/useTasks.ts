@@ -209,9 +209,19 @@ export function useUpdateTask() {
       console.error('[useUpdateTask] Error, rolled back:', err);
       toast.showError(err.userMessage || 'Failed to update task');
     },
-    onSuccess: (_, variables) => {
-      log('[useUpdateTask] Success');
-      queryClient.invalidateQueries({ queryKey: taskKeys.detail(variables.id) });
+    onSuccess: (serverTask, variables) => {
+      log('[useUpdateTask] Success, updating cache with server data');
+      
+      // Update infinite query caches with server-authoritative data
+      updateInfiniteTasksCache({
+        queryClient,
+        queryKey: nextInfiniteKey,
+        predicate: (task) => task.id === variables.id,
+        updater: () => serverTask,
+      });
+
+      // Update detail query cache with server-authoritative data
+      queryClient.setQueryData(taskKeys.detail(variables.id), serverTask);
     },
   });
 }
@@ -261,8 +271,19 @@ export function useScheduleTask() {
       console.error('[useScheduleTask] Error, rolled back:', err);
       toast.showError(err.userMessage || 'Failed to schedule task');
     },
-    onSuccess: (data) => {
-      log('[useScheduleTask] Success response:', data);
+    onSuccess: (serverTask, variables) => {
+      log('[useScheduleTask] Success, updating cache with server data:', serverTask);
+      
+      // Update infinite query caches with server-authoritative data
+      updateInfiniteTasksCache({
+        queryClient,
+        queryKey: nextInfiniteKey,
+        predicate: (task) => task.id === variables.id,
+        updater: () => serverTask,
+      });
+
+      // Update detail query cache with server-authoritative data
+      queryClient.setQueryData(taskKeys.detail(variables.id), serverTask);
     },
   });
 }
@@ -295,8 +316,19 @@ export function useUnscheduleTask() {
       console.error('[useUnscheduleTask] Error, rolled back:', err);
       toast.showError(err.userMessage || 'Failed to unschedule task');
     },
-    onSuccess: (data) => {
-      log('[useUnscheduleTask] Success response:', data);
+    onSuccess: (serverTask, taskId) => {
+      log('[useUnscheduleTask] Success, updating cache with server data:', serverTask);
+      
+      // Update infinite query caches with server-authoritative data
+      updateInfiniteTasksCache({
+        queryClient,
+        queryKey: nextInfiniteKey,
+        predicate: (task) => task.id === taskId,
+        updater: () => serverTask,
+      });
+
+      // Update detail query cache with server-authoritative data
+      queryClient.setQueryData(taskKeys.detail(taskId), serverTask);
     },
   });
 }

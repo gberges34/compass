@@ -1,0 +1,8 @@
+repos:
+  - repo: compass/compass
+    installationId: 123456
+    permissions:
+      codex: write
+      cursor: write
+      gemini: read
+

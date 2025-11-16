@@ -7,7 +7,8 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
 import { reviewTypeEnum, energyEnum } from '../schemas/enums';
 import { calculateMetrics } from '../utils/reviewMetrics';
-import { paginationSchema, PaginatedResponse } from '../schemas/pagination';
+import { paginationSchema } from '../schemas/pagination';
+import type { PaginationResponse } from '@compass/dto/pagination';
 import { cacheControl, CachePolicies } from '../middleware/cacheControl';
 
 const router = Router();
@@ -27,12 +28,13 @@ const listReviewsQuerySchema = z.object({
 }).merge(paginationSchema);
 
 // Helper function to calculate daily metrics
-async function calculateDailyMetrics(date: Date) {
+async function calculateDailyMetrics(date: Date, tx?: Prisma.TransactionClient) {
   const dayStart = startOfDay(date);
   const dayEnd = endOfDay(date);
+  const db = tx || prisma;
 
   // Get daily plan
-  const dailyPlan = await prisma.dailyPlan.findUnique({
+  const dailyPlan = await db.dailyPlan.findUnique({
     where: { date: dayStart },
     select: { topOutcomes: true },
   });
@@ -42,20 +44,20 @@ async function calculateDailyMetrics(date: Date) {
     startDate: dayStart,
     endDate: dayEnd,
     dailyPlan,
-  });
+  }, tx);
 
   return metrics;
 }
 
 // Helper function to calculate weekly metrics
-async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date) {
+async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date, tx?: Prisma.TransactionClient) {
   // Calculate metrics using shared utility
   const metrics = await calculateMetrics({
     startDate: weekStart,
     endDate: weekEnd,
     dailyPlan: null, // No daily plan for weekly reviews
     isWeekly: true, // Flag to query all daily plans in the range
-  });
+  }, tx);
 
   return metrics;
 }
@@ -71,34 +73,38 @@ router.post('/daily', asyncHandler(async (req: Request, res: Response) => {
   const periodStart = startOfDay(today);
   const periodEnd = endOfDay(today);
 
-  // Check for existing review for this period
-  const existingReview = await prisma.review.findFirst({
-    where: {
-      type: 'DAILY',
-      periodStart: periodStart
+  // Wrap metric calculation and review creation in a transaction
+  // to prevent race conditions where metrics become stale
+  const review = await prisma.$transaction(async (tx) => {
+    // Check for existing review for this period (within transaction to prevent race conditions)
+    const existingReview = await tx.review.findFirst({
+      where: {
+        type: 'DAILY',
+        periodStart: periodStart
+      }
+    });
+
+    if (existingReview) {
+      throw new BadRequestError('A daily review already exists for this period');
     }
-  });
 
-  if (existingReview) {
-    throw new BadRequestError('A daily review already exists for this period');
-  }
+    // Calculate metrics within transaction
+    const metrics = await calculateDailyMetrics(today, tx);
 
-  // Calculate metrics
-  const metrics = await calculateDailyMetrics(today);
-
-  // Create review
-  const review = await prisma.review.create({
-    data: {
-      type: 'DAILY',
-      periodStart,
-      periodEnd,
-      wins: validatedData.wins,
-      misses: validatedData.misses,
-      lessons: validatedData.lessons,
-      nextGoals: validatedData.nextGoals,
-      energyAssessment: validatedData.energyAssessment || null,
-      ...metrics,
-    }
+    // Create review within same transaction
+    return await tx.review.create({
+      data: {
+        type: 'DAILY',
+        periodStart,
+        periodEnd,
+        wins: validatedData.wins,
+        misses: validatedData.misses,
+        lessons: validatedData.lessons,
+        nextGoals: validatedData.nextGoals,
+        energyAssessment: validatedData.energyAssessment || null,
+        ...metrics,
+      }
+    });
   });
 
   res.status(201).json(review);
@@ -115,34 +121,38 @@ router.post('/weekly', asyncHandler(async (req: Request, res: Response) => {
   const periodStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
   const periodEnd = endOfWeek(today, { weekStartsOn: 0 });
 
-  // Check for existing review for this period
-  const existingReview = await prisma.review.findFirst({
-    where: {
-      type: 'WEEKLY',
-      periodStart: periodStart
+  // Wrap metric calculation and review creation in a transaction
+  // to prevent race conditions where metrics become stale
+  const review = await prisma.$transaction(async (tx) => {
+    // Check for existing review for this period (within transaction to prevent race conditions)
+    const existingReview = await tx.review.findFirst({
+      where: {
+        type: 'WEEKLY',
+        periodStart: periodStart
+      }
+    });
+
+    if (existingReview) {
+      throw new BadRequestError('A weekly review already exists for this period');
     }
-  });
 
-  if (existingReview) {
-    throw new BadRequestError('A weekly review already exists for this period');
-  }
+    // Calculate metrics within transaction
+    const metrics = await calculateWeeklyMetrics(periodStart, periodEnd, tx);
 
-  // Calculate metrics
-  const metrics = await calculateWeeklyMetrics(periodStart, periodEnd);
-
-  // Create review
-  const review = await prisma.review.create({
-    data: {
-      type: 'WEEKLY',
-      periodStart,
-      periodEnd,
-      wins: validatedData.wins,
-      misses: validatedData.misses,
-      lessons: validatedData.lessons,
-      nextGoals: validatedData.nextGoals,
-      energyAssessment: validatedData.energyAssessment || null,
-      ...metrics,
-    }
+    // Create review within same transaction
+    return await tx.review.create({
+      data: {
+        type: 'WEEKLY',
+        periodStart,
+        periodEnd,
+        wins: validatedData.wins,
+        misses: validatedData.misses,
+        lessons: validatedData.lessons,
+        nextGoals: validatedData.nextGoals,
+        energyAssessment: validatedData.energyAssessment || null,
+        ...metrics,
+      }
+    });
   });
 
   res.status(201).json(review);
@@ -170,7 +180,7 @@ router.get('/', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Req
   const items = hasMore ? reviews.slice(0, pageSize) : reviews;
   const nextCursor = hasMore ? items[items.length - 1].id : null;
 
-  const response: PaginatedResponse<Review> = { items, nextCursor };
+  const response: PaginationResponse<Review> = { items, nextCursor };
   res.json(response);
 }));
 
