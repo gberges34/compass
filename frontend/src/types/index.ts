@@ -178,6 +178,7 @@ export interface TaskFilters {
   context?: Context;
   priority?: Priority;
   energyRequired?: Energy;
+  scheduledFilter?: string;
 }
 
 export interface CalendarEvent {
