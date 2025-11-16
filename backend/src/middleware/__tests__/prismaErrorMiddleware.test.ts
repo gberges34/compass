@@ -1,6 +1,6 @@
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { normalizePrismaError } from '../prismaErrorMiddleware';
-import { ConflictError, BadRequestError } from '../../errors/AppError';
+import { NotFoundError, ConflictError, BadRequestError } from '../../errors/AppError';
 
 describe('prismaErrorExtension', () => {
   const createKnownRequestError = (
@@ -32,5 +32,29 @@ describe('prismaErrorExtension', () => {
     expect(normalized).toBeInstanceOf(BadRequestError);
     expect(normalized?.message).toContain('taskId');
   });
-});
 
+  it('throws NotFoundError for record not found errors', async () => {
+    const notFoundError = createKnownRequestError('P2025', {
+      modelName: 'Task',
+    });
+
+    const normalized = normalizePrismaError(notFoundError, 'Task');
+    expect(normalized).toBeInstanceOf(NotFoundError);
+    expect(normalized?.message).toContain('Task');
+  });
+
+  it('uses provided model name when meta.modelName is missing', async () => {
+    const notFoundError = createKnownRequestError('P2025', {});
+
+    const normalized = normalizePrismaError(notFoundError, 'DailyPlan');
+    expect(normalized).toBeInstanceOf(NotFoundError);
+    expect(normalized?.message).toContain('DailyPlan');
+  });
+
+  it('returns null for unhandled error codes', async () => {
+    const unhandledError = createKnownRequestError('P1000', {});
+
+    const normalized = normalizePrismaError(unhandledError, 'Task');
+    expect(normalized).toBeNull();
+  });
+});
