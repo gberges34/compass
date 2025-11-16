@@ -16,7 +16,8 @@
     "setup": "bash scripts/setup.sh",
     "verify": "bash scripts/verify-environment.sh",
     "health": "bash scripts/health-check.sh",
-    "check:anthropic": "CHECK_ANTHROPIC=true ./scripts/health-check.sh anthropic"
+    "check:anthropic": "CHECK_ANTHROPIC=true ./scripts/health-check.sh anthropic",
+    "vscode:extensions": "bash scripts/install-vscode-extensions.sh"
   },
   "keywords": ["productivity", "task-management", "calendar"],
   "author": "",

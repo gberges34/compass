@@ -7,6 +7,7 @@ Get Compass running on your local machine in under 5 minutes.
 - Node.js 18 or higher
 - PostgreSQL database (local or Railway)
 - npm or yarn
+- VS Code (recommended) - for the best development experience
 
 ## Installation
 
@@ -26,6 +27,27 @@ The setup script will:
 - ✓ Install all dependencies
 - ✓ Copy .env.example to .env
 - ✓ Generate Prisma client
+
+### 1.5. Install VS Code Extensions (Optional but Recommended)
+
+If you're using VS Code, install the recommended extensions for the best development experience:
+
+```bash
+# Install all recommended extensions automatically
+npm run vscode:extensions
+```
+
+Alternatively:
+- VS Code will automatically prompt you to install recommended extensions when you open the workspace
+- Or install manually from the Extensions view (Cmd+Shift+X / Ctrl+Shift+X)
+
+Recommended extensions include:
+- Prisma (schema syntax highlighting)
+- ESLint & Prettier (code quality)
+- Tailwind CSS IntelliSense
+- Jest (testing)
+- PostgreSQL (database tools)
+- Error Lens, GitLens, and more
 
 ### 2. Configure Environment
 
@@ -127,6 +149,7 @@ npm run install:all
 | `npm run db:studio` | Open Prisma Studio |
 | `npm run db:reset` | Reset database (⚠️ deletes data) |
 | `npm run build` | Build for production |
+| `npm run vscode:extensions` | Install recommended VS Code extensions |
 
 ## Manual Startup
 
