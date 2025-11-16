@@ -2,17 +2,10 @@ import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { NotFoundError, ConflictError, BadRequestError } from '../errors/AppError';
 
-/**
- * Normalizes Prisma errors to application-specific error types
- *
- * @param error - The Prisma error to normalize
- * @param model - Optional model name for context
- * @returns Normalized error or null if error cannot be normalized
- */
 export const normalizePrismaError = (
   error: PrismaClientKnownRequestError,
   model?: string
-): NotFoundError | ConflictError | BadRequestError | null => {
+) => {
   if (error.code === 'P2025') {
     const modelName = (error.meta?.modelName as string) || model || 'Record';
     return new NotFoundError(modelName);

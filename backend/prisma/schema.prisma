@@ -134,6 +134,7 @@ model Review {
 
   @@index([periodStart, type])
   @@index([type])
+  @@unique([type, periodStart], name: "unique_review_per_period")
 }
 
 // Temporary Captured Tasks (from Todoist)

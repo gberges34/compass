@@ -91,9 +91,15 @@ const ReviewsPage: React.FC = () => {
   };
 
   const formatPeriod = (review: Review) => {
-    const start = formatDate(review.periodStart);
-    const end = formatDate(review.periodEnd);
-    return `${start} - ${end}`;
+    if (review.type === 'DAILY') {
+      // For daily reviews, just show the single date
+      return formatDate(review.periodStart);
+    } else {
+      // For weekly reviews, show the range
+      const start = formatDate(review.periodStart);
+      const end = formatDate(review.periodEnd);
+      return `${start} - ${end}`;
+    }
   };
 
   // Chart data preparation
