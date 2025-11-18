@@ -1,4 +1,5 @@
 import { Octokit } from '@octokit/rest';
+import type { InstallationOctokit } from './app-client.js';
 
 const mockGetInstallationOctokit = jest.fn();
 
@@ -42,7 +43,7 @@ describe('app-client', () => {
           }
         })
       }
-    } as unknown as Octokit;
+    } as unknown as InstallationOctokit;
 
     const content = await readFile(mockOctokit, 'owner/repo', 'path/to/file', 'main');
     expect(content).toBe('test content');
@@ -64,9 +65,81 @@ describe('app-client', () => {
           }
         })
       }
-    } as unknown as Octokit;
+    } as unknown as InstallationOctokit;
 
     await expect(readFile(mockOctokit, 'owner/repo', 'path/to/dir', 'main')).rejects.toThrow('not a file');
+  });
+
+  describe('readFile repo format validation', () => {
+    test('throws on repo without slash', async () => {
+      const { readFile } = await import('./app-client.js');
+      const mockOctokit = {
+        repos: {
+          getContent: jest.fn()
+        }
+      } as unknown as InstallationOctokit;
+
+      await expect(readFile(mockOctokit, 'invalid-repo', 'path/to/file', 'main')).rejects.toThrow(
+        'Invalid repo format: "invalid-repo". Expected \'owner/name\'.'
+      );
+      expect(mockOctokit.repos.getContent).not.toHaveBeenCalled();
+    });
+
+    test('throws on repo with only owner', async () => {
+      const { readFile } = await import('./app-client.js');
+      const mockOctokit = {
+        repos: {
+          getContent: jest.fn()
+        }
+      } as unknown as InstallationOctokit;
+
+      await expect(readFile(mockOctokit, 'owner/', 'path/to/file', 'main')).rejects.toThrow(
+        'Invalid repo format: "owner/". Expected \'owner/name\'.'
+      );
+      expect(mockOctokit.repos.getContent).not.toHaveBeenCalled();
+    });
+
+    test('throws on repo with only name', async () => {
+      const { readFile } = await import('./app-client.js');
+      const mockOctokit = {
+        repos: {
+          getContent: jest.fn()
+        }
+      } as unknown as InstallationOctokit;
+
+      await expect(readFile(mockOctokit, '/name', 'path/to/file', 'main')).rejects.toThrow(
+        'Invalid repo format: "/name". Expected \'owner/name\'.'
+      );
+      expect(mockOctokit.repos.getContent).not.toHaveBeenCalled();
+    });
+
+    test('throws on repo with multiple slashes', async () => {
+      const { readFile } = await import('./app-client.js');
+      const mockOctokit = {
+        repos: {
+          getContent: jest.fn()
+        }
+      } as unknown as InstallationOctokit;
+
+      await expect(readFile(mockOctokit, 'owner/repo/path', 'path/to/file', 'main')).rejects.toThrow(
+        'Invalid repo format: "owner/repo/path". Expected \'owner/name\'.'
+      );
+      expect(mockOctokit.repos.getContent).not.toHaveBeenCalled();
+    });
+
+    test('throws on empty repo string', async () => {
+      const { readFile } = await import('./app-client.js');
+      const mockOctokit = {
+        repos: {
+          getContent: jest.fn()
+        }
+      } as unknown as InstallationOctokit;
+
+      await expect(readFile(mockOctokit, '', 'path/to/file', 'main')).rejects.toThrow(
+        'Invalid repo format: "". Expected \'owner/name\'.'
+      );
+      expect(mockOctokit.repos.getContent).not.toHaveBeenCalled();
+    });
   });
 });
 
