@@ -50,7 +50,11 @@ export async function readFile(
   path: string,
   ref: string
 ): Promise<string> {
-  const [owner, name] = repo.split("/");
+  const parts = repo.split("/");
+  if (parts.length !== 2 || !parts[0] || !parts[1]) {
+    throw new Error(`Invalid repo format: "${repo}". Expected 'owner/name'.`);
+  }
+  const [owner, name] = parts;
   const res = await octokit.repos.getContent({ owner, repo: name, path, ref });
   if (!("content" in res.data)) {
     throw new Error("not a file");
