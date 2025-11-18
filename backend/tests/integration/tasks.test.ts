@@ -108,6 +108,152 @@ describe('Tasks API - Integration Tests', () => {
       // Cleanup
       await prisma.task.delete({ where: { id: task.id } });
     });
+
+    it('should be idempotent when completing an already DONE task', async () => {
+      // Create test task
+      const task = await prisma.task.create({
+        data: {
+          name: 'Test Task for Idempotent Completion',
+          status: 'ACTIVE',
+          priority: 'MUST',
+          category: 'ADMIN',
+          context: 'COMPUTER',
+          energyRequired: 'MEDIUM',
+          duration: 30,
+          definitionOfDone: 'Test complete',
+        }
+      });
+
+      // Complete task once successfully
+      const firstCompleteResponse = await request(app)
+        .post(`/api/tasks/${task.id}/complete`)
+        .send({
+          outcome: 'Task completed successfully',
+          effortLevel: 'MEDIUM',
+          keyInsight: 'First completion',
+          actualDuration: 35,
+          startTime: new Date().toISOString(),
+          endTime: new Date().toISOString(),
+        });
+
+      expect(firstCompleteResponse.status).toBe(200);
+      expect(firstCompleteResponse.body.task.status).toBe('DONE');
+      expect(firstCompleteResponse.body.postDoLog.outcome).toBe('Task completed successfully');
+      expect(firstCompleteResponse.body.postDoLog.actualDuration).toBe(35);
+
+      // Store first completion data for comparison
+      const firstPostDoLogId = firstCompleteResponse.body.postDoLog.id;
+      const firstOutcome = firstCompleteResponse.body.postDoLog.outcome;
+      const firstActualDuration = firstCompleteResponse.body.postDoLog.actualDuration;
+
+      // Attempt to complete the same task again (idempotent call)
+      const secondCompleteResponse = await request(app)
+        .post(`/api/tasks/${task.id}/complete`)
+        .send({
+          outcome: 'Attempted second completion',
+          effortLevel: 'LARGE',
+          keyInsight: 'Second completion attempt',
+          actualDuration: 40,
+          startTime: new Date().toISOString(),
+          endTime: new Date().toISOString(),
+        });
+
+      // Should return 200 OK with existing data (idempotent success)
+      expect(secondCompleteResponse.status).toBe(200);
+      expect(secondCompleteResponse.body.task.status).toBe('DONE');
+      
+      // Verify existing PostDoLog metrics are preserved (not overwritten)
+      expect(secondCompleteResponse.body.postDoLog.id).toBe(firstPostDoLogId);
+      expect(secondCompleteResponse.body.postDoLog.outcome).toBe(firstOutcome);
+      expect(secondCompleteResponse.body.postDoLog.actualDuration).toBe(firstActualDuration);
+      expect(secondCompleteResponse.body.postDoLog.actualDuration).toBe(35); // Original value, not 40
+
+      // Verify only one PostDoLog exists
+      const taskWithLogs = await prisma.task.findUnique({
+        where: { id: task.id },
+        include: { postDoLog: true }
+      });
+      expect(taskWithLogs?.status).toBe('DONE');
+      expect(taskWithLogs?.postDoLog).toBeDefined();
+      expect(taskWithLogs?.postDoLog?.outcome).toBe('Task completed successfully'); // Original value preserved
+
+      // Verify no duplicate PostDoLog was created
+      const allLogs = await prisma.postDoLog.findMany({
+        where: { taskId: task.id }
+      });
+      expect(allLogs.length).toBe(1);
+
+      // Cleanup
+      await prisma.postDoLog.delete({ where: { taskId: task.id } });
+      await prisma.task.delete({ where: { id: task.id } });
+    });
+
+    it('should handle race condition where PostDoLog exists but task status is not DONE', async () => {
+      // Create test task
+      const task = await prisma.task.create({
+        data: {
+          name: 'Test Task for Race Condition',
+          status: 'ACTIVE',
+          priority: 'MUST',
+          category: 'ADMIN',
+          context: 'COMPUTER',
+          energyRequired: 'MEDIUM',
+          duration: 30,
+          definitionOfDone: 'Test complete',
+        }
+      });
+
+      // Manually create PostDoLog without updating task status (simulating race condition)
+      const existingLog = await prisma.postDoLog.create({
+        data: {
+          taskId: task.id,
+          outcome: 'Original completion',
+          effortLevel: 'MEDIUM',
+          keyInsight: 'Original insight',
+          estimatedDuration: 30,
+          actualDuration: 35,
+          variance: 5,
+          efficiency: 85.71,
+          startTime: new Date(),
+          endTime: new Date(),
+          timeOfDay: 'MORNING',
+          dayOfWeek: 'Monday',
+        }
+      });
+
+      // Attempt to complete task (should handle existing PostDoLog gracefully)
+      const response = await request(app)
+        .post(`/api/tasks/${task.id}/complete`)
+        .send({
+          outcome: 'New completion attempt',
+          effortLevel: 'LARGE',
+          keyInsight: 'New insight',
+          actualDuration: 40,
+          startTime: new Date().toISOString(),
+          endTime: new Date().toISOString(),
+        });
+
+      // Should return 200 OK (idempotent)
+      expect(response.status).toBe(200);
+      expect(response.body.task.status).toBe('DONE');
+      
+      // Verify existing PostDoLog metrics are preserved
+      expect(response.body.postDoLog.id).toBe(existingLog.id);
+      expect(response.body.postDoLog.outcome).toBe('Original completion');
+      expect(response.body.postDoLog.actualDuration).toBe(35); // Original value preserved
+
+      // Verify task status was updated
+      const updatedTask = await prisma.task.findUnique({
+        where: { id: task.id },
+        include: { postDoLog: true }
+      });
+      expect(updatedTask?.status).toBe('DONE');
+      expect(updatedTask?.postDoLog?.id).toBe(existingLog.id);
+
+      // Cleanup
+      await prisma.postDoLog.delete({ where: { taskId: task.id } });
+      await prisma.task.delete({ where: { id: task.id } });
+    });
   });
 
   describe('Task 2: POST /api/tasks/enrich - Transaction Atomicity', () => {
@@ -514,6 +660,27 @@ describe('Tasks API - Integration Tests', () => {
       expect(findUniqueSpy).not.toHaveBeenCalled();
 
       findUniqueSpy.mockRestore();
+    });
+
+    it('should reject non-UTC scheduledStart (strict Z requirement)', async () => {
+        // Case 1: No timezone (ambiguous local time)
+        const responseNoZone = await request(app)
+          .patch(`/api/tasks/${taskId}/schedule`)
+          .send({
+            scheduledStart: "2025-11-18T09:00:00"
+          });
+  
+        expect(responseNoZone.status).toBe(400);
+        expect(responseNoZone.body.code).toBe('VALIDATION_ERROR');
+  
+        // Case 2: Offset (ambiguous if not normalized, but Zod rejects it strictly here)
+        const responseOffset = await request(app)
+          .patch(`/api/tasks/${taskId}/schedule`)
+          .send({
+            scheduledStart: "2025-11-18T09:00:00+09:00"
+          });
+  
+        expect(responseOffset.status).toBe(400);
     });
   });
 });

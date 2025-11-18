@@ -103,6 +103,15 @@ export const getTasks = async (
   if (filters?.context) params.append('context', filters.context);
   if (filters?.priority) params.append('priority', filters.priority);
   if (filters?.energyRequired) params.append('energyRequired', filters.energyRequired);
+  if (filters?.scheduledFilter) params.append('scheduledFilter', filters.scheduledFilter);
+  
+  // Always include user's timezone for timezone-aware date filtering
+  if (filters?.timezone) {
+    params.append('timezone', filters.timezone);
+  } else {
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    params.append('timezone', userTimezone);
+  }
 
   // Add pagination params
   if (pagination?.cursor) params.append('cursor', pagination.cursor);

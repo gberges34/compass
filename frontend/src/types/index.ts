@@ -2,7 +2,7 @@ import type { PaginationResponse } from '@compass/dto/pagination';
 
 // Compass Frontend - Type Definitions
 
-export type TaskStatus = 'NEXT' | 'WAITING' | 'ACTIVE' | 'DONE';
+export type TaskStatus = 'NEXT' | 'WAITING' | 'ACTIVE' | 'DONE' | 'SOMEDAY';
 export type Priority = 'MUST' | 'SHOULD' | 'COULD' | 'MAYBE';
 export type Category = 'SCHOOL' | 'MUSIC' | 'FITNESS' | 'GAMING' | 'NUTRITION' | 'HYGIENE' | 'PET' | 'SOCIAL' | 'PERSONAL' | 'ADMIN';
 export type Context = 'HOME' | 'OFFICE' | 'COMPUTER' | 'PHONE' | 'ERRANDS' | 'ANYWHERE';
@@ -179,6 +179,7 @@ export interface TaskFilters {
   priority?: Priority;
   energyRequired?: Energy;
   scheduledFilter?: string;
+  timezone?: string;
 }
 
 export interface CalendarEvent {

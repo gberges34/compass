@@ -36,7 +36,8 @@ GET /api/tasks?status=NEXT&priority=MUST&cursor=abc-123&limit=30
 
 #### Tasks - GET /api/tasks
 - Supports cursor-based pagination
-- Ordered by: status (asc), priority (asc), id (asc)
+- Ordered by: status (asc), priority (asc), scheduledStart (asc), createdAt (desc)
+- Optimized with composite index `@@index([status, priority, scheduledStart, createdAt])` (BACKEND-PERF-001)
 - Cursor uses `id > cursor` for next page
 - Works with filters: status, priority, category, scheduledDate
 

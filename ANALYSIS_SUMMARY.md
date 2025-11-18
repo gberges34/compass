@@ -1,5 +1,13 @@
 # Frontend Analysis Phase 1 - Quick Reference Summary
 
+## 2025-11-15 — BACKEND-TASK-002: Idempotent Task Completion
+
+- Fixed `POST /api/tasks/:id/complete` to be idempotent, preventing Prisma unique constraint violations when the endpoint is called multiple times (e.g., network retries or user double-clicks).
+- Replaced `PostDoLog.create` with `PostDoLog.upsert` keyed by `taskId`, ensuring that if a `PostDoLog` already exists, the existing record is returned without mutating its metrics.
+- Added early return path for tasks that are already `DONE` with an existing `PostDoLog`, returning 200 OK with the existing data instead of throwing an error.
+- Added integration tests covering idempotent behavior: second completion call returns 200 with preserved metrics, and race condition handling where `PostDoLog` exists but task status isn't `DONE`.
+- **Behavior**: Task completion is now fully idempotent—multiple calls with the same `taskId` return 200 OK with the original `PostDoLog` metrics preserved, making the endpoint safe for retries and double-clicks.
+
 ## 2025-11-11 — REQ-SEC-001: Remove insecure Anthropic script
 
 - Deleted `backend/test-api.js` and replaced the workflow with `npm run check:anthropic`, which shells into `scripts/health-check.sh` for a sanitized Anthropic connectivity probe.
