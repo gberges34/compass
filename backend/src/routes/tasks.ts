@@ -3,7 +3,7 @@ import { prisma } from '../prisma';
 import { Prisma, $Enums, Task } from '@prisma/client';
 import { z } from 'zod';
 import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
-import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
+import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { enrichTask } from '../services/llm';
 import { calculateTimeOfDay, getDayOfWeek } from '../utils/timeUtils';
 import { getCurrentTimestamp, dateToISO } from '../utils/dateHelpers';
@@ -36,9 +36,9 @@ function getDayBoundsInTimezone(dateString: string, timezone: string = 'UTC'): {
   const endOfDayString = `${dateString}T23:59:59.999`;
   
   // Convert from zoned time to UTC
-  // zonedTimeToUtc interprets the date string as being in the specified timezone
-  const utcStart = zonedTimeToUtc(startOfDayString, timezone);
-  const utcEnd = zonedTimeToUtc(endOfDayString, timezone);
+  // fromZonedTime interprets the date string as being in the specified timezone
+  const utcStart = fromZonedTime(startOfDayString, timezone);
+  const utcEnd = fromZonedTime(endOfDayString, timezone);
   
   return { start: utcStart, end: utcEnd };
 }
@@ -50,18 +50,31 @@ function getWeekBoundsInTimezone(dateString: string, timezone: string = 'UTC'): 
   const dateStringWithTime = `${dateString}T00:00:00`;
   
   // Convert from zoned time to UTC to get the actual date in the user's timezone
-  const zonedDate = zonedTimeToUtc(dateStringWithTime, timezone);
+  const utcDate = fromZonedTime(dateStringWithTime, timezone);
   
-  // Convert back to zoned time to calculate week bounds in the user's timezone
-  const zonedDateInTimezone = utcToZonedTime(zonedDate, timezone);
+  // Convert back to zoned time to get the date components in the user's timezone
+  // toZonedTime returns a Date object that represents the correct local time when displayed in the timezone
+  const zonedDateInTimezone = toZonedTime(utcDate, timezone);
   
-  // Get week start (Sunday) and end in the user's timezone
-  const zonedWeekStart = startOfWeek(zonedDateInTimezone, { weekStartsOn: 0 });
-  const zonedWeekEnd = endOfWeek(zonedDateInTimezone, { weekStartsOn: 0 });
+  // Use date-fns functions to calculate week bounds
+  // Note: These operate on the Date's local time representation, which matches
+  // the zoned time we want since toZonedTime gives us the correct local time
+  const weekStartDate = startOfWeek(zonedDateInTimezone, { weekStartsOn: 0 });
+  const weekEndDate = endOfWeek(zonedDateInTimezone, { weekStartsOn: 0 });
   
-  // Convert back to UTC for database queries
-  const utcStart = zonedTimeToUtc(zonedWeekStart, timezone);
-  const utcEnd = zonedTimeToUtc(zonedWeekEnd, timezone);
+  // Format Date objects as ISO strings without timezone indicator
+  // Extract YYYY-MM-DDTHH:mm:ss format to represent the local time in user's timezone
+  // This is critical: Date objects are UTC internally, so we format them as strings
+  // first, then convert those strings from the user's timezone to UTC
+  // This prevents the double conversion bug where Date objects are misinterpreted
+  const weekStartStr = `${weekStartDate.getFullYear()}-${String(weekStartDate.getMonth() + 1).padStart(2, '0')}-${String(weekStartDate.getDate()).padStart(2, '0')}T${String(weekStartDate.getHours()).padStart(2, '0')}:${String(weekStartDate.getMinutes()).padStart(2, '0')}:${String(weekStartDate.getSeconds()).padStart(2, '0')}`;
+  const weekEndStr = `${weekEndDate.getFullYear()}-${String(weekEndDate.getMonth() + 1).padStart(2, '0')}-${String(weekEndDate.getDate()).padStart(2, '0')}T${String(weekEndDate.getHours()).padStart(2, '0')}:${String(weekEndDate.getMinutes()).padStart(2, '0')}:${String(weekEndDate.getSeconds()).padStart(2, '0')}`;
+  
+  // Convert these strings from the user's timezone to UTC
+  // This prevents double conversion: Date objects are already UTC internally,
+  // so passing them directly to fromZonedTime would misinterpret them as local times
+  const utcStart = fromZonedTime(weekStartStr, timezone);
+  const utcEnd = fromZonedTime(weekEndStr, timezone);
   
   return { start: utcStart, end: utcEnd };
 }
