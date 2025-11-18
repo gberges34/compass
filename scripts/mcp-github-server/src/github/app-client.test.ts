@@ -1,4 +1,5 @@
 import { Octokit } from '@octokit/rest';
+import type { InstallationOctokit } from './app-client.js';
 
 const mockGetInstallationOctokit = jest.fn();
 
@@ -42,7 +43,7 @@ describe('app-client', () => {
           }
         })
       }
-    } as unknown as Octokit;
+    } as unknown as InstallationOctokit;
 
     const content = await readFile(mockOctokit, 'owner/repo', 'path/to/file', 'main');
     expect(content).toBe('test content');
@@ -64,7 +65,7 @@ describe('app-client', () => {
           }
         })
       }
-    } as unknown as Octokit;
+    } as unknown as InstallationOctokit;
 
     await expect(readFile(mockOctokit, 'owner/repo', 'path/to/dir', 'main')).rejects.toThrow('not a file');
   });
