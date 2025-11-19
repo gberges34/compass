@@ -60,14 +60,16 @@ const ClarifyPage: React.FC = () => {
       });
 
       setEnrichedData({
-        name: enrichedTask.name,
-        category: enrichedTask.category,
-        context: enrichedTask.context,
-        definitionOfDone: enrichedTask.definitionOfDone,
+        name: enrichedTask.enrichment.rephrasedName,
+        category: enrichedTask.enrichment.category,
+        context: enrichedTask.enrichment.context,
+        definitionOfDone: enrichedTask.enrichment.definitionOfDone,
       });
       toast.showSuccess('Task enriched successfully!');
-    } catch (err) {
-      toast.showError('Failed to enrich task. Please try again.');
+    } catch (err: any) {
+      // Show specific error message for enrichment failures
+      const errorMessage = err?.userMessage || err?.message || 'Enrichment failed';
+      toast.showError('Enrichment failed, please categorize manually');
       console.error('Error enriching task:', err);
     } finally {
       setEnriching(false);

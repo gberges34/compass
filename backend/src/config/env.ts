@@ -5,6 +5,7 @@ const envSchema = z.object({
   // Required variables
   DATABASE_URL: z.string().url('DATABASE_URL must be a valid PostgreSQL connection URL'),
   ANTHROPIC_API_KEY: z.string().min(1, 'ANTHROPIC_API_KEY is required'),
+  API_KEY: z.string().min(1, 'API_KEY is required'),
 
   // Optional with defaults
   PORT: z.coerce.number().int().positive().default(3001),

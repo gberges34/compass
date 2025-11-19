@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { withRetry } from '../utils/retry';
 import { env } from '../config/env';
 import { categoryEnum, contextEnum } from '../schemas/enums';
+import { InternalError } from '../errors/AppError';
 
 let anthropic = new Anthropic({
   apiKey: env.ANTHROPIC_API_KEY,
@@ -45,35 +46,22 @@ function isValidContext(value: any): boolean {
   return taskEnrichmentSchema.shape.context.safeParse(value).success;
 }
 
-function validateWithRecovery(data: any, input: TaskEnrichmentInput): TaskEnrichmentOutput {
+function validateEnrichment(data: any): TaskEnrichmentOutput {
   const result = taskEnrichmentSchema.safeParse(data);
 
   if (result.success) {
     return result.data;
   }
 
-  // Partial recovery: use valid fields, fill in defaults for invalid
-  const recovered: TaskEnrichmentOutput = {
-    category: isValidCategory(data.category) ? data.category : 'PERSONAL',
-    context: isValidContext(data.context) ? data.context : 'ANYWHERE',
-    rephrasedName:
-      typeof data.rephrasedName === 'string' && data.rephrasedName.length > 0
-        ? data.rephrasedName
-        : input.rawTaskName,
-    definitionOfDone:
-      typeof data.definitionOfDone === 'string' && data.definitionOfDone.length > 0
-        ? data.definitionOfDone
-        : 'Task completed as described',
-  };
-
   // Log validation failures for monitoring
-  console.warn('[LLM Validation] Partial validation failure:', {
+  console.error('[LLM Validation] Validation failure:', {
     errors: result.error.issues,
     rawResponse: data,
-    recoveredFields: recovered,
   });
 
-  return recovered;
+  throw new InternalError(
+    `LLM enrichment validation failed: ${result.error.issues.map((i) => i.message).join(', ')}`
+  );
 }
 
 export async function enrichTask(
@@ -130,7 +118,7 @@ Respond ONLY with valid JSON in this exact format:
       jsonText = jsonText.replace(/```\n?/g, '');
     }
 
-    // Parse JSON with fallback for malformed responses
+    // Parse JSON - throw error if malformed
     let enrichment;
     try {
       enrichment = JSON.parse(jsonText);
@@ -138,36 +126,32 @@ Respond ONLY with valid JSON in this exact format:
       console.error('LLM returned invalid JSON:', jsonText.substring(0, 200));
       console.error('Parse error:', parseError instanceof Error ? parseError.message : parseError);
 
-      // Return fallback enrichment for malformed JSON
-      return {
-        category: 'PERSONAL',
-        context: 'ANYWHERE',
-        rephrasedName: input.rawTaskName,
-        definitionOfDone: 'Task completed as described',
-      };
+      throw new InternalError(
+        `Failed to parse LLM response as JSON: ${parseError instanceof Error ? parseError.message : 'Unknown parse error'}`
+      );
     }
 
-    // Validate with partial recovery
-    return validateWithRecovery(enrichment, input);
+    // Validate enrichment - throws error if validation fails
+    return validateEnrichment(enrichment);
   } catch (error: unknown) {
-    // Only provide fallback for Anthropic API errors
+    // If it's already an InternalError (from validation/parsing), re-throw it
+    if (error instanceof InternalError) {
+      throw error;
+    }
+
+    // Handle Anthropic API errors - throw instead of silent fallback
     if (
       error instanceof APIError ||
       error instanceof APIConnectionError ||
       error instanceof RateLimitError
     ) {
       console.error('Anthropic API error during task enrichment:', error.message);
-
-      // Fallback enrichment if API fails
-      return {
-        category: 'PERSONAL',
-        context: 'ANYWHERE',
-        rephrasedName: input.rawTaskName,
-        definitionOfDone: 'Task completed as described',
-      };
+      throw new InternalError(
+        `LLM enrichment failed: ${error.message}. Please categorize manually.`
+      );
     }
 
-    // Re-throw non-API errors (programming errors, validation failures)
+    // Re-throw any other errors (programming errors, etc.)
     console.error('Unexpected error enriching task:', error);
     throw error;
   }

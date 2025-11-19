@@ -42,6 +42,20 @@ const api = axios.create({
   },
 });
 
+// Request interceptor to inject API key from localStorage
+api.interceptors.request.use(
+  (config) => {
+    const apiKey = localStorage.getItem('apiKey');
+    if (apiKey) {
+      config.headers['x-api-key'] = apiKey;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Response interceptor to extract error from new backend format
 api.interceptors.response.use(
   (response) => response,
@@ -131,8 +145,24 @@ export const deleteTask = async (id: string): Promise<void> => {
   await api.delete(`/tasks/${id}`);
 };
 
-export const enrichTask = async (request: EnrichTaskRequest): Promise<Task> => {
-  const response = await api.post<Task>('/tasks/enrich', request);
+export const enrichTask = async (request: EnrichTaskRequest): Promise<{
+  task: Task;
+  enrichment: {
+    category: string;
+    context: string;
+    rephrasedName: string;
+    definitionOfDone: string;
+  };
+}> => {
+  const response = await api.post<{
+    task: Task;
+    enrichment: {
+      category: string;
+      context: string;
+      rephrasedName: string;
+      definitionOfDone: string;
+    };
+  }>('/tasks/enrich', request);
   return response.data;
 };
 
