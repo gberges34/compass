@@ -2,8 +2,8 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
 import { Prisma, $Enums, Task } from '@prisma/client';
 import { z } from 'zod';
-import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
-import { fromZonedTime, toZonedTime } from 'date-fns-tz';
+import { addDays, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
+import { fromZonedTime, toZonedTime, format } from 'date-fns-tz';
 import { enrichTask } from '../services/llm';
 import { calculateTimeOfDay, getDayOfWeek } from '../utils/timeUtils';
 import { getCurrentTimestamp, dateToISO } from '../utils/dateHelpers';
@@ -45,38 +45,29 @@ function getDayBoundsInTimezone(dateString: string, timezone: string = 'UTC'): {
 
 // Helper function to get week bounds in a specific timezone, converted to UTC
 function getWeekBoundsInTimezone(dateString: string, timezone: string = 'UTC'): { start: Date; end: Date } {
-  // Parse the date string and interpret it as a date in the user's timezone
-  // Create a date string representing midnight in the user's timezone
-  const dateStringWithTime = `${dateString}T00:00:00`;
-  
-  // Convert from zoned time to UTC to get the actual date in the user's timezone
-  const utcDate = fromZonedTime(dateStringWithTime, timezone);
-  
-  // Convert back to zoned time to get the date components in the user's timezone
-  // toZonedTime returns a Date object that represents the correct local time when displayed in the timezone
-  const zonedDateInTimezone = toZonedTime(utcDate, timezone);
-  
-  // Use date-fns functions to calculate week bounds
-  // Note: These operate on the Date's local time representation, which matches
-  // the zoned time we want since toZonedTime gives us the correct local time
-  const weekStartDate = startOfWeek(zonedDateInTimezone, { weekStartsOn: 0 });
-  const weekEndDate = endOfWeek(zonedDateInTimezone, { weekStartsOn: 0 });
-  
-  // Format Date objects as ISO strings without timezone indicator
-  // Extract YYYY-MM-DDTHH:mm:ss format to represent the local time in user's timezone
-  // This is critical: Date objects are UTC internally, so we format them as strings
-  // first, then convert those strings from the user's timezone to UTC
-  // This prevents the double conversion bug where Date objects are misinterpreted
-  const weekStartStr = `${weekStartDate.getFullYear()}-${String(weekStartDate.getMonth() + 1).padStart(2, '0')}-${String(weekStartDate.getDate()).padStart(2, '0')}T${String(weekStartDate.getHours()).padStart(2, '0')}:${String(weekStartDate.getMinutes()).padStart(2, '0')}:${String(weekStartDate.getSeconds()).padStart(2, '0')}`;
-  const weekEndStr = `${weekEndDate.getFullYear()}-${String(weekEndDate.getMonth() + 1).padStart(2, '0')}-${String(weekEndDate.getDate()).padStart(2, '0')}T${String(weekEndDate.getHours()).padStart(2, '0')}:${String(weekEndDate.getMinutes()).padStart(2, '0')}:${String(weekEndDate.getSeconds()).padStart(2, '0')}`;
-  
-  // Convert these strings from the user's timezone to UTC
-  // This prevents double conversion: Date objects are already UTC internally,
-  // so passing them directly to fromZonedTime would misinterpret them as local times
-  const utcStart = fromZonedTime(weekStartStr, timezone);
-  const utcEnd = fromZonedTime(weekEndStr, timezone);
-  
-  return { start: utcStart, end: utcEnd };
+  // Use noon to avoid DST crossover issues that can occur at midnight.
+  const targetDate = fromZonedTime(`${dateString}T12:00:00`, timezone);
+
+  // Get the day of the week in the target timezone (0=Sun, 6=Sat).
+  // This aligns with the `weekStartsOn: 0` option used elsewhere.
+  // Use format with 'e' token (1=Monday, 7=Sunday) and convert to 0-6 range (0=Sunday)
+  const dayOfWeekISO = parseInt(format(targetDate, 'e', { timeZone: timezone }));
+  // Convert ISO day (1=Mon, 7=Sun) to JavaScript day (0=Sun, 6=Sat)
+  // ISO 7 (Sun) -> 0, ISO 1 (Mon) -> 1, ISO 2 (Tue) -> 2, ..., ISO 6 (Sat) -> 6
+  const dayOfWeek = dayOfWeekISO === 7 ? 0 : dayOfWeekISO;
+
+  // Calculate the start and end dates of the week.
+  const weekStartDate = addDays(targetDate, -dayOfWeek);
+  const weekEndDate = addDays(weekStartDate, 6);
+
+  // Format the dates back to 'yyyy-MM-dd' strings in the target timezone.
+  const weekStartDateString = format(weekStartDate, 'yyyy-MM-dd', { timeZone: timezone });
+  const weekEndDateString = format(weekEndDate, 'yyyy-MM-dd', { timeZone: timezone });
+
+  // Use the reliable getDayBoundsInTimezone helper to get the final UTC bounds.
+  const { start } = getDayBoundsInTimezone(weekStartDateString, timezone);
+  const { end } = getDayBoundsInTimezone(weekEndDateString, timezone);
+  return { start, end };
 }
 
 // Validation schemas
@@ -97,7 +88,7 @@ const updateTaskSchema = createTaskSchema.partial();
 const scheduleTaskSchema = z.object({
   // strict ISO 8601 format ending in 'Z' required (no offsets)
   // This prevents "local time vs server time" ambiguity by forcing client to convert to UTC.
-  scheduledStart: z.string().datetime(),
+  scheduledStart: z.string().datetime().refine((val) => val.endsWith('Z'), { message: "Datetime must be in UTC ISO 8601 format and end with 'Z'" }),
 });
 
 const updateStatusSchema = z.object({
@@ -508,13 +499,11 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
 
     // If task is already DONE and PostDoLog exists, return existing data (idempotent)
     if (task.status === 'DONE' && task.postDoLog) {
-      const variance = task.postDoLog.actualDuration - task.postDoLog.estimatedDuration;
-      const efficiency = (task.postDoLog.estimatedDuration / task.postDoLog.actualDuration) * 100;
       return {
         updatedTask: task,
         postDoLog: task.postDoLog,
-        variance,
-        efficiency,
+        variance: task.postDoLog.variance,
+        efficiency: task.postDoLog.efficiency,
         timeOfDay: task.postDoLog.timeOfDay,
         dayOfWeek: task.postDoLog.dayOfWeek
       };
