@@ -2,7 +2,8 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
 import { Prisma, $Enums, Task } from '@prisma/client';
 import { z } from 'zod';
-import { startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
+import { addDays, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
+import { fromZonedTime, toZonedTime, format } from 'date-fns-tz';
 import { enrichTask } from '../services/llm';
 import { calculateTimeOfDay, getDayOfWeek } from '../utils/timeUtils';
 import { getCurrentTimestamp, dateToISO } from '../utils/dateHelpers';
@@ -27,6 +28,48 @@ const log = DEBUG ? console.log : () => {};
 
 const router = Router();
 
+// Helper function to get start and end of day in a specific timezone, converted to UTC
+function getDayBoundsInTimezone(dateString: string, timezone: string = 'UTC'): { start: Date; end: Date } {
+  // Parse the date string (e.g., '2025-11-18') and interpret it as a date in the user's timezone
+  // Create a date string representing midnight in the user's timezone
+  const startOfDayString = `${dateString}T00:00:00`;
+  const endOfDayString = `${dateString}T23:59:59.999`;
+  
+  // Convert from zoned time to UTC
+  // fromZonedTime interprets the date string as being in the specified timezone
+  const utcStart = fromZonedTime(startOfDayString, timezone);
+  const utcEnd = fromZonedTime(endOfDayString, timezone);
+  
+  return { start: utcStart, end: utcEnd };
+}
+
+// Helper function to get week bounds in a specific timezone, converted to UTC
+function getWeekBoundsInTimezone(dateString: string, timezone: string = 'UTC'): { start: Date; end: Date } {
+  // Use noon to avoid DST crossover issues that can occur at midnight.
+  const targetDate = fromZonedTime(`${dateString}T12:00:00`, timezone);
+
+  // Get the day of the week in the target timezone (0=Sun, 6=Sat).
+  // This aligns with the `weekStartsOn: 0` option used elsewhere.
+  // Use format with 'e' token (1=Monday, 7=Sunday) and convert to 0-6 range (0=Sunday)
+  const dayOfWeekISO = parseInt(format(targetDate, 'e', { timeZone: timezone }));
+  // Convert ISO day (1=Mon, 7=Sun) to JavaScript day (0=Sun, 6=Sat)
+  // ISO 7 (Sun) -> 0, ISO 1 (Mon) -> 1, ISO 2 (Tue) -> 2, ..., ISO 6 (Sat) -> 6
+  const dayOfWeek = dayOfWeekISO === 7 ? 0 : dayOfWeekISO;
+
+  // Calculate the start and end dates of the week.
+  const weekStartDate = addDays(targetDate, -dayOfWeek);
+  const weekEndDate = addDays(weekStartDate, 6);
+
+  // Format the dates back to 'yyyy-MM-dd' strings in the target timezone.
+  const weekStartDateString = format(weekStartDate, 'yyyy-MM-dd', { timeZone: timezone });
+  const weekEndDateString = format(weekEndDate, 'yyyy-MM-dd', { timeZone: timezone });
+
+  // Use the reliable getDayBoundsInTimezone helper to get the final UTC bounds.
+  const { start } = getDayBoundsInTimezone(weekStartDateString, timezone);
+  const { end } = getDayBoundsInTimezone(weekEndDateString, timezone);
+  return { start, end };
+}
+
 // Validation schemas
 const createTaskSchema = z.object({
   name: z.string().min(1),
@@ -43,7 +86,9 @@ const createTaskSchema = z.object({
 const updateTaskSchema = createTaskSchema.partial();
 
 const scheduleTaskSchema = z.object({
-  scheduledStart: z.string().datetime(),
+  // strict ISO 8601 format ending in 'Z' required (no offsets)
+  // This prevents "local time vs server time" ambiguity by forcing client to convert to UTC.
+  scheduledStart: z.string().datetime().refine((val) => val.endsWith('Z'), { message: "Datetime must be in UTC ISO 8601 format and end with 'Z'" }),
 });
 
 const updateStatusSchema = z.object({
@@ -73,6 +118,7 @@ export const listTasksQuerySchema = z.object({
   priority: z.nativeEnum($Enums.Priority).optional(),
   category: z.nativeEnum($Enums.Category).optional(),
   scheduledFilter: z.string().optional(),
+  timezone: z.string().optional(),
 }).merge(paginationSchema);
 
 // GET /api/tasks - List tasks with filters and pagination
@@ -95,10 +141,12 @@ router.get('/', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Requ
       where.scheduledStart = null;
     } else {
       // Specific date (e.g., '2025-11-16')
-      const date = new Date(query.scheduledFilter);
+      // Use timezone-aware date calculation if timezone is provided
+      const timezone = query.timezone || 'UTC';
+      const { start, end } = getDayBoundsInTimezone(query.scheduledFilter, timezone);
       where.scheduledStart = {
-        gte: startOfDay(date),
-        lte: endOfDay(date),
+        gte: start,
+        lte: end,
       };
     }
   }
@@ -197,6 +245,10 @@ router.post('/enrich', asyncHandler(async (req: Request, res: Response) => {
     energy: validatedData.energy
   });
 
+  // Validate LLM output against Zod enums before transaction
+  const category = categoryEnum.parse(enrichment.category);
+  const context = contextEnum.parse(enrichment.context);
+
   // TRANSACTION: Atomic task creation + temp task marking
   const result = await prisma.$transaction(async (tx) => {
     // Create full task
@@ -205,8 +257,8 @@ router.post('/enrich', asyncHandler(async (req: Request, res: Response) => {
         name: enrichment.rephrasedName,
         status: validatedData.priority <= 2 ? 'NEXT' : 'WAITING',
         priority: priorityMap[validatedData.priority],
-        category: enrichment.category as any,
-        context: enrichment.context as any,
+        category,
+        context,
         energyRequired: validatedData.energy,
         duration: validatedData.duration,
         definitionOfDone: enrichment.definitionOfDone,
@@ -347,10 +399,9 @@ router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
 // GET /api/tasks/calendar/:date - Get tasks for calendar view (week)
 router.get('/calendar/:date', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Request, res: Response) => {
   const { date } = req.params;
-  const targetDate = new Date(date);
-
-  const weekStart = startOfWeek(targetDate, { weekStartsOn: 0 }); // Sunday
-  const weekEnd = endOfWeek(targetDate, { weekStartsOn: 0 });
+  const timezone = (req.query.timezone as string) || 'UTC';
+  
+  const { start: weekStart, end: weekEnd } = getWeekBoundsInTimezone(date, timezone);
 
   const tasks = await prisma.task.findMany({
     where: {
@@ -370,9 +421,9 @@ router.get('/calendar/:date', cacheControl(CachePolicies.SHORT), asyncHandler(as
 // GET /api/tasks/scheduled/:date - Get scheduled tasks for a specific date
 router.get('/scheduled/:date', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Request, res: Response) => {
   const { date } = req.params;
-  const targetDate = new Date(date);
-  const dayStart = startOfDay(targetDate);
-  const dayEnd = endOfDay(targetDate);
+  const timezone = (req.query.timezone as string) || 'UTC';
+  
+  const { start: dayStart, end: dayEnd } = getDayBoundsInTimezone(date, timezone);
 
   const tasks = await prisma.task.findMany({
     where: {
@@ -438,11 +489,24 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
   const result = await prisma.$transaction(async (tx) => {
     // Get task for calculations inside transaction to ensure consistent read
     const task = await tx.task.findUnique({
-      where: { id }
+      where: { id },
+      include: { postDoLog: true }
     });
 
     if (!task) {
       throw new NotFoundError('Task');
+    }
+
+    // If task is already DONE and PostDoLog exists, return existing data (idempotent)
+    if (task.status === 'DONE' && task.postDoLog) {
+      return {
+        updatedTask: task,
+        postDoLog: task.postDoLog,
+        variance: task.postDoLog.variance,
+        efficiency: task.postDoLog.efficiency,
+        timeOfDay: task.postDoLog.timeOfDay,
+        dayOfWeek: task.postDoLog.dayOfWeek
+      };
     }
 
     // Calculate metrics using task data fetched within transaction
@@ -451,9 +515,10 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
     const timeOfDay = calculateTimeOfDay(startTime);
     const dayOfWeek = getDayOfWeek(startTime);
 
-    // Create Post-Do Log
-    const postDoLog = await tx.postDoLog.create({
-      data: {
+    // Upsert Post-Do Log (idempotent: create if not exists, return existing if exists)
+    const postDoLog = await tx.postDoLog.upsert({
+      where: { taskId: task.id },
+      create: {
         taskId: task.id,
         outcome: validatedData.outcome,
         effortLevel: validatedData.effortLevel,
@@ -467,10 +532,14 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
         timeOfDay: timeOfDay as any,
         dayOfWeek,
         timeryEntryId: validatedData.timeryEntryId,
+      },
+      update: {
+        // No-op update: preserve existing metrics if PostDoLog already exists
+        // This handles race conditions where PostDoLog was created but task status wasn't updated
       }
     });
 
-    // Update task status
+    // Update task status (idempotent: no-op if already DONE)
     const updatedTask = await tx.task.update({
       where: { id },
       data: { status: 'DONE' }
