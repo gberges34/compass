@@ -1,6 +1,33 @@
 import { Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { NotFoundError } from '../errors/AppError';
+import { NotFoundError, ConflictError, BadRequestError } from '../errors/AppError';
+
+export const normalizePrismaError = (
+  error: PrismaClientKnownRequestError,
+  model?: string
+) => {
+  if (error.code === 'P2025') {
+    const modelName = (error.meta?.modelName as string) || model || 'Record';
+    return new NotFoundError(modelName);
+  }
+
+  if (error.code === 'P2002') {
+    const target = error.meta?.target;
+    const fields = Array.isArray(target)
+      ? (target as string[]).join(', ')
+      : (target as string) || 'fields';
+    return new ConflictError(`A record with the same ${fields} already exists`, {
+      target,
+    });
+  }
+
+  if (error.code === 'P2003') {
+    const field = (error.meta?.field_name as string) || 'field';
+    return new BadRequestError(`Foreign key constraint failed on ${field}`);
+  }
+
+  return null;
+};
 
 /**
  * Prisma extension to convert P2025 errors to NotFoundError
@@ -20,24 +47,10 @@ export const prismaErrorExtension = Prisma.defineExtension({
         try {
           return await query(args);
         } catch (error: unknown) {
-          // Convert Prisma P2025 to NotFoundError
           if (error instanceof PrismaClientKnownRequestError) {
-            if (error.code === 'P2025') {
-              // Extract model name from error meta
-              const modelName = error.meta?.modelName || model || 'Record';
-              throw new NotFoundError(modelName as string);
-            }
-
-            // P2002 = Unique constraint violation
-            if (error.code === 'P2002') {
-              const fields = (error.meta?.target as string[])?.join(', ') || 'fields';
-              throw new Error(`A record with the same ${fields} already exists`);
-            }
-
-            // P2003 = Foreign key constraint violation
-            if (error.code === 'P2003') {
-              const field = error.meta?.field_name || 'field';
-              throw new Error(`Foreign key constraint failed on ${field}`);
+            const normalizedError = normalizePrismaError(error, model);
+            if (normalizedError) {
+              throw normalizedError;
             }
           }
 

@@ -123,7 +123,7 @@ const TasksPage: React.FC = () => {
 
         {/* Tabs */}
         <div className="mt-24 flex space-x-4 border-b border-fog">
-          {(['NEXT', 'WAITING', 'ACTIVE', 'DONE'] as TaskStatus[]).map((status) => (
+          {(['NEXT', 'WAITING', 'ACTIVE', 'DONE', 'SOMEDAY'] as TaskStatus[]).map((status) => (
             <button
               key={status}
               onClick={() => setSelectedTab(status)}

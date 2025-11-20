@@ -26,12 +26,18 @@ interface MetricsResult {
 /**
  * Calculates review metrics for a given date range.
  * Works for both daily and weekly periods.
+ * @param input - Metrics input parameters
+ * @param tx - Optional Prisma transaction client. If provided, all database operations use this client for transactional consistency.
  */
-export async function calculateMetrics(input: MetricsInput): Promise<MetricsResult> {
+export async function calculateMetrics(
+  input: MetricsInput,
+  tx?: Prisma.TransactionClient
+): Promise<MetricsResult> {
   const { startDate, endDate, dailyPlan, isWeekly = false } = input;
+  const db = tx || prisma;
 
   // Get completed tasks count
-  const completedTasks = await prisma.task.count({
+  const completedTasks = await db.task.count({
     where: {
       status: 'DONE',
       updatedAt: {
@@ -45,7 +51,7 @@ export async function calculateMetrics(input: MetricsInput): Promise<MetricsResu
   let plannedTasks = 0;
   if (isWeekly) {
     // For weekly reviews, query all daily plans in the date range
-    const dailyPlans = await prisma.dailyPlan.findMany({
+    const dailyPlans = await db.dailyPlan.findMany({
       where: {
         date: {
           gte: startDate,
@@ -65,7 +71,7 @@ export async function calculateMetrics(input: MetricsInput): Promise<MetricsResu
   const executionRate = plannedTasks > 0 ? Math.round((completedTasks / plannedTasks) * 100) : 0;
 
   // Get PostDo logs
-  const postDoLogs: PostDoLogWithTask[] = await prisma.postDoLog.findMany({
+  const postDoLogs: PostDoLogWithTask[] = await db.postDoLog.findMany({
     where: {
       completionDate: {
         gte: startDate,

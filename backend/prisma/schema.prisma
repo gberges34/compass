@@ -39,6 +39,7 @@ model Task {
   @@index([dueDate])
   @@index([status, scheduledStart])
   @@index([status, priority, scheduledStart]) // Optimize main task list query
+  @@index([status, priority, scheduledStart, createdAt]) // Optimize default sort with createdAt tiebreaker (BACKEND-PERF-001)
 }
 
 // Orient Database (Daily Plans)
@@ -134,6 +135,7 @@ model Review {
 
   @@index([periodStart, type])
   @@index([type])
+  @@unique([type, periodStart], name: "unique_review_per_period")
 }
 
 // Temporary Captured Tasks (from Todoist)

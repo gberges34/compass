@@ -2,8 +2,9 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
 import { Prisma, $Enums, Task } from '@prisma/client';
 import { z } from 'zod';
-import { addDays } from 'date-fns';
-import { fromZonedTime, format } from 'date-fns-tz';
+import { addDays, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
+import { fromZonedTime, toZonedTime, format } from 'date-fns-tz';
+import { enrichTask } from '../services/llm';
 import { calculateTimeOfDay, getDayOfWeek } from '../utils/timeUtils';
 import { getCurrentTimestamp, dateToISO } from '../utils/dateHelpers';
 import { asyncHandler } from '../middleware/asyncHandler';
@@ -213,16 +214,40 @@ router.post('/process-captured', asyncHandler(async (req: Request, res: Response
     throw new BadRequestError('Task already processed');
   }
 
+  // Map priority number to enum
+  const priorityMap: Record<number, 'MUST' | 'SHOULD' | 'COULD' | 'MAYBE'> = {
+    1: 'MUST',
+    2: 'SHOULD',
+    3: 'COULD',
+    4: 'MAYBE'
+  };
+
+  // Enrich with LLM (outside transaction - external API call)
+  const enrichment = await enrichTask({
+    rawTaskName: tempTask.name,
+    priority: validatedData.priority,
+    duration: validatedData.duration,
+    energy: validatedData.energy
+  });
+
+  // Validate LLM output against Zod enums before transaction
+  const category = categoryEnum.parse(enrichment.category);
+  const context = contextEnum.parse(enrichment.context);
+
   // TRANSACTION: Atomic task creation + temp task marking
   const result = await prisma.$transaction(async (tx) => {
     // Create full task
     const task = await tx.task.create({
       data: {
-        ...taskData,
-        // If status is not provided, default based on priority
-        status: taskData.status || (taskData.priority === 'MUST' || taskData.priority === 'SHOULD' ? 'NEXT' : 'WAITING'),
-        // Use provided dueDate, or fallback to tempTask dueDate if available
-        dueDate: taskData.dueDate ? new Date(taskData.dueDate) : (tempTask.dueDate ? tempTask.dueDate : null),
+        name: enrichment.rephrasedName,
+        status: validatedData.priority <= 2 ? 'NEXT' : 'WAITING',
+        priority: priorityMap[validatedData.priority],
+        category,
+        context,
+        energyRequired: validatedData.energy,
+        duration: validatedData.duration,
+        definitionOfDone: enrichment.definitionOfDone,
+        dueDate: tempTask.dueDate
       }
     });
 
@@ -507,20 +532,8 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
         timeryEntryId: validatedData.timeryEntryId,
       },
       update: {
-        // Update with new completion data if PostDoLog already exists
-        // This ensures retries after partial failures update with the latest metrics
-        outcome: validatedData.outcome,
-        effortLevel: validatedData.effortLevel,
-        keyInsight: validatedData.keyInsight,
-        estimatedDuration: task.duration,
-        actualDuration: validatedData.actualDuration,
-        variance,
-        efficiency,
-        startTime,
-        endTime,
-        timeOfDay: timeOfDay as any,
-        dayOfWeek,
-        timeryEntryId: validatedData.timeryEntryId,
+        // No-op update: preserve existing metrics if PostDoLog already exists
+        // This handles race conditions where PostDoLog was created but task status wasn't updated
       }
     });
 
