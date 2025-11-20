@@ -42,12 +42,12 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to inject API key from localStorage
+// Request interceptor to inject API secret from localStorage
 api.interceptors.request.use(
   (config) => {
-    const apiKey = localStorage.getItem('apiKey');
-    if (apiKey) {
-      config.headers['x-api-key'] = apiKey;
+    const apiSecret = localStorage.getItem('apiKey');
+    if (apiSecret) {
+      config.headers['x-api-secret'] = apiSecret;
     }
     return config;
   },

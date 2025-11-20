@@ -58,7 +58,7 @@ const LoginGate: React.FC<LoginGateProps> = ({ children }) => {
       // Temporarily set header for verification call
       await api.get("/tasks", {
         params: { limit: 1 },
-        headers: { "x-api-key": trimmedKey },
+        headers: { "x-api-secret": trimmedKey },
       });
 
       // Key is valid, save it and authenticate
