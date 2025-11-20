@@ -3,7 +3,7 @@ import { isTogglEntryDuplicate, type PostDoLogTimeRange } from '../timery';
 jest.mock('../../config/env', () => ({
   env: {
     DATABASE_URL: 'postgres://user:pass@localhost:5432/compass',
-    ANTHROPIC_API_KEY: 'test-anthropic',
+    API_SECRET: 'test-api-secret',
     TOGGL_API_TOKEN: 'test-toggl',
     PORT: 3001,
     NODE_ENV: 'test',

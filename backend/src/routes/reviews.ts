@@ -13,6 +13,9 @@ import { cacheControl, CachePolicies } from '../middleware/cacheControl';
 
 const router = Router();
 
+// Derive transaction client type from the extended Prisma client
+type PrismaTransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
 // Validation schema
 const createReviewSchema = z.object({
   type: reviewTypeEnum,
@@ -28,7 +31,7 @@ const listReviewsQuerySchema = z.object({
 }).merge(paginationSchema);
 
 // Helper function to calculate daily metrics
-async function calculateDailyMetrics(date: Date, tx?: any) {
+async function calculateDailyMetrics(date: Date, tx?: PrismaTransactionClient) {
   const dayStart = startOfDay(date);
   const dayEnd = endOfDay(date);
   const db = tx || prisma;
@@ -50,7 +53,7 @@ async function calculateDailyMetrics(date: Date, tx?: any) {
 }
 
 // Helper function to calculate weekly metrics
-async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date, tx?: any) {
+async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date, tx?: PrismaTransactionClient) {
   // Calculate metrics using shared utility
   const metrics = await calculateMetrics({
     startDate: weekStart,
