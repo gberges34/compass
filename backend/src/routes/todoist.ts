@@ -53,7 +53,7 @@ router.get('/pending', cacheControl(CachePolicies.EXTERNAL), asyncHandler(async 
 }));
 
 // DELETE /api/todoist/temp/:id
-// Delete a temp task (used after successful enrichment)
+// Delete a temp task (used after successful processing)
 router.delete('/temp/:id', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 

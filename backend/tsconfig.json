@@ -12,7 +12,12 @@
     "resolveJsonModule": true,
     "moduleResolution": "node",
     "types": ["node", "jest"],
-    "typeRoots": ["./node_modules/@types", "../shared"]
+    "typeRoots": ["./node_modules/@types", "../shared"],
+    "baseUrl": "./src",
+    "paths": {
+      "@compass/dto/*": ["../../shared/dto/*"],
+      "@compass/dto": ["../../shared/dto/index.d.ts"]
+    }
   },
   "include": ["src/**/*", "../shared/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]

@@ -1,7 +1,7 @@
 jest.mock('../../config/env', () => ({
   env: {
     DATABASE_URL: 'postgresql://localhost:5432/compass',
-    ANTHROPIC_API_KEY: 'test-key',
+    API_SECRET: 'test-api-secret',
     PORT: 3999,
     NODE_ENV: 'test',
     FRONTEND_URL: 'http://localhost:3000',

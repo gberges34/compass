@@ -7,12 +7,14 @@ describe('prismaErrorExtension', () => {
     code: string,
     meta: Record<string, unknown>
   ): PrismaClientKnownRequestError => {
+    // Pass arguments as a config object for Prisma 6.x
     const error = new PrismaClientKnownRequestError(
       'Simulated Prisma error',
-      code,
-      '6.19.0'
+      {
+        code: code,
+        clientVersion: '6.19.0'
+      }
     );
-    (error as any).code = code;
     (error as any).meta = meta;
     return error;
   };

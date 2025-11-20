@@ -4,6 +4,9 @@ import { getCategoryBalanceFromToggl, type PostDoLogTimeRange } from '../service
 
 type PostDoLogWithTask = Prisma.PostDoLogGetPayload<{ include: { task: true } }>;
 
+// Derive transaction client type from the extended Prisma client to support both base and extended clients
+type PrismaTransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
 interface MetricsInput {
   startDate: Date;
   endDate: Date;
@@ -31,7 +34,7 @@ interface MetricsResult {
  */
 export async function calculateMetrics(
   input: MetricsInput,
-  tx?: Prisma.TransactionClient
+  tx?: PrismaTransactionClient
 ): Promise<MetricsResult> {
   const { startDate, endDate, dailyPlan, isWeekly = false } = input;
   const db = tx || prisma;
