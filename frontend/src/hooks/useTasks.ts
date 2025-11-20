@@ -303,7 +303,7 @@ export function useUnscheduleTask() {
         (task) => task.id === id,
         (task) => ({
           ...task,
-          scheduledStart: undefined,
+          scheduledStart: null,
           updatedAt: new Date().toISOString(),
         }),
         'useUnscheduleTask'

@@ -507,8 +507,20 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
         timeryEntryId: validatedData.timeryEntryId,
       },
       update: {
-        // No-op update: preserve existing metrics if PostDoLog already exists
-        // This handles race conditions where PostDoLog was created but task status wasn't updated
+        // Update with new completion data if PostDoLog already exists
+        // This ensures retries after partial failures update with the latest metrics
+        outcome: validatedData.outcome,
+        effortLevel: validatedData.effortLevel,
+        keyInsight: validatedData.keyInsight,
+        estimatedDuration: task.duration,
+        actualDuration: validatedData.actualDuration,
+        variance,
+        efficiency,
+        startTime,
+        endTime,
+        timeOfDay: timeOfDay as any,
+        dayOfWeek,
+        timeryEntryId: validatedData.timeryEntryId,
       }
     });
 

@@ -23,17 +23,13 @@ export const authMiddleware = (
     throw new UnauthorizedError('Invalid or missing API key');
   }
 
-  // Convert both values to Buffers for timing-safe comparison
-  const keyBuffer = Buffer.from(apiKeyHeader, 'utf8');
-  const envKeyBuffer = Buffer.from(env.API_KEY, 'utf8');
-
-  // If lengths differ, reject immediately (before timing-safe comparison)
-  if (keyBuffer.length !== envKeyBuffer.length) {
-    throw new UnauthorizedError('Invalid or missing API key');
-  }
+  // Hash both keys to ensure constant length for comparison
+  // This prevents timing attacks that could leak key length information
+  const keyHash = crypto.createHash('sha256').update(apiKeyHeader).digest();
+  const envKeyHash = crypto.createHash('sha256').update(env.API_KEY).digest();
 
   // Use timing-safe comparison to prevent timing attacks
-  if (!crypto.timingSafeEqual(keyBuffer, envKeyBuffer)) {
+  if (!crypto.timingSafeEqual(keyHash, envKeyHash)) {
     throw new UnauthorizedError('Invalid or missing API key');
   }
 
