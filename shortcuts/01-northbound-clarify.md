@@ -47,6 +47,7 @@ URL: [YOUR_BACKEND_URL]/api/todoist/pending
 Method: GET
 Headers:
   Content-Type: application/json
+  x-api-key: [YOUR_API_KEY]
 ```
 
 #### Step 2: Parse Response
@@ -214,6 +215,7 @@ URL: [YOUR_BACKEND_URL]/api/tasks/process-captured
 Method: POST
 Headers:
   Content-Type: application/json
+  x-api-key: [YOUR_API_KEY]
 Request Body: Dictionary (from Step 15)
 ```
 
