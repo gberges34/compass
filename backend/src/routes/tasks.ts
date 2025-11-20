@@ -4,7 +4,6 @@ import { Prisma, $Enums, Task } from '@prisma/client';
 import { z } from 'zod';
 import { addDays, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { fromZonedTime, toZonedTime, format } from 'date-fns-tz';
-import { enrichTask } from '../services/llm';
 import { calculateTimeOfDay, getDayOfWeek } from '../utils/timeUtils';
 import { getCurrentTimestamp, dateToISO } from '../utils/dateHelpers';
 import { asyncHandler } from '../middleware/asyncHandler';
@@ -198,6 +197,7 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
 // POST /api/tasks/process-captured - Process a captured task with fully formed data
 router.post('/process-captured', asyncHandler(async (req: Request, res: Response) => {
   // Validate that we received all necessary fields for a full task
+  // The schema already requires: name, priority, category, context, energyRequired, definitionOfDone
   const validatedData = processCapturedTaskSchema.parse(req.body);
   const { tempTaskId, ...taskData } = validatedData;
 
@@ -214,45 +214,27 @@ router.post('/process-captured', asyncHandler(async (req: Request, res: Response
     throw new BadRequestError('Task already processed');
   }
 
-  // Map priority number to enum
-  const priorityMap: Record<number, 'MUST' | 'SHOULD' | 'COULD' | 'MAYBE'> = {
-    1: 'MUST',
-    2: 'SHOULD',
-    3: 'COULD',
-    4: 'MAYBE'
-  };
-
-  // Enrich with LLM (outside transaction - external API call)
-  const enrichment = await enrichTask({
-    rawTaskName: tempTask.name,
-    priority: validatedData.priority,
-    duration: validatedData.duration,
-    energy: validatedData.energy
-  });
-
-  // Validate LLM output against Zod enums before transaction
-  const category = categoryEnum.parse(enrichment.category);
-  const context = contextEnum.parse(enrichment.context);
+  // Determine Status based on priority (High priority = NEXT, others = WAITING)
+  const isHighPriority = ['MUST', 'SHOULD'].includes(validatedData.priority);
+  const status = isHighPriority ? 'NEXT' : 'WAITING';
 
   // TRANSACTION: Atomic task creation + temp task marking
   const result = await prisma.$transaction(async (tx) => {
-    // Create full task
     const task = await tx.task.create({
       data: {
-        name: enrichment.rephrasedName,
-        status: validatedData.priority <= 2 ? 'NEXT' : 'WAITING',
-        priority: priorityMap[validatedData.priority],
-        category,
-        context,
-        energyRequired: validatedData.energy,
+        name: validatedData.name,               // Name is already rephrased by iOS Shortcut
+        status: status,
+        priority: validatedData.priority,
+        category: validatedData.category,
+        context: validatedData.context,
+        energyRequired: validatedData.energyRequired, // Correct property name
         duration: validatedData.duration,
-        definitionOfDone: enrichment.definitionOfDone,
+        definitionOfDone: validatedData.definitionOfDone,
         dueDate: tempTask.dueDate
       }
     });
 
-    // Mark temp task as processed
-    const updatedTempTask = await tx.tempCapturedTask.update({
+    await tx.tempCapturedTask.update({
       where: { id: tempTaskId },
       data: { processed: true }
     });

@@ -28,7 +28,7 @@ const listReviewsQuerySchema = z.object({
 }).merge(paginationSchema);
 
 // Helper function to calculate daily metrics
-async function calculateDailyMetrics(date: Date, tx?: Prisma.TransactionClient) {
+async function calculateDailyMetrics(date: Date, tx?: any) {
   const dayStart = startOfDay(date);
   const dayEnd = endOfDay(date);
   const db = tx || prisma;
@@ -50,7 +50,7 @@ async function calculateDailyMetrics(date: Date, tx?: Prisma.TransactionClient) 
 }
 
 // Helper function to calculate weekly metrics
-async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date, tx?: Prisma.TransactionClient) {
+async function calculateWeeklyMetrics(weekStart: Date, weekEnd: Date, tx?: any) {
   // Calculate metrics using shared utility
   const metrics = await calculateMetrics({
     startDate: weekStart,
