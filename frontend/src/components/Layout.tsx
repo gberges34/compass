@@ -5,6 +5,7 @@ import { prefetchTasks } from '../hooks/useTasks';
 import { prefetchTodayPlan } from '../hooks/useDailyPlans';
 import { prefetchReviews } from '../hooks/useReviews';
 import { prefetchTodoistPending } from '../hooks/useTodoist';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,6 +13,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const queryClient = useQueryClient();
+  const { logout } = useAuth();
 
   // Prefetch handlers for each route
   const prefetchHandlers: Record<string, () => void> = {
@@ -85,6 +87,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <span className="text-body">{link.label}</span>
               </NavLink>
             ))}
+            <button
+              onClick={logout}
+              className="px-24 py-12 rounded-default font-medium transition-standard bg-snow text-ink border border-stone hover:bg-fog hover:shadow-e01"
+            >
+              <span className="text-body">Logout</span>
+            </button>
           </nav>
         </div>
       </header>

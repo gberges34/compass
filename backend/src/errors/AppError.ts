@@ -42,3 +42,9 @@ export class InternalError extends AppError {
     super(message, 500, 'INTERNAL_ERROR');
   }
 }
+
+export class UnauthorizedError extends AppError {
+  constructor(message: string = 'Unauthorized') {
+    super(message, 401, 'UNAUTHORIZED');
+  }
+}

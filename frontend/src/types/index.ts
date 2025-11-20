@@ -2,7 +2,7 @@ import type { PaginationResponse } from '@compass/dto/pagination';
 
 // Compass Frontend - Type Definitions
 
-export type TaskStatus = 'NEXT' | 'WAITING' | 'ACTIVE' | 'DONE';
+export type TaskStatus = 'NEXT' | 'WAITING' | 'ACTIVE' | 'DONE' | 'SOMEDAY';
 export type Priority = 'MUST' | 'SHOULD' | 'COULD' | 'MAYBE';
 export type Category = 'SCHOOL' | 'MUSIC' | 'FITNESS' | 'GAMING' | 'NUTRITION' | 'HYGIENE' | 'PET' | 'SOCIAL' | 'PERSONAL' | 'ADMIN';
 export type Context = 'HOME' | 'OFFICE' | 'COMPUTER' | 'PHONE' | 'ERRANDS' | 'ANYWHERE';
@@ -112,11 +112,18 @@ export interface PaginatedResponse<T> {
   nextCursor: string | null;
 }
 
-export interface EnrichTaskRequest {
+// Replaced EnrichTaskRequest with ProcessCapturedTaskRequest
+export interface ProcessCapturedTaskRequest {
   tempTaskId: string;
-  priority: number;
+  name: string;
+  priority: Priority;
+  category: Category;
+  context: Context;
+  energyRequired: Energy;
   duration: number;
-  energy: Energy;
+  definitionOfDone: string;
+  dueDate?: string;
+  status?: TaskStatus;
 }
 
 export interface ActivateTaskResponse {
@@ -178,6 +185,8 @@ export interface TaskFilters {
   context?: Context;
   priority?: Priority;
   energyRequired?: Energy;
+  scheduledFilter?: string;
+  timezone?: string;
 }
 
 export interface CalendarEvent {

@@ -1,116 +1,90 @@
-import React, { useState } from 'react';
-import { enrichTask } from '../lib/api';
-import type { TempCapturedTask, Priority, Energy } from '../types';
+import React, { useState, useEffect } from 'react';
+import type { TempCapturedTask, Priority, Category, Energy, Context } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useTodoistPending } from '../hooks/useTodoist';
-import { useCreateTask } from '../hooks/useTasks';
+import { useProcessCapturedTask } from '../hooks/useTasks';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Input from '../components/Input';
 
-interface EnrichedTaskData {
-  name: string;
-  category: string;
-  context: string;
-  definitionOfDone: string;
-}
-
 const ClarifyPage: React.FC = () => {
   const toast = useToast();
 
-  // Replace manual state with React Query hook
+  // Data fetching hooks
   const { data, isLoading, isError } = useTodoistPending();
   const pendingTasks = data?.tasks ?? [];
 
-  // Use mutation hook for automatic cache invalidation
-  const createTaskMutation = useCreateTask();
+  // Mutation hooks
+  const processTaskMutation = useProcessCapturedTask();
 
+  // UI State
   const [selectedTask, setSelectedTask] = useState<TempCapturedTask | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Form state
+  // Form State
+  const [name, setName] = useState('');
   const [priority, setPriority] = useState<number>(1);
   const [duration, setDuration] = useState<number>(30);
   const [energy, setEnergy] = useState<Energy>('MEDIUM');
+  const [category, setCategory] = useState<Category>('PERSONAL');
+  const [context, setContext] = useState<Context>('ANYWHERE');
+  const [definitionOfDone, setDefinitionOfDone] = useState('');
 
-  // Enrichment state
-  const [enriching, setEnriching] = useState(false);
-  const [enrichedData, setEnrichedData] = useState<EnrichedTaskData | null>(null);
-
-  // Save state
-  const [saving, setSaving] = useState(false);
+  // Reset form when a task is selected
+  useEffect(() => {
+    if (selectedTask) {
+      setName(selectedTask.name);
+      setPriority(1); // Default to Must
+      setDuration(30);
+      setEnergy('MEDIUM');
+      setCategory('PERSONAL');
+      setContext('ANYWHERE');
+      setDefinitionOfDone('');
+    }
+  }, [selectedTask]);
 
   const handleSelectTask = (task: TempCapturedTask) => {
     setSelectedTask(task);
-    setEnrichedData(null);
-    setPriority(1);
-    setDuration(30);
-    setEnergy('MEDIUM');
   };
 
-  const handleEnrichTask = async () => {
+  const handleProcessTask = async () => {
     if (!selectedTask) return;
 
-    setEnriching(true);
-    try {
-      const enrichedTask = await enrichTask({
-        tempTaskId: selectedTask.id,
-        priority,
-        duration,
-        energy,
-      });
-
-      setEnrichedData({
-        name: enrichedTask.name,
-        category: enrichedTask.category,
-        context: enrichedTask.context,
-        definitionOfDone: enrichedTask.definitionOfDone,
-      });
-      toast.showSuccess('Task enriched successfully!');
-    } catch (err) {
-      toast.showError('Failed to enrich task. Please try again.');
-      console.error('Error enriching task:', err);
-    } finally {
-      setEnriching(false);
+    if (definitionOfDone.trim().length < 5) {
+      toast.showError('Please provide a Definition of Done');
+      return;
     }
-  };
 
-  const handleSaveTask = async () => {
-    if (!selectedTask || !enrichedData) return;
+    setIsProcessing(true);
 
-    setSaving(true);
+    const priorityMap: Record<number, Priority> = {
+      1: 'MUST',
+      2: 'SHOULD',
+      3: 'COULD',
+      4: 'MAYBE',
+    };
+
     try {
-      const priorityMap: Record<number, Priority> = {
-        1: 'MUST',
-        2: 'SHOULD',
-        3: 'COULD',
-        4: 'MAYBE',
-      };
-
-      await createTaskMutation.mutateAsync({
-        name: enrichedData.name,
+      await processTaskMutation.mutateAsync({
+        tempTaskId: selectedTask.id,
+        name: name.trim(),
         priority: priorityMap[priority],
-        category: enrichedData.category as any,
-        context: enrichedData.context as any,
+        category,
+        context,
         energyRequired: energy,
         duration,
-        definitionOfDone: enrichedData.definitionOfDone,
-        status: 'NEXT',
+        definitionOfDone: definitionOfDone.trim(),
         dueDate: selectedTask.dueDate,
+        status: 'NEXT'
       });
 
-      toast.showSuccess('Task saved successfully!');
-
-      // No manual cache invalidation needed!
-      // The mutation hook handles it automatically via queryClient.invalidateQueries
-
-      // Reset form
+      toast.showSuccess('Task processed successfully!');
       setSelectedTask(null);
-      setEnrichedData(null);
     } catch (err) {
-      toast.showError('Failed to save task. Please try again.');
-      console.error('Error saving task:', err);
+      toast.showError('Failed to process task. Please try again.');
+      console.error('Error processing task:', err);
     } finally {
-      setSaving(false);
+      setIsProcessing(false);
     }
   };
 
@@ -120,7 +94,7 @@ const ClarifyPage: React.FC = () => {
       <Card padding="large">
         <h1 className="text-h1 text-ink">Clarify Tasks</h1>
         <p className="text-slate mt-4">
-          Review and enrich tasks captured from Todoist
+          Process tasks captured from Todoist
         </p>
       </Card>
 
@@ -187,139 +161,138 @@ const ClarifyPage: React.FC = () => {
                 </h2>
 
                 <div className="space-y-16">
-                  {/* Task Name (Read-only) */}
-                  <div>
-                    <label className="block text-small font-medium text-ink mb-4">
-                      Task Name
-                    </label>
-                    <div className="px-12 py-8 bg-fog border border-stone rounded-default text-ink">
-                      {selectedTask.name}
-                    </div>
-                  </div>
-
-                  {/* Priority */}
-                  <div>
-                    <label className="block text-small font-medium text-ink mb-4">
-                      Priority
-                    </label>
-                    <select
-                      value={priority}
-                      onChange={(e) => setPriority(Number(e.target.value))}
-                      className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
-                      disabled={enriching || saving}
-                    >
-                      <option value={1}>1 - Must</option>
-                      <option value={2}>2 - Should</option>
-                      <option value={3}>3 - Could</option>
-                      <option value={4}>4 - Maybe</option>
-                    </select>
-                  </div>
-
-                  {/* Duration */}
+                  {/* Task Name */}
                   <Input
-                    type="number"
-                    label="Duration (minutes)"
-                    value={duration}
-                    onChange={(e) => setDuration(Number(e.target.value))}
-                    min={5}
-                    step={5}
-                    disabled={enriching || saving}
+                    label="Task Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     fullWidth
+                    disabled={isProcessing}
                   />
 
-                  {/* Energy */}
+                  {/* Priority & Duration */}
+                  <div className="grid grid-cols-2 gap-16">
+                    <div>
+                      <label className="block text-small font-medium text-ink mb-4">
+                        Priority
+                      </label>
+                      <select
+                        value={priority}
+                        onChange={(e) => setPriority(Number(e.target.value))}
+                        className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
+                        disabled={isProcessing}
+                      >
+                        <option value={1}>1 - Must</option>
+                        <option value={2}>2 - Should</option>
+                        <option value={3}>3 - Could</option>
+                        <option value={4}>4 - Maybe</option>
+                      </select>
+                    </div>
+
+                    <Input
+                      type="number"
+                      label="Duration (min)"
+                      value={duration}
+                      onChange={(e) => setDuration(Number(e.target.value))}
+                      min={5}
+                      step={5}
+                      disabled={isProcessing}
+                      fullWidth
+                    />
+                  </div>
+
+                  {/* Category & Energy */}
+                  <div className="grid grid-cols-2 gap-16">
+                    <div>
+                      <label className="block text-small font-medium text-ink mb-4">
+                        Category
+                      </label>
+                      <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value as Category)}
+                        className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
+                        disabled={isProcessing}
+                      >
+                        <option value="SCHOOL">School</option>
+                        <option value="MUSIC">Music</option>
+                        <option value="FITNESS">Fitness</option>
+                        <option value="GAMING">Gaming</option>
+                        <option value="NUTRITION">Nutrition</option>
+                        <option value="HYGIENE">Hygiene</option>
+                        <option value="PET">Pet</option>
+                        <option value="SOCIAL">Social</option>
+                        <option value="PERSONAL">Personal</option>
+                        <option value="ADMIN">Admin</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-small font-medium text-ink mb-4">
+                        Energy
+                      </label>
+                      <select
+                        value={energy}
+                        onChange={(e) => setEnergy(e.target.value as Energy)}
+                        className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
+                        disabled={isProcessing}
+                      >
+                        <option value="HIGH">High</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LOW">Low</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Context */}
                   <div>
                     <label className="block text-small font-medium text-ink mb-4">
-                      Energy Required
+                      Context
                     </label>
                     <select
-                      value={energy}
-                      onChange={(e) => setEnergy(e.target.value as Energy)}
+                      value={context}
+                      onChange={(e) => setContext(e.target.value as Context)}
                       className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
-                      disabled={enriching || saving}
+                      disabled={isProcessing}
                     >
-                      <option value="HIGH">High</option>
-                      <option value="MEDIUM">Medium</option>
-                      <option value="LOW">Low</option>
+                      <option value="HOME">Home</option>
+                      <option value="OFFICE">Office</option>
+                      <option value="COMPUTER">Computer</option>
+                      <option value="PHONE">Phone</option>
+                      <option value="ERRANDS">Errands</option>
+                      <option value="ANYWHERE">Anywhere</option>
                     </select>
                   </div>
 
-                  {/* Enrich Button */}
+                  {/* Definition of Done */}
+                  <div>
+                    <label className="block text-small font-medium text-ink mb-4">
+                      Definition of Done
+                    </label>
+                    <textarea
+                      value={definitionOfDone}
+                      onChange={(e) => setDefinitionOfDone(e.target.value)}
+                      className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action min-h-[100px]"
+                      placeholder="What does finished look like?"
+                      disabled={isProcessing}
+                    />
+                  </div>
+
+                  {/* Save Button */}
                   <Button
                     variant="primary"
-                    onClick={handleEnrichTask}
-                    disabled={enriching || saving}
+                    onClick={handleProcessTask}
+                    disabled={isProcessing}
                     className="w-full"
                   >
-                    {enriching ? (
+                    {isProcessing ? (
                       <>
                         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-snow mr-8 inline-block"></div>
-                        Enriching with AI...
+                        Processing...
                       </>
                     ) : (
-                      'Enrich with AI'
+                      'Save Task'
                     )}
                   </Button>
-
-                  {/* Enriched Data Display */}
-                  {enrichedData && (
-                    <div className="mt-24 pt-16 border-t border-fog space-y-16">
-                      <h3 className="text-h3 text-ink">Enriched Task Details</h3>
-
-                      <div>
-                        <label className="block text-small font-medium text-ink mb-4">
-                          Enriched Name
-                        </label>
-                        <div className="px-12 py-8 bg-sky border border-sky rounded-default text-ink">
-                          {enrichedData.name}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-small font-medium text-ink mb-4">
-                          Category
-                        </label>
-                        <div className="px-12 py-8 bg-sky border border-sky rounded-default text-ink">
-                          {enrichedData.category}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-small font-medium text-ink mb-4">
-                          Context
-                        </label>
-                        <div className="px-12 py-8 bg-sky border border-sky rounded-default text-ink">
-                          {enrichedData.context}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-small font-medium text-ink mb-4">
-                          Definition of Done
-                        </label>
-                        <div className="px-12 py-8 bg-sky border border-sky rounded-default text-ink whitespace-pre-wrap">
-                          {enrichedData.definitionOfDone}
-                        </div>
-                      </div>
-
-                      {/* Save Button */}
-                      <Button
-                        variant="primary"
-                        onClick={handleSaveTask}
-                        disabled={saving}
-                        className="w-full"
-                      >
-                        {saving ? (
-                          <>
-                            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-snow mr-8 inline-block"></div>
-                            Saving Task...
-                          </>
-                        ) : (
-                          'Save Task'
-                        )}
-                      </Button>
-                    </div>
-                  )}
                 </div>
               </Card>
             ) : (

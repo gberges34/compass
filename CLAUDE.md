@@ -73,6 +73,7 @@ npm run health
 
 ### Monorepo Structure
 This is a TypeScript monorepo with two main workspaces:
+
 - **`/backend`** - Express.js REST API server (port 3001)
 - **`/frontend`** - React SPA (port 3000)
 - **`/scripts`** - Setup and development scripts
@@ -81,7 +82,8 @@ This is a TypeScript monorepo with two main workspaces:
 
 #### Route Organization
 Routes are organized by **feature domain**, not HTTP method:
-- `routes/tasks.ts` - Task CRUD, scheduling, enrichment, completion
+
+- `routes/tasks.ts` - Task CRUD, scheduling, processing, completion
 - `routes/orient.ts` - Daily planning (Orient East morning, Orient West evening)
 - `routes/reviews.ts` - Daily/weekly review generation
 - `routes/todoist.ts` - Todoist integration
@@ -177,6 +179,7 @@ import { NotFoundError, BadRequestError } from '../errors/AppError';
 
 #### Middleware Stack
 Core middleware in order (see `src/index.ts`):
+
 1. **CORS** - Configured for `FRONTEND_URL` env var
 2. **JSON Parser** - `express.json()`
 3. **Cache Control** - Intelligent per-route HTTP caching:
@@ -186,14 +189,14 @@ Core middleware in order (see `src/index.ts`):
 
 #### Services
 External integrations are in `src/services/`:
-- **`llm.ts`** - Claude API for task enrichment (with graceful fallbacks)
+
 - **`timery.ts`** - Time tracking integration (structure defined)
 
 Services handle failures gracefully and provide sensible defaults.
 
 #### Retry Logic
 
-All external API calls (LLM, Todoist, Timery) are wrapped with `withRetry()` utility:
+All external API calls (Todoist, Timery) are wrapped with `withRetry()` utility:
 
 ```typescript
 import { withRetry } from '../utils/retry';
@@ -213,26 +216,6 @@ await withRetry(() => someAPI.call(), {
   initialDelay: 500,
   shouldRetry: (error) => error.code === 'CUSTOM_ERROR'
 });
-```
-
-#### LLM Response Validation
-
-LLM responses are validated with Zod schemas:
-- Strict type checking for enums (category, context)
-- Partial recovery: valid fields used, invalid fields get defaults
-- Validation failures logged for monitoring
-
-**Example validation with recovery:**
-```typescript
-const enrichmentSchema = z.object({
-  category: z.enum(['SCHOOL', 'MUSIC', 'FITNESS', ...]),
-  context: z.enum(['HOME', 'OFFICE', 'COMPUTER', ...]),
-  rephrasedName: z.string().min(1),
-  definitionOfDone: z.string().min(1),
-});
-
-// If LLM returns invalid category, fall back to 'PERSONAL'
-// If valid fields exist, they are preserved
 ```
 
 #### Pagination
@@ -283,6 +266,7 @@ export const taskKeys = {
 
 #### Component Organization
 Components in `src/components/` are flat and focused:
+
 - **Layout:** `Layout.tsx`, `Card.tsx`
 - **Forms:** `Input.tsx`, `Button.tsx`
 - **UI:** `Badge.tsx`, `LoadingSkeleton.tsx`, `Toast.tsx`
@@ -292,6 +276,7 @@ Components follow single-responsibility pattern. No deep nesting.
 
 #### API Client
 Centralized Axios client in `src/lib/api.ts`:
+
 - All API methods are exported functions (e.g., `getTasks`, `scheduleTask`)
 - Response interceptor adds user-friendly error messages to errors
 - Base URL configured via `REACT_APP_API_URL` env var
@@ -303,6 +288,7 @@ Centralized Axios client in `src/lib/api.ts`:
 
 #### Type Definitions
 All types centralized in `src/types/index.ts`:
+
 - **Domain models** (Task, DailyPlan, Review, etc.)
 - **Enums** (TaskStatus, Priority, Energy, Category, Context)
 - **API request/response types**
@@ -332,12 +318,13 @@ All types centralized in `src/types/index.ts`:
 #### Error Handling Philosophy
 - **Backend:** Return appropriate HTTP status codes with descriptive error messages
 - **Frontend:** Display user-friendly messages via Toast context
-- **Services:** Fail gracefully with sensible defaults (e.g., LLM enrichment)
+- **Services:** Fail gracefully with sensible defaults
 
 ### Testing
 
 #### Frontend Tests
 Located in `src/hooks/useTasks.test.tsx`:
+
 - Jest + React Testing Library
 - Tests focus on React Query integration (cache behavior, optimistic updates, rollback)
 - Run with `npm test` in frontend directory
@@ -350,6 +337,7 @@ Located in `src/hooks/useTasks.test.tsx`:
 
 #### Backend Tests
 **Not yet implemented.** Expected pattern:
+
 - Route integration tests with supertest
 - Validation tests (Zod error cases)
 - Service tests with mocks
@@ -391,7 +379,6 @@ Located in `src/hooks/useTasks.test.tsx`:
 ### Backend `.env` (required)
 ```
 DATABASE_URL="postgresql://user:password@host:port/database"
-ANTHROPIC_API_KEY="sk-ant-..."
 TOGGL_API_TOKEN="..."
 PORT=3001
 NODE_ENV="development"
@@ -566,13 +553,13 @@ terminal-notifier -message "Test" -sound Basso
 - Task management (priority, energy, context-based)
 - Daily planning (Orient East morning, Orient West evening)
 - Weekly reviews with metrics
-- Todoist integration for task capture/enrichment
+- Todoist integration for task capture
 - Calendar view for scheduled tasks
 - Analytics tracking (deep work hours, completion rates)
 
 **Core workflow:**
 1. Capture tasks from Todoist → Clarify page
-2. Enrich with AI → Creates proper task with metadata
+2. Process tasks (Assign Priority, Energy, Context)
 3. Orient East → Morning planning (select NEXT tasks, schedule deep work)
 4. Work on tasks → Complete with reflection (PostDo log)
 5. Orient West → Evening reflection
