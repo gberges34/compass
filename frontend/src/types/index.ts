@@ -23,7 +23,7 @@ export interface Task {
   duration: number;
   definitionOfDone: string;
   dueDate?: string;
-  scheduledStart?: string;
+  scheduledStart?: string | null;
   activatedAt?: string;
   createdAt: string;
   updatedAt: string;
