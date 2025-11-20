@@ -77,7 +77,7 @@ app.use((req, res, next) => {
 // API Key authentication middleware (applies to all routes except health check)
 app.use((req, res, next) => {
   // Skip auth for health check endpoint
-  if (req.path === '/api/health' || req.path === '/health') {
+  if (req.path.startsWith('/api/health') || req.path.startsWith('/health')) {
     return next();
   }
   authMiddleware(req, res, next);

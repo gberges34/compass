@@ -29,7 +29,6 @@ const LoginGate: React.FC<LoginGateProps> = ({ children }) => {
           // Verify the key is valid by making a request
           await api.get("/tasks", {
             params: { limit: 1 },
-            headers: { "x-api-key": storedKey },
           });
           setIsAuthenticated(true);
         } catch (error) {

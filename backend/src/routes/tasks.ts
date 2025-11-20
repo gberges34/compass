@@ -178,22 +178,6 @@ router.get('/', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Requ
   res.json(response);
 }));
 
-// GET /api/tasks/:id - Get single task
-router.get('/:id', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  const task = await prisma.task.findUnique({
-    where: { id },
-    include: { postDoLog: true },
-  });
-
-  if (!task) {
-    throw new NotFoundError('Task');
-  }
-
-  res.json(task);
-}));
-
 // POST /api/tasks - Create new task
 router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const validatedData = createTaskSchema.parse(req.body);
@@ -411,6 +395,22 @@ router.get('/scheduled/:date', cacheControl(CachePolicies.SHORT), asyncHandler(a
   });
 
   res.json(tasks);
+}));
+
+// GET /api/tasks/:id - Get single task
+router.get('/:id', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const task = await prisma.task.findUnique({
+    where: { id },
+    include: { postDoLog: true },
+  });
+
+  if (!task) {
+    throw new NotFoundError('Task');
+  }
+
+  res.json(task);
 }));
 
 // POST /api/tasks/:id/activate - Activate task (Navigate shortcut)
