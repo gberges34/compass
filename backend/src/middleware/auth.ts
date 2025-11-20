@@ -6,7 +6,7 @@ import { UnauthorizedError } from '../errors/AppError';
 /**
  * API Key authentication middleware
  * 
- * Requires x-api-key header to match the API_KEY environment variable.
+ * Requires x-api-secret header to match the API_SECRET environment variable.
  * Used for simple API key authentication to protect backend routes.
  * 
  * Uses timing-safe comparison to prevent timing attacks.
@@ -16,23 +16,22 @@ export const authMiddleware = (
   res: Response,
   next: NextFunction
 ): void => {
-  const apiKeyHeader = req.headers['x-api-key'];
+  const apiSecretHeader = req.headers['x-api-secret'];
 
   // Reject if header is missing, an array, or not a non-empty string
-  if (!apiKeyHeader || Array.isArray(apiKeyHeader) || typeof apiKeyHeader !== 'string' || apiKeyHeader.length === 0) {
-    throw new UnauthorizedError('Invalid or missing API key');
+  if (!apiSecretHeader || Array.isArray(apiSecretHeader) || typeof apiSecretHeader !== 'string' || apiSecretHeader.length === 0) {
+    throw new UnauthorizedError('Invalid or missing API secret');
   }
 
   // Hash both keys to ensure constant length for comparison
   // This prevents timing attacks that could leak key length information
-  const keyHash = crypto.createHash('sha256').update(apiKeyHeader).digest();
-  const envKeyHash = crypto.createHash('sha256').update(env.API_KEY).digest();
+  const keyHash = crypto.createHash('sha256').update(apiSecretHeader).digest();
+  const envKeyHash = crypto.createHash('sha256').update(env.API_SECRET).digest();
 
   // Use timing-safe comparison to prevent timing attacks
   if (!crypto.timingSafeEqual(keyHash, envKeyHash)) {
-    throw new UnauthorizedError('Invalid or missing API key');
+    throw new UnauthorizedError('Invalid or missing API secret');
   }
 
   next();
 };
-

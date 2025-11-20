@@ -7,7 +7,7 @@ import { env } from '../../config/env';
 // Mock the env module
 jest.mock('../../config/env', () => ({
   env: {
-    API_KEY: 'test-api-key-12345',
+    API_SECRET: 'test-api-secret-12345',
   },
 }));
 
@@ -36,7 +36,7 @@ describe('authMiddleware', () => {
   });
 
   describe('missing header', () => {
-    it('should throw UnauthorizedError when x-api-key header is missing', () => {
+    it('should throw UnauthorizedError when x-api-secret header is missing', () => {
       mockRequest.headers = {};
 
       expect(() => {
@@ -45,9 +45,9 @@ describe('authMiddleware', () => {
       expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it('should throw UnauthorizedError when x-api-key header is undefined', () => {
+    it('should throw UnauthorizedError when x-api-secret header is undefined', () => {
       mockRequest.headers = {
-        'x-api-key': undefined,
+        'x-api-secret': undefined,
       };
 
       expect(() => {
@@ -58,9 +58,9 @@ describe('authMiddleware', () => {
   });
 
   describe('array header', () => {
-    it('should throw UnauthorizedError when x-api-key is an array', () => {
+    it('should throw UnauthorizedError when x-api-secret is an array', () => {
       mockRequest.headers = {
-        'x-api-key': ['key1', 'key2'],
+        'x-api-secret': ['key1', 'key2'],
       };
 
       expect(() => {
@@ -69,9 +69,9 @@ describe('authMiddleware', () => {
       expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it('should throw UnauthorizedError when x-api-key is an array with one element', () => {
+    it('should throw UnauthorizedError when x-api-secret is an array with one element', () => {
       mockRequest.headers = {
-        'x-api-key': ['test-api-key-12345'],
+        'x-api-secret': ['test-api-secret-12345'],
       };
 
       expect(() => {
@@ -84,7 +84,7 @@ describe('authMiddleware', () => {
   describe('incorrect key', () => {
     it('should throw UnauthorizedError when key is incorrect (same length)', () => {
       mockRequest.headers = {
-        'x-api-key': 'test-api-key-99999', // Same length, different value
+        'x-api-secret': 'test-api-secret-99999', // Same length, different value
       };
 
       expect(() => {
@@ -95,7 +95,7 @@ describe('authMiddleware', () => {
 
     it('should throw UnauthorizedError when key is incorrect (different length)', () => {
       mockRequest.headers = {
-        'x-api-key': 'wrong-key', // Different length
+        'x-api-secret': 'wrong-key', // Different length
       };
 
       expect(() => {
@@ -106,7 +106,7 @@ describe('authMiddleware', () => {
 
     it('should throw UnauthorizedError when key is empty string', () => {
       mockRequest.headers = {
-        'x-api-key': '',
+        'x-api-secret': '',
       };
 
       expect(() => {
@@ -119,7 +119,7 @@ describe('authMiddleware', () => {
   describe('correct key', () => {
     it('should call next() when API key is correct', () => {
       mockRequest.headers = {
-        'x-api-key': 'test-api-key-12345',
+        'x-api-secret': 'test-api-secret-12345',
       };
 
       authMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
@@ -129,4 +129,3 @@ describe('authMiddleware', () => {
     });
   });
 });
-

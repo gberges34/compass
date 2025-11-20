@@ -23,7 +23,7 @@ const LoginGate: React.FC<LoginGateProps> = ({ children }) => {
   // Check if API key exists in localStorage on mount
   useEffect(() => {
     const verifyStoredKey = async () => {
-      const storedKey = localStorage.getItem("apiKey");
+      const storedKey = localStorage.getItem("apiSecret");
       if (storedKey) {
         try {
           // Verify the key is valid by making a request
@@ -33,7 +33,7 @@ const LoginGate: React.FC<LoginGateProps> = ({ children }) => {
           setIsAuthenticated(true);
         } catch (error) {
           // If verification fails, clear the invalid key
-          localStorage.removeItem("apiKey");
+          localStorage.removeItem("apiSecret");
           setIsAuthenticated(false);
           toast.showError("Session expired. Please login again.");
         }
@@ -58,11 +58,11 @@ const LoginGate: React.FC<LoginGateProps> = ({ children }) => {
       // Temporarily set header for verification call
       await api.get("/tasks", {
         params: { limit: 1 },
-        headers: { "x-api-key": trimmedKey },
+        headers: { "x-api-secret": trimmedKey },
       });
 
       // Key is valid, save it and authenticate
-      localStorage.setItem("apiKey", trimmedKey);
+      localStorage.setItem("apiSecret", trimmedKey);
       setIsAuthenticated(true);
       toast.showSuccess("API key saved");
     } catch (error) {
@@ -71,7 +71,7 @@ const LoginGate: React.FC<LoginGateProps> = ({ children }) => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("apiKey");
+    localStorage.removeItem("apiSecret");
     setIsAuthenticated(false);
     setApiKey("");
     toast.showInfo("Logged out");
