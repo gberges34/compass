@@ -1,6 +1,6 @@
 # Northbound Shortcut - Clarify Workflow
 
-**Purpose**: Process captured tasks from Todoist, enrich them with Claude AI, and add them to your Compass task list.
+**Purpose**: Process captured tasks from Todoist, clarify their details (Category, Context, Energy), and add them to your Compass task list.
 
 ## Prerequisites
 
@@ -33,15 +33,6 @@ ngrok http 3001
 # Copy the HTTPS URL (e.g., https://abc123.ngrok.io)
 ```
 
-### Option C: Same Network (WiFi only)
-```bash
-# Get your Mac's local IP:
-ipconfig getifaddr en0
-
-# Use http://YOUR_LOCAL_IP:3001 as base URL
-# Example: http://192.168.1.100:3001
-```
-
 ## Shortcut Instructions
 
 ### 1. Create New Shortcut
@@ -56,6 +47,7 @@ URL: [YOUR_BACKEND_URL]/api/todoist/pending
 Method: GET
 Headers:
   Content-Type: application/json
+  x-api-key: [YOUR_API_KEY]
 ```
 
 #### Step 2: Parse Response
@@ -106,178 +98,140 @@ Action: Get Dictionary Value from SelectedTask
   - Get "dueDate" → Set Variable "DueDate"
 ```
 
-#### Step 8: Ask for Priority
+#### Step 8: Clarify Task Name (Optional)
+```
+Action: Ask for Input
+Prompt: Review Task Name
+Default Answer: TaskName
+Set Variable "FinalName" to Provided Input
+```
+
+#### Step 9: Set Priority
 ```
 Action: Choose from Menu
-Prompt: Priority for this task?
+Prompt: Priority?
 Menu Items:
   1. Must Do (P1)
   2. Should Do (P2)
   3. Could Do (P3)
   4. Maybe (P4)
 
-Case "Must Do (P1)": Set Variable "Priority" to 1
-Case "Should Do (P2)": Set Variable "Priority" to 2
-Case "Could Do (P3)": Set Variable "Priority" to 3
-Case "Maybe (P4)": Set Variable "Priority" to 4
+Case "Must Do (P1)": Set Variable "Priority" to "MUST"
+Case "Should Do (P2)": Set Variable "Priority" to "SHOULD"
+Case "Could Do (P3)": Set Variable "Priority" to "COULD"
+Case "Maybe (P4)": Set Variable "Priority" to "MAYBE"
 ```
 
-#### Step 9: Ask for Duration
+#### Step 10: Set Duration
 ```
 Action: Choose from Menu
-Prompt: How long will this take?
+Prompt: Duration?
 Menu Items:
-  - 15 minutes
-  - 30 minutes
-  - 45 minutes
-  - 60 minutes
-  - 90 minutes
-  - 120 minutes
+  - 15 min
+  - 30 min
+  - 45 min
+  - 60 min
   - Custom
 
-Case "15 minutes": Set Variable "Duration" to 15
-Case "30 minutes": Set Variable "Duration" to 30
-Case "45 minutes": Set Variable "Duration" to 45
-Case "60 minutes": Set Variable "Duration" to 60
-Case "90 minutes": Set Variable "Duration" to 90
-Case "120 minutes": Set Variable "Duration" to 120
-Case "Custom":
-  Action: Ask for Input
-  Prompt: Enter duration in minutes
-  Input Type: Number
-  Set Variable "Duration" to Provided Input
+Case "15 min": Set Variable "Duration" to 15
+...
+Case "Custom": Ask for Number → Set Variable "Duration"
 ```
 
-#### Step 10: Ask for Energy Level
+#### Step 11: Set Energy
 ```
 Action: Choose from Menu
-Prompt: Energy level required?
+Prompt: Energy Required?
 Menu Items:
-  - High (Deep focus)
-  - Medium (Normal)
-  - Low (Easy tasks)
+  - High ⚡
+  - Medium 😊
+  - Low 😴
 
-Case "High": Set Variable "Energy" to "HIGH"
-Case "Medium": Set Variable "Energy" to "MEDIUM"
-Case "Low": Set Variable "Energy" to "LOW"
+Case "High ⚡": Set Variable "Energy" to "HIGH"
+Case "Medium 😊": Set Variable "Energy" to "MEDIUM"
+Case "Low 😴": Set Variable "Energy" to "LOW"
 ```
 
-#### Step 11: Show Processing Alert
+#### Step 12: Set Category
 ```
-Action: Show Notification
-Title: Enriching task...
-Body: Claude is analyzing your task
+Action: Choose from Menu
+Prompt: Category?
+Menu Items:
+  - SCHOOL
+  - MUSIC
+  - FITNESS
+  - GAMING
+  - NUTRITION
+  - HYGIENE
+  - PET
+  - SOCIAL
+  - PERSONAL
+  - ADMIN
+
+Set Variable "Category" to Chosen Item
 ```
 
-#### Step 12: Build Enrichment Request
+#### Step 13: Set Context
+```
+Action: Choose from Menu
+Prompt: Context?
+Menu Items:
+  - HOME
+  - OFFICE
+  - COMPUTER
+  - PHONE
+  - ERRANDS
+  - ANYWHERE
+
+Set Variable "Context" to Chosen Item
+```
+
+#### Step 14: Define Done
+```
+Action: Ask for Input
+Prompt: What does "Done" look like?
+Input Type: Text
+Set Variable "DefinitionOfDone" to Provided Input
+```
+
+#### Step 15: Build Process Request
 ```
 Action: Dictionary
   tempTaskId: TaskID
+  name: FinalName
   priority: Priority
   duration: Duration
-  energy: Energy
+  energyRequired: Energy
+  category: Category
+  context: Context
+  definitionOfDone: DefinitionOfDone
+  status: "NEXT"
 ```
 
-#### Step 13: Call Enrich API
+#### Step 16: Call Process API
 ```
 Action: Get Contents of URL
-URL: [YOUR_BACKEND_URL]/api/tasks/enrich
+URL: [YOUR_BACKEND_URL]/api/tasks/process-captured
 Method: POST
 Headers:
   Content-Type: application/json
-Request Body: Dictionary (from Step 12)
+  x-api-key: [YOUR_API_KEY]
+Request Body: Dictionary (from Step 15)
 ```
 
-#### Step 14: Parse Enriched Task
-```
-Action: Get Dictionary from Input
-```
-
-#### Step 15: Extract Enriched Fields
-```
-Action: Get Dictionary Value
-  - "name" → Set Variable "EnrichedName"
-  - "category" → Set Variable "Category"
-  - "context" → Set Variable "Context"
-  - "definitionOfDone" → Set Variable "DoD"
-  - "status" → Set Variable "Status"
-```
-
-#### Step 16: Build Confirmation Message
-```
-Action: Text
-Content:
-✅ Task Enriched!
-
-📝 Name: EnrichedName
-📂 Category: Category
-📍 Context: Context
-⚡ Energy: Energy
-⏱️ Duration: Duration min
-🎯 Priority: Priority
-
-✓ Definition of Done:
-DoD
-
-Status: Status
-```
-
-#### Step 17: Show Confirmation
-```
-Action: Show Alert
-Title: Task Ready
-Message: Text (from Step 16)
-Show Cancel Button: ON
-```
-
-#### Step 18: Celebrate
+#### Step 17: Celebrate
 ```
 Action: Show Notification
-Title: 🎉 Task added!
-Body: EnrichedName is now in your task list
+Title: 🎉 Task Processed!
+Body: FinalName is now in your Compass system.
 ```
 
 ## Testing the Shortcut
 
-1. First, add test tasks via Todoist import:
-```bash
-curl -X POST http://localhost:3001/api/todoist/import \
-  -H "Content-Type: application/json" \
-  -d '{
-    "tasks": [
-      {
-        "name": "Review quarterly metrics",
-        "due": "2025-11-15T17:00:00Z"
-      },
-      {
-        "name": "Call dentist for appointment"
-      }
-    ]
-  }'
-```
+1. Add a test task via Todoist or the import API.
 
-2. Run the Northbound shortcut on your iPhone
-3. Select a task, set priority/duration/energy
-4. Verify enrichment happens and task is created
+2. Run "Northbound" on your iPhone.
 
-## Troubleshooting
+3. Step through the clarification wizard.
 
-**"Could not connect to server"**
-- Check backend is running: `curl http://localhost:3001/health`
-- Verify iPhone can reach backend URL
-- Check firewall settings
-
-**"No pending tasks"**
-- Verify tasks exist: `curl http://localhost:3001/api/todoist/pending`
-- Check database connection
-
-**Enrichment fails**
-- Verify Claude API key in backend `.env`
-- Check API credits: https://console.anthropic.com/
-
-## Next Steps
-
-After creating this shortcut:
-1. Add to home screen or widget
-2. Create Navigate shortcut (for starting tasks)
-3. Create Portside shortcut (for completing tasks)
+4. Verify the task appears in your Compass "NEXT" list with all attributes set.

@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from './lib/queryClient';
 import { ToastProvider } from './contexts/ToastContext';
+import LoginGate from './components/LoginGate';
 import Layout from './components/Layout';
 import TodayPage from './pages/TodayPage';
 import TasksPage from './pages/TasksPage';
@@ -16,20 +17,22 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <Router>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Navigate to="/today" replace />} />
-              <Route path="/today" element={<TodayPage />} />
-              <Route path="/tasks" element={<TasksPage />} />
-              <Route path="/calendar" element={<CalendarPage />} />
-              <Route path="/clarify" element={<ClarifyPage />} />
-              <Route path="/orient/east" element={<OrientEastPage />} />
-              <Route path="/orient/west" element={<OrientWestPage />} />
-              <Route path="/reviews" element={<ReviewsPage />} />
-            </Routes>
-          </Layout>
-        </Router>
+        <LoginGate>
+          <Router>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Navigate to="/today" replace />} />
+                <Route path="/today" element={<TodayPage />} />
+                <Route path="/tasks" element={<TasksPage />} />
+                <Route path="/calendar" element={<CalendarPage />} />
+                <Route path="/clarify" element={<ClarifyPage />} />
+                <Route path="/orient/east" element={<OrientEastPage />} />
+                <Route path="/orient/west" element={<OrientWestPage />} />
+                <Route path="/reviews" element={<ReviewsPage />} />
+              </Routes>
+            </Layout>
+          </Router>
+        </LoginGate>
       </ToastProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

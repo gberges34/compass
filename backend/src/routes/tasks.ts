@@ -95,11 +95,9 @@ const updateStatusSchema = z.object({
   status: statusEnum,
 });
 
-const enrichTaskSchema = z.object({
+// New schema for processing captured tasks (expects full task details)
+const processCapturedTaskSchema = createTaskSchema.extend({
   tempTaskId: z.string().uuid(),
-  priority: z.number().min(1).max(4),
-  duration: z.number().positive(),
-  energy: energyEnum,
 });
 
 const completeTaskSchema = z.object({
@@ -181,22 +179,6 @@ router.get('/', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Requ
   res.json(response);
 }));
 
-// GET /api/tasks/:id - Get single task
-router.get('/:id', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  const task = await prisma.task.findUnique({
-    where: { id },
-    include: { postDoLog: true },
-  });
-
-  if (!task) {
-    throw new NotFoundError('Task');
-  }
-
-  res.json(task);
-}));
-
 // POST /api/tasks - Create new task
 router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const validatedData = createTaskSchema.parse(req.body);
@@ -213,12 +195,15 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   res.status(201).json(task);
 }));
 
-// POST /api/tasks/enrich - Enrich and create task from temp task (Northbound)
-router.post('/enrich', asyncHandler(async (req: Request, res: Response) => {
-  const validatedData = enrichTaskSchema.parse(req.body);
+// POST /api/tasks/process-captured - Process a captured task with fully formed data
+router.post('/process-captured', asyncHandler(async (req: Request, res: Response) => {
+  // Validate that we received all necessary fields for a full task
+  const validatedData = processCapturedTaskSchema.parse(req.body);
+  const { tempTaskId, ...taskData } = validatedData;
 
+  // Verify temp task exists and hasn't been processed
   const tempTask = await prisma.tempCapturedTask.findUnique({
-    where: { id: validatedData.tempTaskId },
+    where: { id: tempTaskId },
   });
 
   if (!tempTask) {
@@ -268,18 +253,15 @@ router.post('/enrich', asyncHandler(async (req: Request, res: Response) => {
 
     // Mark temp task as processed
     const updatedTempTask = await tx.tempCapturedTask.update({
-      where: { id: validatedData.tempTaskId },
+      where: { id: tempTaskId },
       data: { processed: true }
     });
 
-    return { task, updatedTempTask };
+    return task;
   });
 
-  log('[POST /tasks/enrich] Enriched and created task:', result.task.id);
-  res.status(201).json({
-    task: result.task,
-    enrichment
-  });
+  log('[POST /tasks/process-captured] Processed task:', result.id);
+  res.status(201).json(result);
 }));
 
 // PATCH /api/tasks/:id - Update task
@@ -438,6 +420,22 @@ router.get('/scheduled/:date', cacheControl(CachePolicies.SHORT), asyncHandler(a
   });
 
   res.json(tasks);
+}));
+
+// GET /api/tasks/:id - Get single task
+router.get('/:id', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const task = await prisma.task.findUnique({
+    where: { id },
+    include: { postDoLog: true },
+  });
+
+  if (!task) {
+    throw new NotFoundError('Task');
+  }
+
+  res.json(task);
 }));
 
 // POST /api/tasks/:id/activate - Activate task (Navigate shortcut)

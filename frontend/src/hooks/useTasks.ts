@@ -9,7 +9,7 @@ import {
 } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import * as api from '../lib/api';
-import type { Task, TaskFilters, EnrichTaskRequest, CompleteTaskRequest, PaginatedResponse } from '../types';
+import type { Task, TaskFilters, ProcessCapturedTaskRequest, CompleteTaskRequest, PaginatedResponse } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useMemo } from 'react';
 import {
@@ -303,7 +303,7 @@ export function useUnscheduleTask() {
         (task) => task.id === id,
         (task) => ({
           ...task,
-          scheduledStart: undefined,
+          scheduledStart: null,
           updatedAt: new Date().toISOString(),
         }),
         'useUnscheduleTask'
@@ -333,11 +333,12 @@ export function useUnscheduleTask() {
   });
 }
 
-export function useEnrichTask() {
+// Renamed from useEnrichTask
+export function useProcessCapturedTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: EnrichTaskRequest) => api.enrichTask(request),
+    mutationFn: (request: ProcessCapturedTaskRequest) => api.processCapturedTask(request),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },

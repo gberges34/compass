@@ -7,7 +7,7 @@ import type {
   DailyPlan,
   Review,
   PostDoLog,
-  EnrichTaskRequest,
+  ProcessCapturedTaskRequest,
   ActivateTaskResponse,
   CompleteTaskRequest,
   CompleteTaskResponse,
@@ -42,12 +42,35 @@ const api = axios.create({
   },
 });
 
+// Request interceptor to inject API key from localStorage
+api.interceptors.request.use(
+  (config) => {
+    const apiKey = localStorage.getItem('apiKey');
+    if (apiKey) {
+      config.headers['x-api-key'] = apiKey;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Response interceptor to extract error from new backend format
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
       const { status, data } = error.response as { status?: number; data?: ApiErrorPayload };
+
+      // Handle 401 Unauthorized globally
+      if (status === 401) {
+        localStorage.removeItem('apiKey');
+        // Force reload to reset state and show login screen
+        window.location.href = '/';
+        return Promise.reject(error);
+      }
+
       const userMessage = getUserFriendlyError(status, data);
 
       error.userMessage = userMessage;
@@ -140,8 +163,9 @@ export const deleteTask = async (id: string): Promise<void> => {
   await api.delete(`/tasks/${id}`);
 };
 
-export const enrichTask = async (request: EnrichTaskRequest): Promise<Task> => {
-  const response = await api.post<Task>('/tasks/enrich', request);
+// Renamed from enrichTask to processCapturedTask
+export const processCapturedTask = async (request: ProcessCapturedTaskRequest): Promise<Task> => {
+  const response = await api.post<Task>('/tasks/process-captured', request);
   return response.data;
 };
 

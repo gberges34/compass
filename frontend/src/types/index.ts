@@ -23,7 +23,7 @@ export interface Task {
   duration: number;
   definitionOfDone: string;
   dueDate?: string;
-  scheduledStart?: string;
+  scheduledStart?: string | null;
   activatedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -112,11 +112,18 @@ export interface PaginatedResponse<T> {
   nextCursor: string | null;
 }
 
-export interface EnrichTaskRequest {
+// Replaced EnrichTaskRequest with ProcessCapturedTaskRequest
+export interface ProcessCapturedTaskRequest {
   tempTaskId: string;
-  priority: number;
+  name: string;
+  priority: Priority;
+  category: Category;
+  context: Context;
+  energyRequired: Energy;
   duration: number;
-  energy: Energy;
+  definitionOfDone: string;
+  dueDate?: string;
+  status?: TaskStatus;
 }
 
 export interface ActivateTaskResponse {

@@ -16,6 +16,7 @@ import { getCurrentTimestamp } from './utils/dateHelpers';
 import { errorHandler } from './middleware/errorHandler';
 import { runHealthChecks } from './services/health';
 import { asyncHandler } from './middleware/asyncHandler';
+import { authMiddleware } from './middleware/auth';
 
 const app = express();
 
@@ -71,6 +72,15 @@ app.use((req, res, next) => {
     res.set('Pragma', 'no-cache');
   }
   next();
+});
+
+// API Key authentication middleware (applies to all routes except health check)
+app.use((req, res, next) => {
+  // Skip auth for health check endpoint
+  if (req.path.startsWith('/api/health') || req.path.startsWith('/health')) {
+    return next();
+  }
+  authMiddleware(req, res, next);
 });
 
 // Health check endpoint
