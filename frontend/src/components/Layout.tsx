@@ -61,15 +61,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    if (!openMenu) {
+      return;
+    }
+
     const handleClickOutside = (event: MouseEvent) => {
-      if (openMenu && navRef.current && !navRef.current.contains(event.target as Node)) {
+      if (navRef.current && !navRef.current.contains(event.target as Node)) {
+        setOpenMenu(null);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
         setOpenMenu(null);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [openMenu]);
 
@@ -156,6 +168,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                       className="relative"
                       onMouseEnter={() => openMenuNow(item.id)}
                       onMouseLeave={queueCloseMenu}
+                      onBlur={(event) => {
+                        if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+                          queueCloseMenu();
+                        }
+                      }}
                     >
                       <button
                         type="button"
@@ -165,7 +182,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         aria-haspopup="menu"
                         aria-expanded={isOpen}
                         onFocus={() => openMenuNow(item.id)}
-                        onBlur={queueCloseMenu}
                         onClick={() => toggleMenu(item.id)}
                       >
                         <span className="text-body">{item.label}</span>
@@ -176,8 +192,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             ? 'opacity-100 translate-y-0 pointer-events-auto'
                             : 'opacity-0 -translate-y-1 pointer-events-none'
                         }`}
-                        role="menu"
-                        aria-label={`${item.label} menu`}
                         onMouseEnter={() => openMenuNow(item.id)}
                         onMouseLeave={queueCloseMenu}
                       >
@@ -186,7 +200,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             <NavLink
                               key={child.id}
                               to={child.to}
-                              role="menuitem"
                               className={({ isActive }) =>
                                 `px-16 py-12 rounded-default font-medium transition-standard text-left ${
                                   isActive

@@ -4,9 +4,9 @@
 
 **Goal:** Merge the Clarify and Tasks top-nav items under a new Tasks parent with hover/click/focus dropdown behavior that matches the existing Orient submenu and Compass design system.
 
-**Architecture:** Keep the data-driven nav config in `frontend/src/components/Layout.tsx`, reuse the existing dropdown state/handlers for multiple parents, and ensure prefetch stays on leaf links only. Add accessible roles/ARIA on the new Tasks trigger and submenu while keeping styling neutral (Snow/Cloud/Stone, E-02 shadow, 160–240 ms transitions) until further visual refinements.
+**Architecture:** Keep the data-driven nav config in `frontend/src/components/Layout.tsx`, reuse the existing dropdown state/handlers for multiple parents, and ensure prefetch stays on leaf links only. Keep dropdown semantics as a disclosure (button + links) with neutral styling (Snow/Cloud/Stone, E-02 shadow, 160–240 ms transitions) until further visual refinements.
 
-**Tech Stack:** React 19, TypeScript, React Router v7, Tailwind (Compass tokens), React Query (prefetch), React Testing Library + Jest.
+**Tech Stack:** React 19, TypeScript, React Router v7 (project dependency), Tailwind (Compass tokens), React Query (prefetch), React Testing Library + Jest.
 
 ---
 
