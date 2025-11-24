@@ -58,12 +58,14 @@ describe('Layout nav dropdowns', () => {
     fireEvent.click(tasksButton);
 
     await waitFor(() => expect(tasksButton).toHaveAttribute('aria-expanded', 'true'));
-    const clarifyLink = await screen.findByText(/clarify/i);
+    const clarifyLink = await screen.findByRole('link', { name: /clarify/i });
     expect(clarifyLink).toBeInTheDocument();
     const tasksLink = screen.getByRole('link', { name: /^tasks$/i });
     expect(tasksLink).toBeInTheDocument();
 
-    clarifyLink.focus();
+    act(() => {
+      clarifyLink.focus();
+    });
     expect(tasksButton).toHaveAttribute('aria-expanded', 'true');
 
     fireEvent.mouseDown(document.body);
