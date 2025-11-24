@@ -95,7 +95,8 @@ Add scripts:
 ```json
 "scripts": {
   "prepare:dto": "node scripts/sync-shared-dto.js",
-  "build": "npm run prepare:dto && tsc",
+  "prebuild": "node scripts/sync-shared-dto.js",
+  "build": "tsc",
   "...existing scripts..."
 }
 ```

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon --exec ts-node src/index.ts",
     "prepare:dto": "node scripts/sync-shared-dto.js",
-    "build": "npm run prepare:dto && tsc",
+    "prebuild": "node scripts/sync-shared-dto.js",
+    "build": "tsc",
     "start": "node dist/index.js",
     "test": "NODE_ENV=test jest",
     "test:watch": "NODE_ENV=test jest --watch",
