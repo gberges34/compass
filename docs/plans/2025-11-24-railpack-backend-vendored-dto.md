@@ -19,21 +19,18 @@
 
 **Step 1: Author the copy script**
 
-Add a small Node script that mirrors `../shared/dto` into `backend/shared/dto` (creating folders as needed) and overwrites on each run:
+Add a small Node script that mirrors `../shared/dto` into `backend/shared/dto` recursively and overwrites on each run:
 
 ```js
 // backend/scripts/sync-shared-dto.js
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
 const src = path.resolve(__dirname, '..', '..', 'shared', 'dto');
 const dest = path.resolve(__dirname, '..', 'shared', 'dto');
 
 fs.rmSync(dest, { recursive: true, force: true });
-fs.mkdirSync(dest, { recursive: true });
-for (const file of fs.readdirSync(src)) {
-  fs.copyFileSync(path.join(src, file), path.join(dest, file));
-}
+fs.cpSync(src, dest, { recursive: true });
 console.log(`Copied shared DTOs from ${src} -> ${dest}`);
 ```
 
@@ -62,8 +59,8 @@ Set `paths` so `@compass/dto/*` resolves to the vendored folder first, then the 
 
 ```json
 "paths": {
-  "@compass/dto/*": ["./shared/dto/*", "../shared/dto/*"],
-  "@compass/dto": ["./shared/dto/index.d.ts", "../shared/dto/index.d.ts"]
+  "@compass/dto/*": ["../shared/dto/*", "../../shared/dto/*"],
+  "@compass/dto": ["../shared/dto/index.d.ts", "../../shared/dto/index.d.ts"]
 }
 ```
 
@@ -124,7 +121,7 @@ Expected: succeeds and generates `backend/shared/dto` before `tsc` runs; no TS23
 
 ```json
 "scripts": {
-  "build:backend": "cd backend && npm ci && npm run build",
+  "build:backend": "cd backend && npm ci && npx prisma generate && npm run build",
   "start": "cd backend && npm run start"
 }
 ```
