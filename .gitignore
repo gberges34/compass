@@ -10,6 +10,7 @@ node_modules/
 /build
 /dist
 backend/dist/
+backend/shared/
 
 # Misc
 .DS_Store

@@ -5,8 +5,10 @@
   "description": "Compass Personal Productivity System",
   "scripts": {
     "dev": "bash scripts/dev.sh",
+    "build:backend": "cd backend && npm ci && npx prisma generate && npm run build",
     "start:backend": "cd backend && npm run dev",
     "start:frontend": "cd frontend && npm start",
+    "start": "cd backend && npm run start",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ..",
     "build": "cd backend && npm run build && cd ../frontend && npm run build && cd ..",
     "db:migrate": "cd backend && npx prisma migrate dev",
@@ -16,7 +18,6 @@
     "setup": "bash scripts/setup.sh",
     "verify": "bash scripts/verify-environment.sh",
     "health": "bash scripts/health-check.sh",
-    "check:anthropic": "CHECK_ANTHROPIC=true ./scripts/health-check.sh anthropic",
     "vscode:extensions": "bash scripts/install-vscode-extensions.sh"
   },
   "keywords": ["productivity", "task-management", "calendar"],

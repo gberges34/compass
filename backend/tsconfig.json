@@ -15,10 +15,10 @@
     "typeRoots": ["./node_modules/@types", "../shared"],
     "baseUrl": "./src",
     "paths": {
-      "@compass/dto/*": ["../../shared/dto/*"],
-      "@compass/dto": ["../../shared/dto/index.d.ts"]
+      "@compass/dto/*": ["./shared/dto/*", "../shared/dto/*"],
+      "@compass/dto": ["./shared/dto/index.d.ts", "../shared/dto/index.d.ts"]
     }
   },
-  "include": ["src/**/*", "../shared/**/*.d.ts"],
+  "include": ["src/**/*", "./shared/**/*.d.ts", "../shared/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
 }
