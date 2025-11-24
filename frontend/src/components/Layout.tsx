@@ -22,6 +22,8 @@ interface NavItem {
   }>;
 }
 
+const MENU_CLOSE_DELAY_MS = 160;
+
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const queryClient = useQueryClient();
   const { logout } = useAuth();
@@ -43,7 +45,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const queueCloseMenu = () => {
     clearCloseTimer();
-    closeTimer.current = window.setTimeout(() => setOpenMenu(null), 150);
+    closeTimer.current = window.setTimeout(() => setOpenMenu(null), MENU_CLOSE_DELAY_MS);
   };
 
   const toggleMenu = (id: string) => {

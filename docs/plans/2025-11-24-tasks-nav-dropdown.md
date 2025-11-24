@@ -79,8 +79,8 @@ it('opens Orient submenu on hover and closes on mouse leave', async () => {
 });
 
 it('toggles Tasks submenu on click and keeps links keyboard focusable', async () => {
-  // click Tasks button -> Clarify/Tasks links visible with role="menuitem"
-  // tab into first link -> menu stays open (focus handler)
+  // click Tasks button -> Clarify/Tasks links visible
+  // tab/focus into first link -> menu stays open (focus handler keeps aria-expanded true)
   // click outside -> menu closes
 });
 ```
@@ -92,7 +92,7 @@ Expect: Tests fail because submenu isn’t wired for Tasks yet.
 
 **Step 3: Implement functionality**
 
-Apply Tasks parent changes from Task 1 and ensure the shared dropdown logic covers both parents. Keep ARIA (`aria-haspopup="menu"`, `aria-expanded`, `role="menu"`, `role="menuitem"`).
+Apply Tasks parent changes from Task 1 and ensure the shared dropdown logic covers both parents. Keep disclosure semantics (`aria-expanded` on triggers) and hover/click/focus handlers; submenu remains links without menu roles (Tab navigation).
 
 **Step 4: Re-run tests and confirm pass**
 
