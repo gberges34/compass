@@ -47,7 +47,7 @@
 - **Files:** `frontend/src/pages/CalendarPage.tsx`.
 - **Steps:**
   1) Ensure `UnscheduledTaskCard` still sets `onDragStart` and add `onDragEnd` to clear state.
--  2) Keep sidebar “Schedule” button behavior unchanged.
+  2) Keep sidebar “Schedule” button behavior unchanged.
   3) Ensure preview resets on `onView`/`onNavigate` to avoid stale ghosts across weeks.
 
 ### Task 7: Verification

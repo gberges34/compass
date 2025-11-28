@@ -195,5 +195,5 @@ export interface CalendarEvent {
   start: Date;
   end: Date;
   task?: Task;
-  type: 'task' | 'deepWork' | 'admin' | 'buffer' | 'preview';
+  type: 'task' | 'deepWork' | 'admin' | 'buffer';
 }
