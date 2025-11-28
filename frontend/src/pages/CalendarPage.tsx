@@ -53,15 +53,17 @@ const getCategoryColor = (category: Category): string => {
 interface UnscheduledTaskCardProps {
   task: Task;
   index: number;
-  onDragStart: (task: Task) => void;
+  onDragStart: (event: React.DragEvent, task: Task) => void;
+  onDragEnd: () => void;
   onSchedule: (task: Task) => void;
 }
 
-const UnscheduledTaskCard = React.memo<UnscheduledTaskCardProps>(({ task, index, onDragStart, onSchedule }) => {
+const UnscheduledTaskCard = React.memo<UnscheduledTaskCardProps>(({ task, index, onDragStart, onDragEnd, onSchedule }) => {
   return (
     <div
       draggable
-      onDragStart={() => onDragStart(task)}
+      onDragStart={(event) => onDragStart(event, task)}
+      onDragEnd={onDragEnd}
       className="border border-stone rounded-card p-12 cursor-move hover:shadow-e02 transition-shadow duration-micro bg-snow"
       style={{
         borderLeftWidth: '4px',
@@ -118,18 +120,23 @@ const CalendarPage: React.FC = () => {
   // Local UI state only
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+  const [previewEvent, setPreviewEvent] = useState<CalendarEvent | null>(null);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [currentView, setCurrentView] = useState<View>('week');
 
   // Derived data from queries
   const loading = tasksLoading || planLoading;
-  const unscheduledTasks = useMemo(
-    () => tasks.filter((task: Task) => !task.scheduledStart),
+  const safeTasks = useMemo(
+    () => tasks.filter((task): task is Task => Boolean(task)),
     [tasks]
   );
+  const unscheduledTasks = useMemo(
+    () => safeTasks.filter((task: Task) => !task.scheduledStart),
+    [safeTasks]
+  );
   const scheduledTasks = useMemo(
-    () => tasks.filter((task: Task) => task.scheduledStart),
-    [tasks]
+    () => safeTasks.filter((task: Task) => task.scheduledStart),
+    [safeTasks]
   );
 
   // Generate calendar events from query data
@@ -222,8 +229,14 @@ const CalendarPage: React.FC = () => {
       }
     }
 
-    return [...taskEvents, ...planEvents];
-  }, [scheduledTasks, todayPlan]);
+    const allEvents = [...taskEvents, ...planEvents];
+
+    if (previewEvent) {
+      allEvents.push(previewEvent);
+    }
+
+    return allEvents;
+  }, [scheduledTasks, todayPlan, previewEvent]);
 
   const handleSelectSlot = useCallback(
     ({ start, end }: { start: Date; end: Date }) => {
@@ -374,10 +387,19 @@ const CalendarPage: React.FC = () => {
       const calendarEvent = event as unknown as CalendarEvent;
       let backgroundColor = '#6b7280';
       let borderColor = '#4b5563';
+      let borderStyle = 'solid';
+      let opacity = scheduleTaskMutation.isPending ? 0.6 : 0.9;
+      let color = 'white';
 
       if (calendarEvent.type === 'task' && calendarEvent.task) {
         backgroundColor = getCategoryColor(calendarEvent.task.category);
         borderColor = backgroundColor;
+      } else if (calendarEvent.type === 'preview') {
+        backgroundColor = '#e5e7eb';
+        borderColor = '#9ca3af';
+        borderStyle = 'dashed';
+        opacity = 0.5;
+        color = '#111827';
       } else if (calendarEvent.type === 'deepWork') {
         backgroundColor = '#3b82f6';
         borderColor = '#2563eb';
@@ -397,10 +419,10 @@ const CalendarPage: React.FC = () => {
           backgroundColor,
           borderColor,
           borderWidth: '1px',
-          borderStyle: 'solid',
+          borderStyle,
           borderRadius: '4px',
-          opacity: scheduleTaskMutation.isPending ? 0.6 : 0.9,
-          color: 'white',
+          opacity,
+          color,
           display: 'block',
           cursor: isDraggable ? (scheduleTaskMutation.isPending ? 'wait' : 'move') : 'default',
           transition: 'opacity 0.2s ease, transform 0.1s ease',
@@ -410,32 +432,46 @@ const CalendarPage: React.FC = () => {
     [scheduleTaskMutation.isPending]
   );
 
-  // Drag and drop handlers
-  const handleDragStart = (task: Task) => {
+  const clearDragState = useCallback(() => {
+    setDraggedTask(null);
+    setPreviewEvent(null);
+  }, []);
+
+  const hasOverlap = useCallback(
+    (candidateStart: Date, candidateEnd: Date) => {
+      return scheduledTasks.some((task: Task) => {
+        if (!task.scheduledStart) return false;
+
+        const taskStart = new Date(task.scheduledStart);
+        if (!isValidDate(taskStart)) return false;
+
+        const taskEnd = addMinutesToDate(taskStart, task.duration);
+        return candidateStart < taskEnd && candidateEnd > taskStart;
+      });
+    },
+    [scheduledTasks]
+  );
+
+  // Drag and drop handlers for sidebar tasks
+  const handleDragStart = (event: React.DragEvent, task: Task) => {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', task.id);
     setDraggedTask(task);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    if (!draggedTask) return;
-
-    // This is a simplified version - in production you'd calculate the exact time based on drop position
-    const dropTime = new Date();
-    await handleScheduleTask(draggedTask, dropTime);
-    setDraggedTask(null);
+  const handleDragEnd = () => {
+    clearDragState();
   };
 
   // Calendar navigation handlers
   const handleNavigate = (newDate: Date) => {
     setCurrentDate(newDate);
+    setPreviewEvent(null);
   };
 
   const handleViewChange = useCallback((newView: View) => {
     setCurrentView(newView);
+    setPreviewEvent(null);
   }, []);
 
   const tooltipAccessor = useCallback((event: BigCalendarEvent) => {
@@ -450,6 +486,63 @@ const CalendarPage: React.FC = () => {
     const calendarEvent = event as CalendarEvent;
     return calendarEvent.type === 'task';
   }, []);
+
+  const handleExternalDragOver = useCallback(
+    ({ start }: { start: Date }) => {
+      if (!draggedTask) return;
+
+      const now = new Date();
+      if (start < now) {
+        setPreviewEvent(null);
+        return false;
+      }
+
+      const candidateEnd = addMinutesToDate(start, draggedTask.duration);
+
+      if (hasOverlap(start, candidateEnd)) {
+        setPreviewEvent(null);
+        return false;
+      }
+
+      setPreviewEvent({
+        id: `preview-${draggedTask.id}`,
+        title: draggedTask.name,
+        start,
+        end: candidateEnd,
+        task: draggedTask,
+        type: 'preview',
+      });
+
+      return true;
+    },
+    [draggedTask, hasOverlap]
+  );
+
+  const handleDropFromOutside = useCallback(
+    async ({ start }: { start: Date }) => {
+      if (!draggedTask) return;
+      if (scheduleTaskMutation.isPending) return;
+
+      const now = new Date();
+      if (start < now) {
+        toast.showError('Cannot schedule tasks in the past');
+        clearDragState();
+        return;
+      }
+
+      const candidateEnd = addMinutesToDate(start, draggedTask.duration);
+
+      if (hasOverlap(start, candidateEnd)) {
+        toast.showError('That time is already booked');
+        clearDragState();
+        return;
+      }
+
+      await handleScheduleTask(draggedTask, start);
+      clearDragState();
+    },
+    [draggedTask, handleScheduleTask, hasOverlap, scheduleTaskMutation.isPending, clearDragState, toast]
+  );
 
   // Handler for scheduling tasks from sidebar
   const handleScheduleFromSidebar = useCallback((task: Task) => {
@@ -510,6 +603,7 @@ const CalendarPage: React.FC = () => {
                     task={task}
                     index={index}
                     onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
                     onSchedule={handleScheduleFromSidebar}
                   />
                 ))
@@ -552,7 +646,7 @@ const CalendarPage: React.FC = () => {
         </div>
 
         {/* Calendar */}
-        <div className="bg-cloud rounded-card shadow-e01 border border-fog p-24 flex-1 relative" onDragOver={handleDragOver} onDrop={handleDrop}>
+        <div className="bg-cloud rounded-card shadow-e01 border border-fog p-24 flex-1 relative">
           {/* Loading Overlay */}
           {scheduleTaskMutation.isPending && (
             <div className="absolute inset-0 bg-ink/20 backdrop-blur-sm flex items-center justify-center z-40 rounded-card">
@@ -586,6 +680,9 @@ const CalendarPage: React.FC = () => {
             showMultiDayTimes
             tooltipAccessor={tooltipAccessor}
             draggableAccessor={draggableAccessor}
+            dragFromOutsideItem={() => draggedTask}
+            onDropFromOutside={handleDropFromOutside as any}
+            onDragOver={handleExternalDragOver as any}
             resizable
             onEventDrop={handleEventDrop as any}
             onEventResize={handleEventResize as any}
