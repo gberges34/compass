@@ -126,7 +126,9 @@ const CalendarPage: React.FC = () => {
   // Derived data from queries
   const loading = tasksLoading || planLoading;
   const safeTasks = useMemo(
-    () => tasks.filter((task): task is Task => Boolean(task)),
+    () => (tasks as Array<Task | null | undefined>).filter(
+      (task: Task | null | undefined): task is Task => Boolean(task)
+    ),
     [tasks]
   );
   const unscheduledTasks = useMemo(
@@ -260,18 +262,21 @@ const CalendarPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // toast removed - context functions are stable
 
-  const handleScheduleTask = async (task: Task, scheduledStart: Date) => {
-    try {
-      await scheduleTaskMutation.mutateAsync({
-        id: task.id,
-        scheduledStart: scheduledStart.toISOString(),
-      });
-      showSuccess(`Task scheduled for ${formatDisplayTime(scheduledStart)} on ${formatDisplayDate(scheduledStart)}`);
-    } catch (err) {
-      showError('Failed to schedule task. Please try again.');
-      console.error('Error scheduling task:', err);
-    }
-  };
+  const handleScheduleTask = useCallback(
+    async (task: Task, scheduledStart: Date) => {
+      try {
+        await scheduleTaskMutation.mutateAsync({
+          id: task.id,
+          scheduledStart: scheduledStart.toISOString(),
+        });
+        showSuccess(`Task scheduled for ${formatDisplayTime(scheduledStart)} on ${formatDisplayDate(scheduledStart)}`);
+      } catch (err) {
+        showError('Failed to schedule task. Please try again.');
+        console.error('Error scheduling task:', err);
+      }
+    },
+    [scheduleTaskMutation, showError, showSuccess]
+  );
 
   const handleUnscheduleTask = async (task: Task) => {
     if (unscheduleTaskMutation.isPending) return; // Prevent double-clicks
@@ -436,6 +441,16 @@ const CalendarPage: React.FC = () => {
   const handleDragEnd = () => {
     clearDragState();
   };
+
+  const externalDragItem = useMemo(() => {
+    if (!draggedTask) return null;
+    const now = new Date();
+    return {
+      ...draggedTask,
+      start: now,
+      end: addMinutesToDate(now, draggedTask.duration),
+    };
+  }, [draggedTask]);
 
   // Calendar navigation handlers
   const handleNavigate = (newDate: Date) => {
@@ -621,7 +636,7 @@ const CalendarPage: React.FC = () => {
             showMultiDayTimes
             tooltipAccessor={tooltipAccessor}
             draggableAccessor={draggableAccessor}
-            dragFromOutsideItem={() => draggedTask}
+            dragFromOutsideItem={() => externalDragItem ?? {}}
             // react-big-calendar external DnD typings omit the drop payload; cast to align with addon runtime shape
             onDropFromOutside={handleDropFromOutside as any}
             resizable
