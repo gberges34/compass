@@ -49,7 +49,7 @@ git push origin main
 
 Required:
 - `DATABASE_URL` - PostgreSQL connection string (auto-set by Railway)
-- `ANTHROPIC_API_KEY` - Claude API key
+- `API_SECRET` - API authentication secret (must match frontend client secrets)
 - `FRONTEND_URL` - Vercel frontend URL (for CORS)
 - `PORT` - 3001
 - `NODE_ENV` - production

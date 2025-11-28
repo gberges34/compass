@@ -349,10 +349,17 @@ Located in `src/hooks/useTasks.test.tsx`:
 4. Test refetch logic
 
 #### Backend Tests
-**Not yet implemented.** Expected pattern:
+Backend tests are located in:
+
+- `backend/src/__tests__/integration/` - Integration tests for routes
+- `backend/tests/integration/` - Additional integration test suites
+- `backend/src/middleware/__tests__/` - Middleware unit tests
+
+**Test pattern:**
 - Route integration tests with supertest
 - Validation tests (Zod error cases)
 - Service tests with mocks
+- Use Jest with ts-jest for TypeScript support
 
 ## Common Development Patterns
 
@@ -391,6 +398,7 @@ Located in `src/hooks/useTasks.test.tsx`:
 ### Backend `.env` (required)
 ```
 DATABASE_URL="postgresql://user:password@host:port/database"
+API_SECRET="your-secure-api-key-here"
 ANTHROPIC_API_KEY="sk-ant-..."
 TOGGL_API_TOKEN="..."
 PORT=3001
@@ -559,6 +567,23 @@ terminal-notifier -message "Test" -sound Basso
 - Check JSON syntax with `jq` or JSON validator
 - Ensure `command` value is a single string (not array)
 - Hook timeout default is 60 seconds - long commands may fail
+
+## API Authentication
+
+The backend uses API secret authentication to protect routes:
+
+- **Backend Configuration:** Set `API_SECRET` in `backend/.env` (required)
+- **Frontend Flow:** Users enter API secret via `LoginGate` component; stored in localStorage
+- **Request Header:** All API requests include `x-api-secret` header (auto-injected by Axios interceptor)
+- **Middleware:** `backend/src/middleware/auth.ts` validates the header using timing-safe comparison
+- **Health Check:** `/api/health` endpoint is excluded from authentication
+
+**Implementation Details:**
+- See `frontend/docs/auth.md` for frontend authentication documentation
+- See `docs/plans/2025-11-24-process-captured-refactor.md` for the authentication implementation plan
+- See `docs/mcp/github-gateway.md` for multi-agent authentication context
+
+**Maintenance Note:** When a new plan supersedes `docs/plans/2025-11-24-process-captured-refactor.md`, update these pointers to reference the latest plan immediately.
 
 ## Project Context
 

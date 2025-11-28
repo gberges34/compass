@@ -77,7 +77,7 @@ ngrok http 3001
 Make sure backend `.env` has:
 ```env
 DATABASE_URL=your_railway_postgres_url
-ANTHROPIC_API_KEY=your_claude_api_key
+API_SECRET=your_secure_api_key_here
 TOGGL_API_TOKEN=your_toggl_token  # Optional, for automatic Timery integration
 ```
 
@@ -298,15 +298,15 @@ curl -X POST https://YOUR_BACKEND_URL/api/todoist/import \
 
 ### "Enrichment failed"
 
-**Check Claude API key:**
+**Check API secret:**
 ```bash
 # In backend directory
-grep ANTHROPIC_API_KEY .env
+grep API_SECRET .env
 ```
 
-**Verify credits:**
-- Go to https://console.anthropic.com/
-- Check credit balance
+**Verify API secret:**
+- Ensure `API_SECRET` in backend `.env` matches the secret used by your frontend clients
+- The frontend stores the API secret in localStorage after login
 - Add credits if needed
 
 ### Focus Mode not switching

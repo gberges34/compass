@@ -44,8 +44,8 @@ if [ -f "backend/.env" ]; then
     echo -e "${GREEN}Exists ✓${NC}"
 
     # Check for placeholder values
-    if grep -q "your-claude-api-key-here" backend/.env 2>/dev/null; then
-        echo -e "  ${YELLOW}⚠ ANTHROPIC_API_KEY appears to be placeholder${NC}"
+    if grep -q "your-secure-api-key-here" backend/.env 2>/dev/null; then
+        echo -e "  ${YELLOW}⚠ API_SECRET appears to be placeholder${NC}"
         ((WARNINGS++))
     fi
 

@@ -57,14 +57,12 @@ Edit `backend/.env` with your credentials:
 # Required: Database connection
 DATABASE_URL="postgresql://user:password@host:5432/compass"
 
-# Optional: AI features
-COMPASS_ANTHROPIC_API_KEY="your-claude-api-key"  # fallback to ANTHROPIC_API_KEY if not set
+# Required: API Authentication
+API_SECRET="your-secure-api-key-here"
 
 # Optional: Time tracking
 TOGGL_API_TOKEN="your-toggl-token"
 ```
-
-> ℹ️ The backend currently reads `ANTHROPIC_API_KEY`. For compatibility the new Anthropic health check accepts either variable, so you can keep the existing key name while migrating to the `COMPASS_` prefix.
 
 ### 3. Initialize Database
 
@@ -96,15 +94,9 @@ Run the verification script to diagnose issues:
 npm run verify
 ```
 
-### Anthropic Connectivity
+### API Authentication
 
-Validate Anthropic credentials without bespoke scripts:
-
-```bash
-COMPASS_ANTHROPIC_API_KEY=sk-ant-... npm run check:anthropic
-```
-
-The command shells into `scripts/health-check.sh` and only prints sanitized status lines so keys never hit your terminal history.
+The backend requires an API secret for authentication. Set `API_SECRET` in `backend/.env` to match the secret used by your frontend clients. The frontend stores the API secret in localStorage after login.
 
 ### Common Issues
 
@@ -142,7 +134,6 @@ npm run install:all
 | `npm run dev` | Start both frontend and backend |
 | `npm run setup` | Initial environment setup |
 | `npm run verify` | Check environment configuration |
-| `npm run check:anthropic` | Run the sanitized Anthropic connectivity check |
 | `npm run install:all` | Install all dependencies |
 | `npm run db:migrate` | Run database migrations |
 | `npm run db:generate` | Generate Prisma client |

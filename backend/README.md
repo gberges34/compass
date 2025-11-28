@@ -47,6 +47,12 @@ GET /api/tasks?status=NEXT&priority=MUST&cursor=abc-123&limit=30
 - Cursor uses `id < cursor` for next page (DESC ordering)
 - Works with filter: type (DAILY/WEEKLY)
 
+## API Authentication
+
+All backend routes (except `/api/health`) require authentication via the `x-api-secret` header. The header value must match the `API_SECRET` environment variable configured in `backend/.env`.
+
+The frontend automatically includes this header via an Axios interceptor that reads the API secret from localStorage (stored after user login). See `docs/plans/2025-11-24-process-captured-refactor.md` for details on the authentication implementation.
+
 ## Anthropic Connectivity Check
 
 Use the workspace health script whenever you need to validate Anthropic access without exposing secrets in logs.
