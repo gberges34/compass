@@ -53,15 +53,17 @@ const getCategoryColor = (category: Category): string => {
 interface UnscheduledTaskCardProps {
   task: Task;
   index: number;
-  onDragStart: (task: Task) => void;
+  onDragStart: (event: React.DragEvent, task: Task) => void;
+  onDragEnd: () => void;
   onSchedule: (task: Task) => void;
 }
 
-const UnscheduledTaskCard = React.memo<UnscheduledTaskCardProps>(({ task, index, onDragStart, onSchedule }) => {
+const UnscheduledTaskCard = React.memo<UnscheduledTaskCardProps>(({ task, index, onDragStart, onDragEnd, onSchedule }) => {
   return (
     <div
       draggable
-      onDragStart={() => onDragStart(task)}
+      onDragStart={(event) => onDragStart(event, task)}
+      onDragEnd={onDragEnd}
       className="border border-stone rounded-card p-12 cursor-move hover:shadow-e02 transition-shadow duration-micro bg-snow"
       style={{
         borderLeftWidth: '4px',
@@ -98,7 +100,7 @@ const UnscheduledTaskCard = React.memo<UnscheduledTaskCardProps>(({ task, index,
 UnscheduledTaskCard.displayName = 'UnscheduledTaskCard';
 
 const CalendarPage: React.FC = () => {
-  const toast = useToast();
+  const { showSuccess, showError, showInfo, showWarning } = useToast();
   const isDocumentVisible = useDocumentVisibility();
   // Keep passive refresh active only while the calendar tab is visible.
   const refetchInterval = isDocumentVisible ? 60_000 : false;
@@ -123,24 +125,25 @@ const CalendarPage: React.FC = () => {
 
   // Derived data from queries
   const loading = tasksLoading || planLoading;
-  const unscheduledTasks = useMemo(
-    () => tasks.filter((task: Task) => !task.scheduledStart),
+  const safeTasks = useMemo(
+    () => (tasks as Array<Task | null | undefined>).filter(
+      (task: Task | null | undefined): task is Task => Boolean(task)
+    ),
     [tasks]
+  );
+  const unscheduledTasks = useMemo(
+    () => safeTasks.filter((task: Task) => !task.scheduledStart),
+    [safeTasks]
   );
   const scheduledTasks = useMemo(
-    () => tasks.filter((task: Task) => task.scheduledStart),
-    [tasks]
+    () => safeTasks.filter((task: Task) => task.scheduledStart),
+    [safeTasks]
   );
 
-  // Generate calendar events from query data
-  const events = useMemo(() => {
-    // Note: This regenerates 4x per mutation due to optimistic updates + refetch:
-    // 1. onMutate (optimistic), 2-3. React Query cache sync, 4. onSuccess refetch
-    // This is expected behavior and ensures UI stays in sync with server
+  const taskEvents = useMemo(() => {
     log('[Calendar] Generating events from tasks:', scheduledTasks.length);
 
-    // Convert scheduled tasks to calendar events with defensive null checks
-    const taskEvents: CalendarEvent[] = scheduledTasks
+    return scheduledTasks
       .filter((task: Task) => {
         // Defensive: ensure scheduledStart exists and is valid
         if (!task.scheduledStart) {
@@ -173,9 +176,10 @@ const CalendarPage: React.FC = () => {
           type: 'task' as const,
         };
       });
+  }, [scheduledTasks]);
 
-    log('[Calendar] Generated task events:', taskEvents.length);
-
+  // Generate calendar events from query data
+  const events = useMemo(() => {
     // Generate plan events if today's plan exists
     const planEvents: CalendarEvent[] = [];
     if (todayPlan) {
@@ -223,12 +227,12 @@ const CalendarPage: React.FC = () => {
     }
 
     return [...taskEvents, ...planEvents];
-  }, [scheduledTasks, todayPlan]);
+  }, [taskEvents, todayPlan]);
 
   const handleSelectSlot = useCallback(
     ({ start, end }: { start: Date; end: Date }) => {
       if (unscheduledTasks.length === 0) {
-        toast.showWarning('No unscheduled tasks available. Please select a task from the sidebar first.');
+        showWarning('No unscheduled tasks available. Please select a task from the sidebar first.');
         return;
       }
 
@@ -253,23 +257,26 @@ const CalendarPage: React.FC = () => {
     if (calendarEvent.task) {
       setSelectedTask(calendarEvent.task);
     } else {
-      toast.showInfo(`${calendarEvent.title}\nType: ${calendarEvent.type}`);
+      showInfo(`${calendarEvent.title}\nType: ${calendarEvent.type}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // toast removed - context functions are stable
 
-  const handleScheduleTask = async (task: Task, scheduledStart: Date) => {
-    try {
-      await scheduleTaskMutation.mutateAsync({
-        id: task.id,
-        scheduledStart: scheduledStart.toISOString(),
-      });
-      toast.showSuccess(`Task scheduled for ${formatDisplayTime(scheduledStart)} on ${formatDisplayDate(scheduledStart)}`);
-    } catch (err) {
-      toast.showError('Failed to schedule task. Please try again.');
-      console.error('Error scheduling task:', err);
-    }
-  };
+  const handleScheduleTask = useCallback(
+    async (task: Task, scheduledStart: Date) => {
+      try {
+        await scheduleTaskMutation.mutateAsync({
+          id: task.id,
+          scheduledStart: scheduledStart.toISOString(),
+        });
+        showSuccess(`Task scheduled for ${formatDisplayTime(scheduledStart)} on ${formatDisplayDate(scheduledStart)}`);
+      } catch (err) {
+        showError('Failed to schedule task. Please try again.');
+        console.error('Error scheduling task:', err);
+      }
+    },
+    [scheduleTaskMutation, showError, showSuccess]
+  );
 
   const handleUnscheduleTask = async (task: Task) => {
     if (unscheduleTaskMutation.isPending) return; // Prevent double-clicks
@@ -277,9 +284,9 @@ const CalendarPage: React.FC = () => {
     try {
       await unscheduleTaskMutation.mutateAsync(task.id);
       setSelectedTask(null);
-      toast.showSuccess('Task unscheduled and moved back to unscheduled list');
+      showSuccess('Task unscheduled and moved back to unscheduled list');
     } catch (err) {
-      toast.showError('Failed to unschedule task. Please try again.');
+      showError('Failed to unschedule task. Please try again.');
       console.error('Error unscheduling task:', err);
     }
   };
@@ -289,14 +296,14 @@ const CalendarPage: React.FC = () => {
 
     // Only allow rescheduling task events, not time blocks
     if (event.type !== 'task' || !event.task) {
-      toast.showError('Cannot reschedule time blocks');
+      showError('Cannot reschedule time blocks');
       return;
     }
 
     // Prevent scheduling in the past (compare UTC times)
     const now = new Date();
     if (start < now) {
-      toast.showError('Cannot schedule tasks in the past');
+      showError('Cannot schedule tasks in the past');
       return;
     }
 
@@ -316,9 +323,9 @@ const CalendarPage: React.FC = () => {
         id: event.task.id,
         scheduledStart: scheduledStartUTC,
       });
-      toast.showSuccess('Task rescheduled successfully');
+      showSuccess('Task rescheduled successfully');
     } catch (err) {
-      toast.showError('Failed to reschedule task. Please try again.');
+      showError('Failed to reschedule task. Please try again.');
       console.error('[handleEventDrop] Failed to schedule:', err);
     }
   };
@@ -328,14 +335,14 @@ const CalendarPage: React.FC = () => {
 
     // Only allow resizing task events
     if (event.type !== 'task' || !event.task) {
-      toast.showError('Cannot resize time blocks');
+      showError('Cannot resize time blocks');
       return;
     }
 
     // Prevent scheduling in the past
     const now = new Date();
     if (start < now) {
-      toast.showError('Cannot schedule tasks in the past');
+      showError('Cannot schedule tasks in the past');
       return;
     }
 
@@ -347,7 +354,7 @@ const CalendarPage: React.FC = () => {
 
       // Validate minimum duration
       if (durationMinutes < 1) {
-        toast.showError('Task duration must be at least 1 minute');
+        showError('Task duration must be at least 1 minute');
         return;
       }
 
@@ -362,9 +369,9 @@ const CalendarPage: React.FC = () => {
         },
       });
 
-      toast.showSuccess('Task duration updated');
+      showSuccess('Task duration updated');
     } catch (err) {
-      toast.showError('Failed to resize task. Please try again.');
+      showError('Failed to resize task. Please try again.');
       console.error('[handleEventResize] Failed to resize:', err);
     }
   };
@@ -374,6 +381,9 @@ const CalendarPage: React.FC = () => {
       const calendarEvent = event as unknown as CalendarEvent;
       let backgroundColor = '#6b7280';
       let borderColor = '#4b5563';
+      let borderStyle = 'solid';
+      let opacity = scheduleTaskMutation.isPending ? 0.6 : 0.9;
+      let color = 'white';
 
       if (calendarEvent.type === 'task' && calendarEvent.task) {
         backgroundColor = getCategoryColor(calendarEvent.task.category);
@@ -397,10 +407,10 @@ const CalendarPage: React.FC = () => {
           backgroundColor,
           borderColor,
           borderWidth: '1px',
-          borderStyle: 'solid',
+          borderStyle,
           borderRadius: '4px',
-          opacity: scheduleTaskMutation.isPending ? 0.6 : 0.9,
-          color: 'white',
+          opacity,
+          color,
           display: 'block',
           cursor: isDraggable ? (scheduleTaskMutation.isPending ? 'wait' : 'move') : 'default',
           transition: 'opacity 0.2s ease, transform 0.1s ease',
@@ -410,24 +420,37 @@ const CalendarPage: React.FC = () => {
     [scheduleTaskMutation.isPending]
   );
 
-  // Drag and drop handlers
-  const handleDragStart = (task: Task) => {
+  const clearDragState = useCallback(() => {
+    setDraggedTask(null);
+  }, []);
+
+  const hasOverlap = useCallback(
+    (candidateStart: Date, candidateEnd: Date) => {
+      return taskEvents.some((event) => candidateStart < event.end && candidateEnd > event.start);
+    },
+    [taskEvents]
+  );
+
+  // Drag and drop handlers for sidebar tasks
+  const handleDragStart = (event: React.DragEvent, task: Task) => {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', task.id);
     setDraggedTask(task);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
+  const handleDragEnd = () => {
+    clearDragState();
   };
 
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    if (!draggedTask) return;
-
-    // This is a simplified version - in production you'd calculate the exact time based on drop position
-    const dropTime = new Date();
-    await handleScheduleTask(draggedTask, dropTime);
-    setDraggedTask(null);
-  };
+  const externalDragItem = useMemo(() => {
+    if (!draggedTask) return null;
+    const now = new Date();
+    return {
+      ...draggedTask,
+      start: now,
+      end: addMinutesToDate(now, draggedTask.duration),
+    };
+  }, [draggedTask]);
 
   // Calendar navigation handlers
   const handleNavigate = (newDate: Date) => {
@@ -451,6 +474,32 @@ const CalendarPage: React.FC = () => {
     return calendarEvent.type === 'task';
   }, []);
 
+  const handleDropFromOutside = useCallback(
+    async ({ start }: { start: Date }) => {
+      if (!draggedTask) return;
+      if (scheduleTaskMutation.isPending) return;
+
+      const now = new Date();
+      if (start < now) {
+        showError('Cannot schedule tasks in the past');
+        clearDragState();
+        return;
+      }
+
+      const candidateEnd = addMinutesToDate(start, draggedTask.duration);
+
+      if (hasOverlap(start, candidateEnd)) {
+        showError('That time is already booked');
+        clearDragState();
+        return;
+      }
+
+      await handleScheduleTask(draggedTask, start);
+      clearDragState();
+    },
+    [draggedTask, handleScheduleTask, hasOverlap, scheduleTaskMutation.isPending, clearDragState, showError]
+  );
+
   // Handler for scheduling tasks from sidebar
   const handleScheduleFromSidebar = useCallback((task: Task) => {
     const timeString = prompt(
@@ -460,12 +509,12 @@ const CalendarPage: React.FC = () => {
       try {
         const scheduledTime = parseTimeString(timeString);
         if (!isValidDate(scheduledTime)) {
-          toast.showError('Invalid time format');
+          showError('Invalid time format');
           return;
         }
         handleScheduleTask(task, scheduledTime);
       } catch (err) {
-        toast.showError('Invalid time format');
+        showError('Invalid time format');
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -510,6 +559,7 @@ const CalendarPage: React.FC = () => {
                     task={task}
                     index={index}
                     onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
                     onSchedule={handleScheduleFromSidebar}
                   />
                 ))
@@ -552,7 +602,7 @@ const CalendarPage: React.FC = () => {
         </div>
 
         {/* Calendar */}
-        <div className="bg-cloud rounded-card shadow-e01 border border-fog p-24 flex-1 relative" onDragOver={handleDragOver} onDrop={handleDrop}>
+        <div className="bg-cloud rounded-card shadow-e01 border border-fog p-24 flex-1 relative">
           {/* Loading Overlay */}
           {scheduleTaskMutation.isPending && (
             <div className="absolute inset-0 bg-ink/20 backdrop-blur-sm flex items-center justify-center z-40 rounded-card">
@@ -586,6 +636,9 @@ const CalendarPage: React.FC = () => {
             showMultiDayTimes
             tooltipAccessor={tooltipAccessor}
             draggableAccessor={draggableAccessor}
+            dragFromOutsideItem={() => externalDragItem ?? {}}
+            // react-big-calendar external DnD typings omit the drop payload; cast to align with addon runtime shape
+            onDropFromOutside={handleDropFromOutside as any}
             resizable
             onEventDrop={handleEventDrop as any}
             onEventResize={handleEventResize as any}
