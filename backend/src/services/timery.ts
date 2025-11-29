@@ -168,120 +168,106 @@ interface TogglTimeEntry {
 
 /**
  * Fetch all time entries for a date range.
- * @returns {TogglTimeEntry[]} Time entries or empty array on error
+ * @throws {Error} If Toggl API call fails
+ * @returns {TogglTimeEntry[]} Time entries
  */
 export async function getTimeEntriesForDateRange(startDate: Date, endDate: Date): Promise<TogglTimeEntry[]> {
-  try {
-    // Toggl API expects ISO 8601 format
-    const startISO = startDate.toISOString();
-    const endISO = endDate.toISOString();
+  // Toggl API expects ISO 8601 format
+  const startISO = startDate.toISOString();
+  const endISO = endDate.toISOString();
 
-    const response = await withRetry(() =>
-      togglAPI.get('/me/time_entries', {
-        params: {
-          start_date: startISO,
-          end_date: endISO,
-        }
-      })
-    );
+  const response = await withRetry(() =>
+    togglAPI.get('/me/time_entries', {
+      params: {
+        start_date: startISO,
+        end_date: endISO,
+      }
+    })
+  );
 
-    // Toggl Track responses are documented as ISO 8601 UTC timestamps:
-    // https://developers.track.toggl.com/docs/time_entries#response
-    // Compass also stores UTC, so no additional conversion is required here.
-    return response.data || [];
-  } catch (error: any) {
-    console.error('Error fetching time entries:', error.response?.data || error.message);
-    // Return empty array on error (graceful degradation)
-    return [];
-  }
+  // Toggl Track responses are documented as ISO 8601 UTC timestamps:
+  // https://developers.track.toggl.com/docs/time_entries#response
+  // Compass also stores UTC, so no additional conversion is required here.
+  return response.data || [];
 }
 
 /**
  * Get all projects to map project_id to project name.
- * @returns {Map<number, string>} Project map or empty map on error
+ * @throws {Error} If Toggl API call fails
+ * @returns {Map<number, string>} Project map
  */
 export async function getProjects(): Promise<Map<number, string>> {
-  try {
-    const response = await withRetry(() =>
-      togglAPI.get('/me/projects')
-    );
+  const response = await withRetry(() =>
+    togglAPI.get('/me/projects')
+  );
 
-    const projects: TogglProject[] = response.data || [];
+  const projects: TogglProject[] = response.data || [];
 
-    const projectMap = new Map<number, string>();
-    projects.forEach(project => {
-      projectMap.set(project.id, project.name);
-    });
+  const projectMap = new Map<number, string>();
+  projects.forEach(project => {
+    projectMap.set(project.id, project.name);
+  });
 
-    return projectMap;
-  } catch (error: any) {
-    console.error('Error fetching projects:', error.response?.data || error.message);
-    return new Map();
-  }
+  return projectMap;
 }
 
 /**
  * Calculate category balance from Toggl time entries.
- * @returns {Record<string, number>} Category balance or empty object on error
+ * @throws {Error} If Toggl API calls fail
+ * @returns {Record<string, number>} Category balance
  */
 export async function getCategoryBalanceFromToggl(
   startDate: Date,
   endDate: Date,
   postDoLogs: PostDoLogTimeRange[] = []
 ): Promise<Record<string, number>> {
-  try {
-    // Get time entries and projects
-    const [entries, projectMap] = await Promise.all([
-      getTimeEntriesForDateRange(startDate, endDate),
-      getProjects(),
-    ]);
+  // Get time entries and projects
+  const [entries, projectMap] = await Promise.all([
+    getTimeEntriesForDateRange(startDate, endDate),
+    getProjects(),
+  ]);
 
-    const categoryBalance: Record<string, number> = {};
+  const categoryBalance: Record<string, number> = {};
 
-    entries.forEach(entry => {
-      // Skip running entries (negative duration)
-      if (entry.duration < 0) return;
+  entries.forEach(entry => {
+    // Skip running entries (negative duration)
+    if (entry.duration < 0) return;
 
-      // Skip if this overlaps with a Compass task (dedupe)
-      if (isTogglEntryDuplicate(entry, postDoLogs)) {
-        console.log(
-          `Skipping duplicate Toggl entry (overlaps with Compass task): ` +
-          `"${entry.description || 'No description'}", ${Math.floor(entry.duration / 60)}m`
-        );
-        return;
-      }
+    // Skip if this overlaps with a Compass task (dedupe)
+    if (isTogglEntryDuplicate(entry, postDoLogs)) {
+      console.log(
+        `Skipping duplicate Toggl entry (overlaps with Compass task): ` +
+        `"${entry.description || 'No description'}", ${Math.floor(entry.duration / 60)}m`
+      );
+      return;
+    }
 
-      // Get project name
-      const projectName = entry.project_id
-        ? projectMap.get(entry.project_id)
-        : null;
+    // Get project name
+    const projectName = entry.project_id
+      ? projectMap.get(entry.project_id)
+      : null;
 
-      // Map project to category
-      const category = projectName && TOGGL_PROJECT_CATEGORY_MAP[projectName]
-        ? TOGGL_PROJECT_CATEGORY_MAP[projectName]
-        : null;
+    // Map project to category
+    const category = projectName && TOGGL_PROJECT_CATEGORY_MAP[projectName]
+      ? TOGGL_PROJECT_CATEGORY_MAP[projectName]
+      : null;
 
-      // Skip unmapped projects with warning
-      if (!category) {
-        console.warn(
-          `Skipping Toggl entry: unmapped project "${projectName || 'No Project'}" ` +
-          `(ID: ${entry.project_id || 'none'}, duration: ${Math.floor(entry.duration / 60)}m). ` +
-          `Add to TOGGL_PROJECT_CATEGORY_MAP to include in metrics.`
-        );
-        return;
-      }
+    // Skip unmapped projects with warning
+    if (!category) {
+      console.warn(
+        `Skipping Toggl entry: unmapped project "${projectName || 'No Project'}" ` +
+        `(ID: ${entry.project_id || 'none'}, duration: ${Math.floor(entry.duration / 60)}m). ` +
+        `Add to TOGGL_PROJECT_CATEGORY_MAP to include in metrics.`
+      );
+      return;
+    }
 
-      // Convert seconds to minutes
-      const durationMinutes = Math.floor(entry.duration / 60);
+    // Convert seconds to minutes
+    const durationMinutes = Math.floor(entry.duration / 60);
 
-      // Accumulate
-      categoryBalance[category] = (categoryBalance[category] || 0) + durationMinutes;
-    });
+    // Accumulate
+    categoryBalance[category] = (categoryBalance[category] || 0) + durationMinutes;
+  });
 
-    return categoryBalance;
-  } catch (error: any) {
-    console.error('Error calculating category balance:', error.response?.data || error.message);
-    // Return empty balance on error
-    return {};
-  }
+  return categoryBalance;
 }
