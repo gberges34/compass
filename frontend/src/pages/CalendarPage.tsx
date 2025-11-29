@@ -151,17 +151,13 @@ const CalendarPage: React.FC = () => {
           return false;
         }
 
-        try {
-          const start = new Date(task.scheduledStart);
-          if (!isValidDate(start)) {
-            log('[Calendar] Invalid scheduledStart date:', task.scheduledStart);
-            return false;
-          }
-          return true;
-        } catch (error) {
-          console.error('[Calendar] Error parsing scheduledStart:', error);
+        // new Date() never throws, it returns Invalid Date
+        const start = new Date(task.scheduledStart);
+        if (!isValidDate(start)) {
+          log('[Calendar] Invalid scheduledStart date:', task.scheduledStart);
           return false;
         }
+        return true;
       })
       .map((task: Task) => {
         const start = new Date(task.scheduledStart!);
@@ -271,11 +267,11 @@ const CalendarPage: React.FC = () => {
         });
         showSuccess(`Task scheduled for ${formatDisplayTime(scheduledStart)} on ${formatDisplayDate(scheduledStart)}`);
       } catch (err) {
-        showError('Failed to schedule task. Please try again.');
+        // Error toast is handled by useScheduleTask hook's onError callback
         console.error('Error scheduling task:', err);
       }
     },
-    [scheduleTaskMutation, showError, showSuccess]
+    [scheduleTaskMutation, showSuccess]
   );
 
   const handleUnscheduleTask = async (task: Task) => {
@@ -286,7 +282,7 @@ const CalendarPage: React.FC = () => {
       setSelectedTask(null);
       showSuccess('Task unscheduled and moved back to unscheduled list');
     } catch (err) {
-      showError('Failed to unschedule task. Please try again.');
+      // Error toast is handled by useUnscheduleTask hook's onError callback
       console.error('Error unscheduling task:', err);
     }
   };
@@ -325,7 +321,7 @@ const CalendarPage: React.FC = () => {
       });
       showSuccess('Task rescheduled successfully');
     } catch (err) {
-      showError('Failed to reschedule task. Please try again.');
+      // Error toast is handled by useScheduleTask hook's onError callback
       console.error('[handleEventDrop] Failed to schedule:', err);
     }
   };
@@ -371,7 +367,7 @@ const CalendarPage: React.FC = () => {
 
       showSuccess('Task duration updated');
     } catch (err) {
-      showError('Failed to resize task. Please try again.');
+      // Error toast is handled by useUpdateTask hook's onError callback
       console.error('[handleEventResize] Failed to resize:', err);
     }
   };

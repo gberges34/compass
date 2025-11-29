@@ -61,7 +61,7 @@ const TasksPage: React.FC = () => {
       toast.showSuccess(`Task activated!\nFocus Mode: ${response.focusMode}\nTimer: ${response.timeryProject}`);
       setSelectedTask(null);
     } catch (err) {
-      toast.showError('Failed to activate task');
+      // Error toast is handled by useActivateTask hook's onError callback
       console.error('Error activating task:', err);
     }
   };
@@ -77,7 +77,7 @@ const TasksPage: React.FC = () => {
       setTaskToComplete(null);
       setSelectedTask(null);
     } catch (err) {
-      toast.showError('Failed to complete task');
+      // Error toast is handled by useCompleteTask hook's onError callback
       console.error('Error completing task:', err);
     }
   };
@@ -93,7 +93,7 @@ const TasksPage: React.FC = () => {
       setTaskToEdit(null);
       setSelectedTask(null);
     } catch (err) {
-      toast.showError('Failed to update task');
+      // Error toast is handled by useUpdateTask hook's onError callback
       console.error('Error updating task:', err);
     }
   };
@@ -105,7 +105,7 @@ const TasksPage: React.FC = () => {
       toast.showSuccess('Task deleted successfully!');
       setSelectedTask(null);
     } catch (err) {
-      toast.showError('Failed to delete task');
+      // Error toast is handled by useDeleteTask hook's onError callback
       console.error('Error deleting task:', err);
     }
   };
@@ -344,7 +344,7 @@ const TasksPage: React.FC = () => {
               toast.showSuccess('Task created successfully!');
               setShowNewTaskModal(false);
             } catch (err) {
-              toast.showError('Failed to create task');
+              // Error toast is handled by useCreateTask hook's onError callback
               console.error('Error creating task:', err);
             }
           }}
