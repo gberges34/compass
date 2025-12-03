@@ -15,6 +15,9 @@ const envSchema = z.object({
   TODOIST_API_TOKEN: z.string().optional(),
   TOGGL_API_TOKEN: z.string().optional(),
   HEALTHKIT_API_KEY: z.string().optional(),
+  
+  // Optional (for Prisma migrations)
+  SHADOW_DATABASE_URL: z.string().url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -12,6 +12,7 @@ import todoistRouter from './routes/todoist';
 import orientRouter from './routes/orient';
 import reviewsRouter from './routes/reviews';
 import postdoRouter from './routes/postdo';
+import engineRouter from './routes/engine';
 import { getCurrentTimestamp } from './utils/dateHelpers';
 import { errorHandler } from './middleware/errorHandler';
 import { runHealthChecks } from './services/health';
@@ -105,6 +106,7 @@ app.use('/api/todoist', todoistRouter);
 app.use('/api/orient', orientRouter);
 app.use('/api/reviews', reviewsRouter);
 app.use('/api/postdo', postdoRouter);
+app.use('/api/engine', engineRouter);
 
 // Error handling middleware (MUST be last)
 app.use(errorHandler);

@@ -1,0 +1,18 @@
+import { z } from 'zod';
+
+export const timeDimensionEnum = z.enum(['PRIMARY', 'WORK_MODE', 'SOCIAL', 'SEGMENT']);
+export const timeSourceEnum = z.enum(['SHORTCUT', 'TIMERY', 'MANUAL', 'API']);
+
+export const startSliceSchema = z.object({
+  category: z.string().min(1),
+  dimension: timeDimensionEnum,
+  source: timeSourceEnum,
+  linkedTaskId: z.string().uuid().optional(),
+});
+
+export const stopSliceSchema = z.object({
+  dimension: timeDimensionEnum,
+  category: z.string().optional(),
+});
+
+

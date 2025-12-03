@@ -6,7 +6,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ============================================================================
@@ -150,6 +149,23 @@ model TempCapturedTask {
   @@index([processed])
 }
 
+// Time Engine - Tracks time independently of tasks
+model TimeSlice {
+  id           String        @id @default(uuid())
+  start        DateTime
+  end          DateTime?
+  category     String
+  dimension    TimeDimension
+  source       TimeSource
+  isLocked     Boolean       @default(false)
+  linkedTaskId String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([start, end])
+  @@index([dimension, end])
+}
+
 // ============================================================================
 // ENUMS
 // ============================================================================
@@ -222,4 +238,18 @@ enum EnergyMatch {
 enum ReviewType {
   DAILY
   WEEKLY
+}
+
+enum TimeDimension {
+  PRIMARY
+  WORK_MODE
+  SOCIAL
+  SEGMENT
+}
+
+enum TimeSource {
+  SHORTCUT
+  TIMERY
+  MANUAL
+  API
 }
