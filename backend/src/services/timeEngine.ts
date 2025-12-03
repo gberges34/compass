@@ -35,16 +35,25 @@ export async function startSlice(input: StartSliceInput): Promise<TimeSlice> {
   return await prisma.$transaction(async (tx) => {
     const now = new Date();
 
-    // Close any active slice in the same dimension
-    await tx.timeSlice.updateMany({
+    const activeSlice = await tx.timeSlice.findFirst({
       where: {
         dimension: input.dimension,
         end: null,
       },
-      data: {
-        end: now,
-      },
     });
+
+    // If the exact same slice is already active, return it (idempotent)
+    if (activeSlice && activeSlice.category === input.category) {
+      return activeSlice;
+    }
+
+    // Close any active slice in the same dimension
+    if (activeSlice) {
+      await tx.timeSlice.update({
+        where: { id: activeSlice.id },
+        data: { end: now },
+      });
+    }
 
     // Create new slice
     const newSlice = await tx.timeSlice.create({

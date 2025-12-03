@@ -1,4 +1,4 @@
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
 import { normalizePrismaError } from '../prismaErrorMiddleware';
 import { ConflictError, BadRequestError } from '../../errors/AppError';
 
@@ -6,13 +6,13 @@ describe('prismaErrorExtension', () => {
   const createKnownRequestError = (
     code: string,
     meta: Record<string, unknown>
-  ): PrismaClientKnownRequestError => {
+  ): Prisma.PrismaClientKnownRequestError => {
     // Pass arguments as a config object for Prisma 6.x
-    const error = new PrismaClientKnownRequestError(
+    const error = new Prisma.PrismaClientKnownRequestError(
       'Simulated Prisma error',
       {
-        code: code,
-        clientVersion: '6.19.0'
+        code,
+        clientVersion: '7.1.0'
       }
     );
     (error as any).meta = meta;

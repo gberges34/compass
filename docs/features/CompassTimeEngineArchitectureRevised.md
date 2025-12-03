@@ -60,10 +60,10 @@ model TimeSlice {
   
   // Classification
   category  String     // e.g., "Sleep", "Coding", "Deep Work"
-  dimension String     // "PRIMARY", "WORK_MODE", "SOCIAL", "SEGMENT"
+  dimension TimeDimension  // "PRIMARY", "WORK_MODE", "SOCIAL", "SEGMENT"
   
   // Metadata
-  source    String     // "SHORTCUT", "TIMERY", "MANUAL", "API"
+  source    TimeSource     // "SHORTCUT", "TIMERY", "MANUAL", "API"
   isLocked  Boolean    @default(false) // If true, auto-rules won't overwrite
   
   // Optional: Loose coupling to Tasks for future analytics
@@ -126,7 +126,7 @@ Starts a new activity. Automatically handles "stop previous" logic.
 {
   "category": "Sleep",
   "dimension": "PRIMARY",
-  "source": "SHORTCUT_BEDTIME"
+  "source": "SHORTCUT"
 }
 ```
 

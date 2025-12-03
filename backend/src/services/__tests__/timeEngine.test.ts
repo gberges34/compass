@@ -16,11 +16,26 @@ jest.mock('../../prisma', () => ({
   },
 }));
 
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+type MockPrismaClient = {
+  $transaction: jest.Mock;
+  timeSlice: {
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    update: jest.Mock;
+    updateMany: jest.Mock;
+    create: jest.Mock;
+  };
+};
+
+const mockPrisma = prisma as unknown as MockPrismaClient;
 
 describe('TimeEngine', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   describe('startSlice', () => {
@@ -57,7 +72,8 @@ describe('TimeEngine', () => {
       mockPrisma.$transaction.mockImplementation(async (callback) => {
         const tx = {
           timeSlice: {
-            updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+            findFirst: jest.fn().mockResolvedValue(existingSlice),
+            update: jest.fn().mockResolvedValue({ ...existingSlice, end: now }),
             create: jest.fn().mockResolvedValue(newSlice),
           },
         };
@@ -108,7 +124,7 @@ describe('TimeEngine', () => {
       mockPrisma.$transaction.mockImplementation(async (callback) => {
         const tx = {
           timeSlice: {
-            updateMany: jest.fn().mockResolvedValue({ count: 0 }), // No conflict
+            findFirst: jest.fn().mockResolvedValue(null), // No active slice
             create: jest.fn().mockResolvedValue(workModeSlice),
           },
         };
@@ -122,7 +138,42 @@ describe('TimeEngine', () => {
       });
 
       expect(result).toEqual(workModeSlice);
-      // updateMany should be called but with count 0 (no conflict)
+      expect(mockPrisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('returns existing slice if same category is already active (idempotent)', async () => {
+      const now = new Date('2025-01-01T10:00:00Z');
+      jest.useFakeTimers().setSystemTime(now);
+
+      const existingSlice = {
+        id: 'existing-id',
+        start: new Date('2025-01-01T09:00:00Z'),
+        end: null,
+        category: 'Gaming',
+        dimension: 'PRIMARY' as TimeDimension,
+        source: 'SHORTCUT' as TimeSource,
+        isLocked: false,
+        linkedTaskId: null,
+        createdAt: new Date('2025-01-01T09:00:00Z'),
+        updatedAt: new Date('2025-01-01T09:00:00Z'),
+      };
+
+      mockPrisma.$transaction.mockImplementation(async (callback) => {
+        const tx = {
+          timeSlice: {
+            findFirst: jest.fn().mockResolvedValue(existingSlice),
+          },
+        };
+        return callback(tx as any);
+      });
+
+      const result = await TimeEngine.startSlice({
+        category: 'Gaming',
+        dimension: 'PRIMARY',
+        source: 'SHORTCUT',
+      });
+
+      expect(result).toEqual(existingSlice);
       expect(mockPrisma.$transaction).toHaveBeenCalled();
     });
   });
@@ -264,5 +315,4 @@ describe('TimeEngine', () => {
     });
   });
 });
-
 

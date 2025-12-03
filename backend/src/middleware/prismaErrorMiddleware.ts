@@ -1,9 +1,10 @@
 import { Prisma } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { NotFoundError, ConflictError, BadRequestError } from '../errors/AppError';
 
+type PrismaRequestError = Prisma.PrismaClientKnownRequestError;
+
 export const normalizePrismaError = (
-  error: PrismaClientKnownRequestError,
+  error: PrismaRequestError,
   model?: string
 ) => {
   if (error.code === 'P2025') {
@@ -47,7 +48,7 @@ export const prismaErrorExtension = Prisma.defineExtension({
         try {
           return await query(args);
         } catch (error: unknown) {
-          if (error instanceof PrismaClientKnownRequestError) {
+          if (error instanceof Prisma.PrismaClientKnownRequestError) {
             const normalizedError = normalizePrismaError(error, model);
             if (normalizedError) {
               throw normalizedError;
