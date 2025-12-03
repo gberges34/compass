@@ -4,7 +4,7 @@ import { cacheControl, CachePolicies } from '../middleware/cacheControl';
 import { startSliceSchema, stopSliceSchema, querySlicesSchema, summarySlicesSchema } from '../schemas/timeEngine';
 import * as TimeEngine from '../services/timeEngine';
 import { prisma } from '../prisma';
-import { TimeDimension } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 const router = Router();
 
@@ -46,7 +46,7 @@ router.get(
     const startDate = new Date(query.startDate);
     const endDate = new Date(query.endDate);
     
-    const where: any = {
+    const where: Prisma.TimeSliceWhereInput = {
       // Slice overlaps with date range if:
       // - slice starts before endDate AND
       // - (slice ends after startDate OR slice is still active)
@@ -88,10 +88,7 @@ router.get(
       where: {
         dimension: 'PRIMARY',
         start: { gte: new Date(query.startDate) },
-        AND: [
-          { end: { not: null } },
-          { end: { lte: new Date(query.endDate) } },
-        ],
+        end: { not: null, lte: new Date(query.endDate) },
       },
     });
     

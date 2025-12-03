@@ -539,12 +539,7 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
   });
 
   // Stop any active PRIMARY slice (soft close - don't fail if no slice exists)
-  try {
-    await TimeEngine.stopSlice({ dimension: 'PRIMARY' });
-  } catch (error) {
-    // No active slice is fine - task may have been started without activation
-    log('[POST /tasks/:id/complete] No active PRIMARY slice to stop (this is OK)');
-  }
+  await TimeEngine.stopSliceIfExists({ dimension: 'PRIMARY' });
 
   log('[POST /tasks/:id/complete] Completed task:', id);
   res.json({

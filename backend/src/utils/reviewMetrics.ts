@@ -156,13 +156,10 @@ async function getCategoryBalanceFromTimeEngine(
   endDate: Date,
   taskIds: string[]
 ): Promise<Record<string, number>> {
-  const whereClause: any = {
+  const whereClause: Prisma.TimeSliceWhereInput = {
     dimension: 'PRIMARY',
     start: { lte: endDate },
-    OR: [
-      { end: { gte: startDate } }, // Closed slice that overlaps
-      { end: null }, // Active slice
-    ],
+    end: { gte: startDate }, // Only closed slices that overlap
   };
 
   // Exclude slices linked to tasks (PostDoLog already captures that time)
@@ -185,27 +182,21 @@ async function getCategoryBalanceFromTimeEngine(
 
   const balance: Record<string, number> = {};
   slices.forEach((slice) => {
-    // Only count closed slices (end is not null)
-    if (slice.end) {
-      const minutes = Math.floor((slice.end.getTime() - slice.start.getTime()) / 60000);
-      balance[slice.category] = (balance[slice.category] || 0) + minutes;
-    }
+    // Clamp slice duration to review window boundaries
+    const clampedStart = slice.start < startDate ? startDate : slice.start;
+    const clampedEnd = slice.end! > endDate ? endDate : slice.end!;
+    const minutes = Math.floor((clampedEnd.getTime() - clampedStart.getTime()) / 60000);
+    balance[slice.category] = (balance[slice.category] || 0) + minutes;
   });
 
   return balance;
 }
 
-function mergeCategoryBalances(
-  compassBalance: Record<string, number>,
-  togglBalance: Record<string, number>,
-  timeEngineBalance: Record<string, number>
-): Record<string, number> {
-  const merged = { ...compassBalance };
-  Object.entries(togglBalance).forEach(([category, minutes]) => {
-    merged[category] = (merged[category] || 0) + minutes;
-  });
-  Object.entries(timeEngineBalance).forEach(([category, minutes]) => {
-    merged[category] = (merged[category] || 0) + minutes;
-  });
-  return merged;
+function mergeCategoryBalances(...balances: Record<string, number>[]): Record<string, number> {
+  return balances.reduce((merged, balance) => {
+    Object.entries(balance).forEach(([category, minutes]) => {
+      merged[category] = (merged[category] || 0) + minutes;
+    });
+    return merged;
+  }, {} as Record<string, number>);
 }

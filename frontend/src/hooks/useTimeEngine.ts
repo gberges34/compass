@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import * as api from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
-import { useEffect } from 'react';
 
 // Development-only logging
 const DEBUG = process.env.NODE_ENV === 'development';
@@ -67,8 +66,8 @@ export function useTimeEngine() {
   // Convenience functions
   const startSlice = async (
     category: string,
-    dimension: 'PRIMARY' | 'WORK_MODE' | 'SOCIAL' | 'SEGMENT',
-    source: 'SHORTCUT' | 'TIMERY' | 'MANUAL' | 'API' = 'MANUAL',
+    dimension: api.StartSliceRequest['dimension'],
+    source: api.StartSliceRequest['source'] = 'MANUAL',
     linkedTaskId?: string
   ) => {
     await startSliceMutation.mutateAsync({
@@ -80,7 +79,7 @@ export function useTimeEngine() {
   };
 
   const stopSlice = async (
-    dimension: 'PRIMARY' | 'WORK_MODE' | 'SOCIAL' | 'SEGMENT',
+    dimension: api.StopSliceRequest['dimension'],
     category?: string
   ) => {
     await stopSliceMutation.mutateAsync({ dimension, category });

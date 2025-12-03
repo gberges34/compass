@@ -7,10 +7,6 @@ describe('Time Engine API - Integration Tests', () => {
   const testSliceIds: string[] = [];
   let testTaskId: string;
 
-  beforeAll(async () => {
-    await prisma.$connect();
-  });
-
   afterAll(async () => {
     // Cleanup test slices
     await prisma.timeSlice.deleteMany({
@@ -19,11 +15,12 @@ describe('Time Engine API - Integration Tests', () => {
     
     // Cleanup test task if created
     if (testTaskId) {
-      await prisma.postDoLog.delete({ where: { taskId: testTaskId } }).catch(() => {});
-      await prisma.task.delete({ where: { id: testTaskId } }).catch(() => {});
+      await prisma.postDoLog.deleteMany({ where: { taskId: testTaskId } });
+      await prisma.task.deleteMany({ where: { id: testTaskId } });
     }
     
-    await prisma.$disconnect();
+    // Note: Do not call prisma.$disconnect() here as it's a singleton
+    // shared across all test files. Disconnecting here would break subsequent tests.
   });
 
   describe('POST /api/engine/start', () => {
@@ -298,8 +295,8 @@ describe('Time Engine API - Integration Tests', () => {
       expect(slice?.end).not.toBeNull();
 
       // Cleanup
-      await prisma.postDoLog.delete({ where: { taskId: task.id } }).catch(() => {});
-      await prisma.task.delete({ where: { id: task.id } }).catch(() => {});
+      await prisma.postDoLog.deleteMany({ where: { taskId: task.id } });
+      await prisma.task.deleteMany({ where: { id: task.id } });
     });
   });
 });
