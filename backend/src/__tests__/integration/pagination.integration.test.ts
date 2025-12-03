@@ -23,7 +23,8 @@ describe('Pagination Integration Tests', () => {
   beforeAll(async () => {
     // Check if database is available
     try {
-      await prisma.$connect();
+      // Prisma singleton is already connected, just verify connectivity
+      await prisma.$queryRaw`SELECT 1`;
       isDatabaseAvailable = true;
 
       // Setup: Create test data
@@ -51,7 +52,9 @@ describe('Pagination Integration Tests', () => {
       await prisma.task.deleteMany({
         where: { name: { startsWith: 'Test Task' } },
       });
-      await prisma.$disconnect();
+      
+      // Note: Do not call prisma.$disconnect() here as it's a singleton
+      // shared across all test files. Disconnecting here would break subsequent tests.
     }
   });
 

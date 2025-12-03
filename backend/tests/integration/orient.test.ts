@@ -14,14 +14,6 @@ const orientPayload = {
 };
 
 describe('Orient API', () => {
-  beforeAll(async () => {
-    await prisma.$connect();
-  });
-
-  afterAll(async () => {
-    await prisma.$disconnect();
-  });
-
   afterEach(async () => {
     await prisma.dailyPlan.deleteMany({
       where: { date: startOfDay(new Date()) },

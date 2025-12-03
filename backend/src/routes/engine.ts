@@ -1,8 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { cacheControl, CachePolicies } from '../middleware/cacheControl';
-import { startSliceSchema, stopSliceSchema } from '../schemas/timeEngine';
+import { startSliceSchema, stopSliceSchema, querySlicesSchema, summarySlicesSchema } from '../schemas/timeEngine';
 import * as TimeEngine from '../services/timeEngine';
+import { prisma } from '../prisma';
+import { Prisma } from '@prisma/client';
 
 const router = Router();
 
@@ -33,6 +35,73 @@ router.get(
   asyncHandler(async (_req: Request, res: Response) => {
     const state = await TimeEngine.getCurrentState();
     res.json(state);
+  })
+);
+
+// GET /api/engine/slices - Query historical time slices
+router.get(
+  '/slices',
+  asyncHandler(async (req: Request, res: Response) => {
+    const query = querySlicesSchema.parse(req.query);
+    const startDate = new Date(query.startDate);
+    const endDate = new Date(query.endDate);
+    
+    const where: Prisma.TimeSliceWhereInput = {
+      // Slice overlaps with date range if:
+      // - slice starts before endDate AND
+      // - (slice ends after startDate OR slice is still active)
+      start: { lte: endDate },
+      OR: [
+        { end: { gte: startDate } }, // Closed slice that overlaps
+        { end: null }, // Active slice
+      ],
+    };
+    
+    if (query.dimension) {
+      where.dimension = query.dimension;
+    }
+    
+    if (query.category) {
+      where.category = query.category;
+    }
+    
+    if (query.linkedTaskId) {
+      where.linkedTaskId = query.linkedTaskId;
+    }
+    
+    const slices = await prisma.timeSlice.findMany({
+      where,
+      orderBy: { start: 'desc' },
+    });
+    
+    res.json(slices);
+  })
+);
+
+// GET /api/engine/summary - Aggregate time by category
+router.get(
+  '/summary',
+  asyncHandler(async (req: Request, res: Response) => {
+    const query = summarySlicesSchema.parse(req.query);
+    
+    const slices = await prisma.timeSlice.findMany({
+      where: {
+        dimension: 'PRIMARY',
+        start: { gte: new Date(query.startDate) },
+        end: { not: null, lte: new Date(query.endDate) },
+      },
+    });
+    
+    // Calculate duration by category (in minutes)
+    const categoryBalance: Record<string, number> = {};
+    slices.forEach(slice => {
+      if (slice.end) {
+        const duration = Math.floor((slice.end.getTime() - slice.start.getTime()) / 60000);
+        categoryBalance[slice.category] = (categoryBalance[slice.category] || 0) + duration;
+      }
+    });
+    
+    res.json({ categoryBalance });
   })
 );
 

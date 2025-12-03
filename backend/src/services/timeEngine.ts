@@ -108,6 +108,40 @@ export async function stopSlice(input: StopSliceInput): Promise<TimeSlice> {
 }
 
 /**
+ * Stops the active slice for a given dimension if it exists.
+ * @param input - Dimension to stop, with optional category for validation
+ * @returns The stopped TimeSlice, or null if no active slice exists
+ */
+export async function stopSliceIfExists(input: StopSliceInput): Promise<TimeSlice | null> {
+  const now = new Date();
+
+  // Find active slice for the dimension
+  const activeSlice = await prisma.timeSlice.findFirst({
+    where: {
+      dimension: input.dimension,
+      end: null,
+    },
+  });
+
+  if (!activeSlice) {
+    return null;
+  }
+
+  // Optional category validation
+  if (input.category && activeSlice.category !== input.category) {
+    return null;
+  }
+
+  // Close the slice
+  const stoppedSlice = await prisma.timeSlice.update({
+    where: { id: activeSlice.id },
+    data: { end: now },
+  });
+
+  return stoppedSlice;
+}
+
+/**
  * Maps TimeDimension enum to CurrentState key
  */
 function dimensionToStateKey(dimension: TimeDimension): keyof CurrentState | null {

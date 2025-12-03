@@ -111,8 +111,19 @@ export async function calculateMetrics(
     postDoLogRanges
   );
 
-  // Merge both sources
-  const categoryBreakdown = mergeCategoryBalances(compassCategoryBalance, togglCategoryBalance);
+  // Get Time Engine category balance
+  const timeEngineCategoryBalance = await getCategoryBalanceFromTimeEngine(
+    startDate,
+    endDate,
+    postDoLogs.map((log) => log.task.id)
+  );
+
+  // Merge all three sources
+  const categoryBreakdown = mergeCategoryBalances(
+    compassCategoryBalance,
+    togglCategoryBalance,
+    timeEngineCategoryBalance
+  );
 
   // Calculate total tracked time
   const totalTrackedTime = Object.values(categoryBreakdown).reduce((sum, mins) => sum + mins, 0);
@@ -136,13 +147,56 @@ export async function calculateMetrics(
   };
 }
 
-function mergeCategoryBalances(
-  compassBalance: Record<string, number>,
-  togglBalance: Record<string, number>
-): Record<string, number> {
-  const merged = { ...compassBalance };
-  Object.entries(togglBalance).forEach(([category, minutes]) => {
-    merged[category] = (merged[category] || 0) + minutes;
+/**
+ * Gets category balance from Time Engine, excluding slices linked to tasks
+ * (since PostDoLog already captures that time).
+ */
+async function getCategoryBalanceFromTimeEngine(
+  startDate: Date,
+  endDate: Date,
+  taskIds: string[]
+): Promise<Record<string, number>> {
+  const whereClause: Prisma.TimeSliceWhereInput = {
+    dimension: 'PRIMARY',
+    start: { lte: endDate },
+    end: { gte: startDate }, // Only closed slices that overlap
+  };
+
+  // Exclude slices linked to tasks (PostDoLog already captures that time)
+  if (taskIds.length > 0) {
+    whereClause.AND = [
+      {
+        OR: [
+          { linkedTaskId: null },
+          { linkedTaskId: { notIn: taskIds } },
+        ],
+      },
+    ];
+  } else {
+    whereClause.linkedTaskId = null;
+  }
+
+  const slices = await prisma.timeSlice.findMany({
+    where: whereClause,
   });
-  return merged;
+
+  const balance: Record<string, number> = {};
+  slices.forEach((slice) => {
+    // Clamp slice duration to review window boundaries
+    const clampedStart = slice.start < startDate ? startDate : slice.start;
+    const clampedEnd = slice.end! > endDate ? endDate : slice.end!;
+    const minutes = Math.floor((clampedEnd.getTime() - clampedStart.getTime()) / 60000);
+    balance[slice.category] = (balance[slice.category] || 0) + minutes;
+  });
+
+  return balance;
+}
+
+function mergeCategoryBalances(...balances: Record<string, number>[]): Record<string, number> {
+  return balances.reduce((merged, balance) => {
+    Object.entries(balance).forEach(([category, minutes]) => {
+      merged[category] = (merged[category] || 0) + minutes;
+    });
+    return merged;
+  }, {} as Record<string, number>);
 }

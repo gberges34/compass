@@ -15,4 +15,17 @@ export const stopSliceSchema = z.object({
   category: z.string().optional(),
 });
 
+export const querySlicesSchema = z.object({
+  startDate: z.string().datetime(),
+  endDate: z.string().datetime(),
+  dimension: timeDimensionEnum.optional(),
+  category: z.string().optional(),
+  linkedTaskId: z.string().uuid().optional(),
+});
+
+export const summarySlicesSchema = z.object({
+  startDate: z.string().datetime(),
+  endDate: z.string().datetime(),
+});
+
 

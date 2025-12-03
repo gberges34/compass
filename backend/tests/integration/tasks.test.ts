@@ -5,17 +5,14 @@ import { prisma } from '../../src/prisma';
 describe('Tasks API - Integration Tests', () => {
   let testTaskId: string;
 
-  beforeAll(async () => {
-    // Ensure database is connected
-    await prisma.$connect();
-  });
-
   afterAll(async () => {
-    // Cleanup and disconnect
+    // Cleanup
     if (testTaskId) {
       await prisma.task.delete({ where: { id: testTaskId } }).catch(() => {});
     }
-    await prisma.$disconnect();
+    
+    // Note: Do not call prisma.$disconnect() here as it's a singleton
+    // shared across all test files. Disconnecting here would break subsequent tests.
   });
 
   describe('Task 1: POST /api/tasks/:id/complete - Transaction Atomicity', () => {

@@ -288,6 +288,60 @@ export const getPostDoLogs = async (filters?: {
   return response.data.items; // Extract items from paginated response
 };
 
+// Time Engine API
+
+export interface TimeSlice {
+  id: string;
+  start: string;
+  end: string | null;
+  category: string;
+  dimension: 'PRIMARY' | 'WORK_MODE' | 'SOCIAL' | 'SEGMENT';
+  source: 'SHORTCUT' | 'TIMERY' | 'MANUAL' | 'API';
+  isLocked: boolean;
+  linkedTaskId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ActiveSlice {
+  category: string;
+  start: string;
+}
+
+export interface TimeEngineState {
+  primary: ActiveSlice | null;
+  work_mode: ActiveSlice | null;
+  social: ActiveSlice | null;
+  segment: ActiveSlice | null;
+}
+
+export interface StartSliceRequest {
+  category: string;
+  dimension: 'PRIMARY' | 'WORK_MODE' | 'SOCIAL' | 'SEGMENT';
+  source: 'SHORTCUT' | 'TIMERY' | 'MANUAL' | 'API';
+  linkedTaskId?: string;
+}
+
+export interface StopSliceRequest {
+  dimension: 'PRIMARY' | 'WORK_MODE' | 'SOCIAL' | 'SEGMENT';
+  category?: string;
+}
+
+export const getTimeEngineState = async (): Promise<TimeEngineState> => {
+  const response = await api.get<TimeEngineState>('/engine/state');
+  return response.data;
+};
+
+export const startTimeSlice = async (request: StartSliceRequest): Promise<TimeSlice> => {
+  const response = await api.post<TimeSlice>('/engine/start', request);
+  return response.data;
+};
+
+export const stopTimeSlice = async (request: StopSliceRequest): Promise<TimeSlice> => {
+  const response = await api.post<TimeSlice>('/engine/stop', request);
+  return response.data;
+};
+
 // Health Check
 
 export const healthCheck = async (): Promise<{ status: string; message: string }> => {
