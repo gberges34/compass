@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Task } from '../types';
 import { useFlatTasks } from '../hooks/useTasks';
@@ -8,12 +8,15 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
+import TimeEngineStateWidget from '../components/TimeEngineStateWidget';
+import StartActivityModal from '../components/StartActivityModal';
 import { getEnergyStyle } from '../lib/designTokens';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
 import { getTodayDateString, formatLongDate } from '../lib/dateUtils';
 
 const TodayPage: React.FC = () => {
   const today = formatLongDate();
+  const [showStartActivityModal, setShowStartActivityModal] = useState(false);
 
   // Replace ALL manual state with React Query hooks - parallel fetching
   const { data: plan = null, isLoading: planLoading } = useTodayPlan();
@@ -101,6 +104,23 @@ const TodayPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Time Engine State Widget */}
+      <Card padding="none">
+        <div className="p-24 border-b border-fog flex items-center justify-between">
+          <h2 className="text-h2 text-ink">Time Tracking</h2>
+          <Button
+            variant="primary"
+            size="small"
+            onClick={() => setShowStartActivityModal(true)}
+          >
+            + Start Activity
+          </Button>
+        </div>
+        <div className="p-24">
+          <TimeEngineStateWidget />
+        </div>
+      </Card>
 
       {/* Daily Plan */}
       <Card padding="none">
@@ -260,6 +280,11 @@ const TodayPage: React.FC = () => {
           )}
         </div>
       </Card>
+
+      {/* Start Activity Modal */}
+      {showStartActivityModal && (
+        <StartActivityModal onClose={() => setShowStartActivityModal(false)} />
+      )}
     </div>
   );
 };

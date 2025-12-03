@@ -425,20 +425,29 @@ router.get('/:id', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: R
 router.post('/:id/activate', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  const task = await prisma.task.update({
-    where: { id },
-    data: {
-      status: 'ACTIVE',
-      activatedAt: new Date(),
-    },
-  });
+  // TRANSACTION: Atomic task activation with TimeSlice creation
+  const result = await prisma.$transaction(async (tx) => {
+    // Update task status
+    const task = await tx.task.update({
+      where: { id },
+      data: {
+        status: 'ACTIVE',
+        activatedAt: new Date(),
+      },
+    });
 
-  // Create TimeSlice linked to task
-  const slice = await TimeEngine.startSlice({
-    category: task.category,
-    dimension: 'PRIMARY',
-    source: 'API',
-    linkedTaskId: task.id,
+    // Create TimeSlice linked to task (within same transaction)
+    const slice = await TimeEngine.startSlice(
+      {
+        category: task.category,
+        dimension: 'PRIMARY',
+        source: 'API',
+        linkedTaskId: task.id,
+      },
+      tx
+    );
+
+    return { task, slice };
   });
 
   // Map category to Focus Mode
@@ -455,15 +464,15 @@ router.post('/:id/activate', asyncHandler(async (req: Request, res: Response) =>
     ADMIN: 'Deep Work',
   };
 
-  const focusMode = focusModeMap[task.category] || 'Deep Work';
+  const focusMode = focusModeMap[result.task.category] || 'Deep Work';
 
-  log('[POST /tasks/:id/activate] Activated task:', task.id);
+  log('[POST /tasks/:id/activate] Activated task:', result.task.id);
   res.json({
-    task,
-    slice,
+    task: result.task,
+    slice: result.slice,
     focusMode,
-    timeryProject: task.category,
-    definitionOfDone: task.definitionOfDone,
+    timeryProject: result.task.category,
+    definitionOfDone: result.task.definitionOfDone,
   });
 }));
 

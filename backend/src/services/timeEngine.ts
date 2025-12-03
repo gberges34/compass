@@ -2,6 +2,9 @@ import { prisma } from '../prisma';
 import { TimeSlice, TimeDimension } from '@prisma/client';
 import { NotFoundError } from '../errors/AppError';
 
+// Derive transaction client type from the extended Prisma client to support both base and extended clients
+type PrismaTransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
 export interface StartSliceInput {
   category: string;
   dimension: TimeDimension;
@@ -27,46 +30,71 @@ export interface CurrentState {
 }
 
 /**
- * Starts a new time slice, automatically closing any conflicting slice in the same dimension.
+ * Core logic for starting a time slice. Can be used within an existing transaction.
  * @param input - Slice details including category, dimension, source, and optional linkedTaskId
+ * @param tx - Optional transaction client. If not provided, uses prisma directly (caller must handle transaction)
  * @returns The newly created TimeSlice
  */
-export async function startSlice(input: StartSliceInput): Promise<TimeSlice> {
-  return await prisma.$transaction(async (tx) => {
-    const now = new Date();
+async function startSliceCore(
+  input: StartSliceInput,
+  tx?: PrismaTransactionClient
+): Promise<TimeSlice> {
+  const db = tx || prisma;
+  const now = new Date();
 
-    const activeSlice = await tx.timeSlice.findFirst({
-      where: {
-        dimension: input.dimension,
-        end: null,
-      },
+  const activeSlice = await db.timeSlice.findFirst({
+    where: {
+      dimension: input.dimension,
+      end: null,
+    },
+  });
+
+  // If the exact same slice is already active, return it (idempotent)
+  if (activeSlice && activeSlice.category === input.category) {
+    return activeSlice;
+  }
+
+  // Close any active slice in the same dimension
+  if (activeSlice) {
+    await db.timeSlice.update({
+      where: { id: activeSlice.id },
+      data: { end: now },
     });
+  }
 
-    // If the exact same slice is already active, return it (idempotent)
-    if (activeSlice && activeSlice.category === input.category) {
-      return activeSlice;
-    }
+  // Create new slice
+  const newSlice = await db.timeSlice.create({
+    data: {
+      start: now,
+      category: input.category,
+      dimension: input.dimension,
+      source: input.source,
+      linkedTaskId: input.linkedTaskId,
+    },
+  });
 
-    // Close any active slice in the same dimension
-    if (activeSlice) {
-      await tx.timeSlice.update({
-        where: { id: activeSlice.id },
-        data: { end: now },
-      });
-    }
+  return newSlice;
+}
 
-    // Create new slice
-    const newSlice = await tx.timeSlice.create({
-      data: {
-        start: now,
-        category: input.category,
-        dimension: input.dimension,
-        source: input.source,
-        linkedTaskId: input.linkedTaskId,
-      },
-    });
+/**
+ * Starts a new time slice, automatically closing any conflicting slice in the same dimension.
+ * Creates its own transaction if not provided with one.
+ * @param input - Slice details including category, dimension, source, and optional linkedTaskId
+ * @param tx - Optional transaction client. If provided, uses it; otherwise creates its own transaction
+ * @returns The newly created TimeSlice
+ */
+export async function startSlice(
+  input: StartSliceInput,
+  tx?: PrismaTransactionClient
+): Promise<TimeSlice> {
+  // If transaction client provided, use it directly (caller handles transaction)
+  if (tx) {
+    return startSliceCore(input, tx);
+  }
 
-    return newSlice;
+  // Otherwise, create our own transaction
+  return await prisma.$transaction(async (transactionTx) => {
+    return startSliceCore(input, transactionTx);
   });
 }
 
