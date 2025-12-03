@@ -185,7 +185,7 @@ async function getCategoryBalanceFromTimeEngine(
     // Clamp slice duration to review window boundaries
     // slice.end is guaranteed to be non-null due to query filter
     const clampedStart = slice.start < startDate ? startDate : slice.start;
-    const clampedEnd = slice.end > endDate ? endDate : slice.end;
+    const clampedEnd = slice.end! > endDate ? endDate : slice.end!;
     const minutes = Math.floor((clampedEnd.getTime() - clampedStart.getTime()) / 60000);
     balance[slice.category] = (balance[slice.category] || 0) + minutes;
   });

@@ -49,8 +49,14 @@ async function startSliceCore(
     },
   });
 
-  // If the exact same slice is already active, return it (idempotent)
-  if (activeSlice && activeSlice.category === input.category) {
+  // If the exact same slice is already active (category and linkedTaskId match), return it (idempotent)
+  // Normalize undefined to null for comparison (DB uses null, API may use undefined)
+  const normalizedInputLinkedTaskId = input.linkedTaskId ?? null;
+  if (
+    activeSlice &&
+    activeSlice.category === input.category &&
+    activeSlice.linkedTaskId === normalizedInputLinkedTaskId
+  ) {
     return activeSlice;
   }
 

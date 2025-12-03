@@ -4,17 +4,49 @@ import Button from './Button';
 import Badge from './Badge';
 import { parseISO, differenceInMinutes, format } from 'date-fns';
 
-const TimeEngineStateWidget: React.FC = () => {
-  const { state, loading, stopSlice, isStopping } = useTimeEngine();
+interface ElapsedTimeProps {
+  startTime: string;
+}
+
+const ElapsedTime: React.FC<ElapsedTimeProps> = ({ startTime }) => {
   const [, setNow] = useState(new Date());
 
-  // Update elapsed time every second
+  // Update elapsed time every second (isolated to this component)
   useEffect(() => {
     const interval = setInterval(() => {
       setNow(new Date());
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const formatElapsedTime = (startTimeStr: string): string => {
+    const start = parseISO(startTimeStr);
+    const now = new Date();
+    const minutes = differenceInMinutes(now, start);
+    
+    if (minutes < 1) {
+      return 'Just started';
+    }
+    
+    if (minutes < 60) {
+      return `${minutes}m`;
+    }
+    
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    
+    if (remainingMinutes === 0) {
+      return `${hours}h`;
+    }
+    
+    return `${hours}h ${remainingMinutes}m`;
+  };
+
+  return <span className="font-medium text-action">{formatElapsedTime(startTime)}</span>;
+};
+
+const TimeEngineStateWidget: React.FC = () => {
+  const { state, loading, stopSlice, isStopping } = useTimeEngine();
 
   if (loading) {
     return (
@@ -42,30 +74,6 @@ const TimeEngineStateWidget: React.FC = () => {
       <p className="text-slate text-center text-small">No active time tracking</p>
     );
   }
-
-  // Format elapsed time
-  const formatElapsedTime = (startTime: string): string => {
-    const start = parseISO(startTime);
-    const now = new Date();
-    const minutes = differenceInMinutes(now, start);
-    
-    if (minutes < 1) {
-      return 'Just started';
-    }
-    
-    if (minutes < 60) {
-      return `${minutes}m`;
-    }
-    
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    
-    if (remainingMinutes === 0) {
-      return `${hours}h`;
-    }
-    
-    return `${hours}h ${remainingMinutes}m`;
-  };
 
   // Format start time for display
   const formatStartTime = (startTime: string): string => {
@@ -102,9 +110,7 @@ const TimeEngineStateWidget: React.FC = () => {
                 </div>
                 <div className="flex items-center space-x-12 text-micro text-slate">
                   <span>Started: {formatStartTime(data.start)}</span>
-                  <span className="font-medium text-action">
-                    {formatElapsedTime(data.start)}
-                  </span>
+                  <ElapsedTime startTime={data.start} />
                 </div>
               </div>
               <Button

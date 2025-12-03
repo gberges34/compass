@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useTimeEngine } from '../hooks/useTimeEngine';
-import Button from './Button';
 import Input from './Input';
 import type { StartSliceRequest } from '../lib/api';
 
@@ -10,7 +9,7 @@ interface StartActivityModalProps {
 
 // Predefined categories for non-task activities
 const ACTIVITY_CATEGORIES = [
-  // Non-task activities
+  // Life Activities
   'Sleep',
   'Commute',
   'Gaming',
@@ -18,7 +17,7 @@ const ACTIVITY_CATEGORIES = [
   'Workout',
   'Personal Care',
   'Errands',
-  // Work modes
+  // Work Modes
   'Deep Work',
   'Shallow Work',
   'Admin',
@@ -26,16 +25,6 @@ const ACTIVITY_CATEGORIES = [
   'Discord Call',
   'In-Person',
   'Date Night',
-  // Task categories (for reference)
-  'SCHOOL',
-  'MUSIC',
-  'FITNESS',
-  'NUTRITION',
-  'HYGIENE',
-  'PET',
-  'SOCIAL',
-  'PERSONAL',
-  'ADMIN',
 ] as const;
 
 const DIMENSIONS: Array<{ value: StartSliceRequest['dimension']; label: string }> = [
@@ -60,11 +49,6 @@ const StartActivityModal: React.FC<StartActivityModalProps> = ({ onClose }) => {
     const finalCategory = category === 'CUSTOM' ? customCategory.trim() : category.trim();
     if (!finalCategory) {
       setError('Please select or enter a category');
-      return;
-    }
-
-    if (category === 'CUSTOM' && customCategory.trim().length < 1) {
-      setError('Please enter a category name');
       return;
     }
 
