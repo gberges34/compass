@@ -10,6 +10,7 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
 import { env } from '../config/env';
 import { cacheControl, CachePolicies } from '../middleware/cacheControl';
+import * as TimeEngine from '../services/timeEngine';
 import {
   priorityEnum,
   statusEnum,
@@ -432,6 +433,14 @@ router.post('/:id/activate', asyncHandler(async (req: Request, res: Response) =>
     },
   });
 
+  // Create TimeSlice linked to task
+  const slice = await TimeEngine.startSlice({
+    category: task.category,
+    dimension: 'PRIMARY',
+    source: 'API',
+    linkedTaskId: task.id,
+  });
+
   // Map category to Focus Mode
   const focusModeMap: Record<string, string> = {
     SCHOOL: 'School',
@@ -451,6 +460,7 @@ router.post('/:id/activate', asyncHandler(async (req: Request, res: Response) =>
   log('[POST /tasks/:id/activate] Activated task:', task.id);
   res.json({
     task,
+    slice,
     focusMode,
     timeryProject: task.category,
     definitionOfDone: task.definitionOfDone,
@@ -527,6 +537,14 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
 
     return { updatedTask, postDoLog, variance, efficiency, timeOfDay, dayOfWeek };
   });
+
+  // Stop any active PRIMARY slice (soft close - don't fail if no slice exists)
+  try {
+    await TimeEngine.stopSlice({ dimension: 'PRIMARY' });
+  } catch (error) {
+    // No active slice is fine - task may have been started without activation
+    log('[POST /tasks/:id/complete] No active PRIMARY slice to stop (this is OK)');
+  }
 
   log('[POST /tasks/:id/complete] Completed task:', id);
   res.json({

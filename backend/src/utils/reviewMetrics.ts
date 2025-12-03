@@ -111,8 +111,19 @@ export async function calculateMetrics(
     postDoLogRanges
   );
 
-  // Merge both sources
-  const categoryBreakdown = mergeCategoryBalances(compassCategoryBalance, togglCategoryBalance);
+  // Get Time Engine category balance
+  const timeEngineCategoryBalance = await getCategoryBalanceFromTimeEngine(
+    startDate,
+    endDate,
+    postDoLogs.map((log) => log.task.id)
+  );
+
+  // Merge all three sources
+  const categoryBreakdown = mergeCategoryBalances(
+    compassCategoryBalance,
+    togglCategoryBalance,
+    timeEngineCategoryBalance
+  );
 
   // Calculate total tracked time
   const totalTrackedTime = Object.values(categoryBreakdown).reduce((sum, mins) => sum + mins, 0);
@@ -136,12 +147,64 @@ export async function calculateMetrics(
   };
 }
 
+/**
+ * Gets category balance from Time Engine, excluding slices linked to tasks
+ * (since PostDoLog already captures that time).
+ */
+async function getCategoryBalanceFromTimeEngine(
+  startDate: Date,
+  endDate: Date,
+  taskIds: string[]
+): Promise<Record<string, number>> {
+  const whereClause: any = {
+    dimension: 'PRIMARY',
+    start: { lte: endDate },
+    OR: [
+      { end: { gte: startDate } }, // Closed slice that overlaps
+      { end: null }, // Active slice
+    ],
+  };
+
+  // Exclude slices linked to tasks (PostDoLog already captures that time)
+  if (taskIds.length > 0) {
+    whereClause.AND = [
+      {
+        OR: [
+          { linkedTaskId: null },
+          { linkedTaskId: { notIn: taskIds } },
+        ],
+      },
+    ];
+  } else {
+    whereClause.linkedTaskId = null;
+  }
+
+  const slices = await prisma.timeSlice.findMany({
+    where: whereClause,
+  });
+
+  const balance: Record<string, number> = {};
+  slices.forEach((slice) => {
+    // Only count closed slices (end is not null)
+    if (slice.end) {
+      const minutes = Math.floor((slice.end.getTime() - slice.start.getTime()) / 60000);
+      balance[slice.category] = (balance[slice.category] || 0) + minutes;
+    }
+  });
+
+  return balance;
+}
+
 function mergeCategoryBalances(
   compassBalance: Record<string, number>,
-  togglBalance: Record<string, number>
+  togglBalance: Record<string, number>,
+  timeEngineBalance: Record<string, number>
 ): Record<string, number> {
   const merged = { ...compassBalance };
   Object.entries(togglBalance).forEach(([category, minutes]) => {
+    merged[category] = (merged[category] || 0) + minutes;
+  });
+  Object.entries(timeEngineBalance).forEach(([category, minutes]) => {
     merged[category] = (merged[category] || 0) + minutes;
   });
   return merged;
