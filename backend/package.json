@@ -21,7 +21,8 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@prisma/client": "^6.19.0",
+    "@prisma/adapter-pg": "^7.1.0",
+    "@prisma/client": "^7.1.0",
     "@types/express": "^5.0.5",
     "@types/node": "^24.10.0",
     "axios": "^1.13.2",
@@ -30,7 +31,8 @@
     "date-fns-tz": "^3.2.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "prisma": "^6.19.0",
+    "pg": "^8.13.1",
+    "prisma": "^7.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "zod": "^4.1.12"

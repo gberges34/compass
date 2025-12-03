@@ -1,4 +1,6 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import { prismaErrorExtension } from './middleware/prismaErrorMiddleware';
 import { env } from './config/env';
 
@@ -7,7 +9,11 @@ const globalForPrisma = global as unknown as { prisma: ReturnType<typeof createP
 
 // Create Prisma client with error handling extension
 const createPrismaClient = () => {
+  const pool = new Pool({ connectionString: env.DATABASE_URL });
+  const adapter = new PrismaPg(pool);
+
   const client = new PrismaClient({
+    adapter,
     log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
