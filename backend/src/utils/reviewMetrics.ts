@@ -159,7 +159,7 @@ async function getCategoryBalanceFromTimeEngine(
   const whereClause: Prisma.TimeSliceWhereInput = {
     dimension: 'PRIMARY',
     start: { lte: endDate },
-    end: { gte: startDate }, // Only closed slices that overlap
+    end: { not: null, gte: startDate }, // Only closed slices that overlap
   };
 
   // Exclude slices linked to tasks (PostDoLog already captures that time)
@@ -183,6 +183,7 @@ async function getCategoryBalanceFromTimeEngine(
   const balance: Record<string, number> = {};
   slices.forEach((slice) => {
     // Clamp slice duration to review window boundaries
+    // slice.end is guaranteed to be non-null due to query filter
     const clampedStart = slice.start < startDate ? startDate : slice.start;
     const clampedEnd = slice.end! > endDate ? endDate : slice.end!;
     const minutes = Math.floor((clampedEnd.getTime() - clampedStart.getTime()) / 60000);
