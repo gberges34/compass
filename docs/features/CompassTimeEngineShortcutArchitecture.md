@@ -18,7 +18,7 @@ Body (all required except linkedTaskId):
 {
   "category": "Sleep",                 // any non-empty string
   "dimension": "PRIMARY",              // PRIMARY | WORK_MODE | SOCIAL | SEGMENT
-  "source": "SHORTCUT",                // /Users/gberges/Library/CloudStorage/GoogleDrive-gberges34@gmail.com/My Drive/compass/Device CompartmentalizationSHORTCUT | TIMERY | MANUAL | API
+  "source": "SHORTCUT",                // SHORTCUT | TIMERY | MANUAL | API
   "linkedTaskId": "uuid-optional"      // optional UUID string
 }
 
@@ -32,8 +32,27 @@ Response: full TimeSlice row (id, start, end, category, dimension, source, linke
 
 For automations, you can:
 
-Send only dimension for “just stop whatever’s active in this dimension”.
-Or send dimension + category when you want safety (only stop if it’s “Commute”, etc.).
+Send only dimension for "just stop whatever's active in this dimension".
+Or send dimension + category when you want safety (only stop if it's "Commute", etc.).
+b) Stop slice – POST /api/engine/stop
+
+Validated by stopSliceSchema:
+
+Method: POST
+URL: BASE_URL/api/engine/stop
+Body:
+
+{
+  "dimension": "PRIMARY",              // PRIMARY | WORK_MODE | SOCIAL | SEGMENT (required)
+  "category": "Sleep"                  // optional – only stop if active slice matches this category
+}
+
+Behavior:
+- Finds the active slice (end === null) for the given dimension.
+- If category is provided, validates that the active slice's category matches; returns 404 if not.
+- Closes the slice by setting end = now.
+- Returns 404 if no active slice exists for the dimension.
+- Response: full TimeSlice row.
 c) Current state – GET /api/engine/state
 
 Built by getCurrentState() in backend/src/services/timeEngine.ts (line 79):
@@ -63,7 +82,36 @@ PATCH /api/engine/slices/:id and DELETE /api/engine/slices/:id
 GET /api/engine/summary with startDate, endDate
 → returns { "categoryBalance": { [category: string]: minutes } }.
 
-These are useful for “Daily/Weekly Time Review” shortcuts or analytics, but not required for basic start/stop flows.
+These are useful for "Daily/Weekly Time Review" shortcuts or analytics, but not required for basic start/stop flows.
+
+e) Health Sleep Sync – POST /api/engine/health/sleep-sync
+
+Syncs an authoritative Sleep block from HealthKit/Health data.
+
+Method: POST
+URL: BASE_URL/api/engine/health/sleep-sync
+Body:
+
+{
+  "windowStart": "2025-12-03T00:00:00.000Z",  // Start of sync window (ISO datetime)
+  "windowEnd": "2025-12-04T00:00:00.000Z",    // End of sync window (ISO datetime)
+  "sleepStart": "2025-12-03T23:00:00.000Z",   // Sleep session start (ISO datetime)
+  "sleepEnd": "2025-12-04T07:00:00.000Z"      // Sleep session end (ISO datetime)
+}
+
+Validation:
+- windowStart < windowEnd
+- sleepStart < sleepEnd
+- sleepStart >= windowStart and sleepEnd <= windowEnd
+
+Behavior:
+- Deletes all overlapping Sleep slices in PRIMARY dimension within the window.
+- Creates a new locked Sleep slice with the provided times.
+- Source is set to 'API'.
+- Uses a transaction to ensure atomicity.
+- Response: the newly created TimeSlice.
+
+This endpoint is designed for iOS Shortcuts that read sleep data from HealthKit and push it to Compass as the authoritative source of truth.
 
 2) Recommended shortcut template/framework
 

@@ -242,7 +242,6 @@ export async function syncHealthSleep(input: HealthSleepSyncInput): Promise<Time
       where: {
         category: 'Sleep',
         dimension: 'PRIMARY',
-        source: 'API',
         start: { lt: windowEnd },
         OR: [
           { end: { gt: windowStart } },
