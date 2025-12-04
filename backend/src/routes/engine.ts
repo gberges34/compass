@@ -86,16 +86,11 @@ router.patch(
     const validatedData = updateSliceSchema.parse(req.body);
     
     // Convert ISO strings to Date objects
-    const updateData: { start?: Date; end?: Date | null; category?: string } = {};
-    if (validatedData.start !== undefined) {
-      updateData.start = new Date(validatedData.start);
-    }
-    if (validatedData.end !== undefined) {
-      updateData.end = validatedData.end ? new Date(validatedData.end) : null;
-    }
-    if (validatedData.category !== undefined) {
-      updateData.category = validatedData.category;
-    }
+    const updateData = {
+      ...(validatedData.start && { start: new Date(validatedData.start) }),
+      ...(validatedData.end !== undefined && { end: validatedData.end ? new Date(validatedData.end) : null }),
+      ...(validatedData.category && { category: validatedData.category }),
+    };
     
     const slice = await TimeEngine.updateSlice(id, updateData);
     res.json(slice);

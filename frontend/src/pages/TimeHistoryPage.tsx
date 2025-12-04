@@ -42,7 +42,7 @@ const TimeHistoryPage: React.FC = () => {
     return { startDate: start, endDate: end };
   }, [dateRange, customStartDate, customEndDate]);
 
-  const { slices, loading, updateSlice, deleteSlice, isUpdating, isDeleting } = useTimeHistory({
+  const { slices, loading, error, updateSlice, deleteSlice, isUpdating, isDeleting } = useTimeHistory({
     startDate,
     endDate,
   });
@@ -140,16 +140,11 @@ const TimeHistoryPage: React.FC = () => {
 
   const handleSaveEdit = async (sliceId: string) => {
     try {
-      const updateData: { start?: string; end?: string | null; category?: string } = {};
-      if (editForm.start) {
-        updateData.start = new Date(editForm.start).toISOString();
-      }
-      if (editForm.end !== undefined) {
-        updateData.end = editForm.end ? new Date(editForm.end).toISOString() : null;
-      }
-      if (editForm.category) {
-        updateData.category = editForm.category;
-      }
+      const updateData = {
+        ...(editForm.start && { start: new Date(editForm.start).toISOString() }),
+        ...(editForm.end && { end: new Date(editForm.end).toISOString() }),
+        ...(editForm.category && { category: editForm.category }),
+      };
 
       await updateSlice({ id: sliceId, data: updateData });
       setEditingSlice(null);
@@ -189,6 +184,27 @@ const TimeHistoryPage: React.FC = () => {
           <div className="animate-spin rounded-full h-48 w-48 border-b-4 border-action"></div>
           <p className="mt-16 text-slate">Loading time history...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-64">
+        <Card padding="large">
+          <div className="text-center">
+            <div className="text-red-600 mb-16">
+              <svg className="w-48 h-48 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-h2 text-ink mb-8">Failed to load time history</h2>
+            <p className="text-body text-slate mb-16">{error.message || 'An error occurred while loading your time history.'}</p>
+            <Button variant="primary" onClick={() => window.location.reload()}>
+              Retry
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }

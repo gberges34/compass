@@ -54,6 +54,9 @@ Menu Items:
   - Errands
   - Deep Work
   - Shallow Work
+  - Discord Call
+  - Morning Lag
+  - Gym Block
   - Custom...
 
 Case "Showering": Set Variable "Category" to "Showering"
@@ -64,6 +67,9 @@ Case "Personal Care": Set Variable "Category" to "Personal Care"
 Case "Errands": Set Variable "Category" to "Errands"
 Case "Deep Work": Set Variable "Category" to "Deep Work"
 Case "Shallow Work": Set Variable "Category" to "Shallow Work"
+Case "Discord Call": Set Variable "Category" to "Discord Call"
+Case "Morning Lag": Set Variable "Category" to "Morning Lag"
+Case "Gym Block": Set Variable "Category" to "Gym Block"
 Case "Custom...":
   Action: Ask for Input
   Prompt: Enter activity name
@@ -76,6 +82,12 @@ Action: If Category | is | Deep Work
   Set Variable "Dimension" to "WORK_MODE"
 Else If Category | is | Shallow Work
   Set Variable "Dimension" to "WORK_MODE"
+Else If Category | is | Discord Call
+  Set Variable "Dimension" to "SOCIAL"
+Else If Category | is | Morning Lag
+  Set Variable "Dimension" to "SEGMENT"
+Else If Category | is | Gym Block
+  Set Variable "Dimension" to "SEGMENT"
 Else
   Set Variable "Dimension" to "PRIMARY"
 End If

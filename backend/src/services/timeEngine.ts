@@ -231,27 +231,10 @@ export async function updateSlice(
   id: string,
   data: { start?: Date; end?: Date | null; category?: string }
 ): Promise<TimeSlice> {
-  // Build update data object
-  const updateData: {
-    start?: Date;
-    end?: Date | null;
-    category?: string;
-  } = {};
-
-  if (data.start !== undefined) {
-    updateData.start = data.start;
-  }
-  if (data.end !== undefined) {
-    updateData.end = data.end;
-  }
-  if (data.category !== undefined) {
-    updateData.category = data.category;
-  }
-
   try {
     const updatedSlice = await prisma.timeSlice.update({
       where: { id },
-      data: updateData,
+      data,
     });
     return updatedSlice;
   } catch (error) {
