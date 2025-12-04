@@ -28,4 +28,14 @@ export const summarySlicesSchema = z.object({
   endDate: z.string().datetime(),
 });
 
+export const updateSliceSchema = z.object({
+  start: z.string().datetime().optional(),
+  end: z.string().datetime().optional().nullable(),
+  category: z.string().min(1).optional(),
+});
+
+export const sliceIdParamSchema = z.object({
+  id: z.string().uuid(),
+});
+
 

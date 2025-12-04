@@ -11,6 +11,7 @@ import CalendarPage from './pages/CalendarPage';
 import OrientEastPage from './pages/OrientEastPage';
 import OrientWestPage from './pages/OrientWestPage';
 import ReviewsPage from './pages/ReviewsPage';
+import TimeHistoryPage from './pages/TimeHistoryPage';
 import ClarifyPage from './pages/ClarifyPage';
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
                 <Route path="/orient/east" element={<OrientEastPage />} />
                 <Route path="/orient/west" element={<OrientWestPage />} />
                 <Route path="/reviews" element={<ReviewsPage />} />
+                <Route path="/time-history" element={<TimeHistoryPage />} />
               </Routes>
             </Layout>
           </Router>

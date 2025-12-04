@@ -342,6 +342,35 @@ export const stopTimeSlice = async (request: StopSliceRequest): Promise<TimeSlic
   return response.data;
 };
 
+export interface QuerySlicesParams {
+  startDate: string;
+  endDate: string;
+  dimension?: 'PRIMARY' | 'WORK_MODE' | 'SOCIAL' | 'SEGMENT';
+  category?: string;
+  linkedTaskId?: string;
+}
+
+export const getTimeSlices = async (params: QuerySlicesParams): Promise<TimeSlice[]> => {
+  const queryParams = new URLSearchParams();
+  queryParams.append('startDate', params.startDate);
+  queryParams.append('endDate', params.endDate);
+  if (params.dimension) queryParams.append('dimension', params.dimension);
+  if (params.category) queryParams.append('category', params.category);
+  if (params.linkedTaskId) queryParams.append('linkedTaskId', params.linkedTaskId);
+
+  const response = await api.get<TimeSlice[]>(`/engine/slices?${queryParams.toString()}`);
+  return response.data;
+};
+
+export const updateTimeSlice = async (id: string, data: Partial<{ start: string; end: string | null; category: string }>): Promise<TimeSlice> => {
+  const response = await api.patch<TimeSlice>(`/engine/slices/${id}`, data);
+  return response.data;
+};
+
+export const deleteTimeSlice = async (id: string): Promise<void> => {
+  await api.delete(`/engine/slices/${id}`);
+};
+
 // Health Check
 
 export const healthCheck = async (): Promise<{ status: string; message: string }> => {

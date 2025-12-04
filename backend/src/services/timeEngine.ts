@@ -220,3 +220,73 @@ export async function getCurrentState(): Promise<CurrentState> {
   return state;
 }
 
+/**
+ * Updates a time slice by ID.
+ * @param id - The slice ID to update
+ * @param data - Partial update data (start, end, category)
+ * @returns The updated TimeSlice
+ * @throws {NotFoundError} If the slice doesn't exist
+ */
+export async function updateSlice(
+  id: string,
+  data: { start?: Date; end?: Date | null; category?: string }
+): Promise<TimeSlice> {
+  // Check if slice exists
+  const existingSlice = await prisma.timeSlice.findUnique({
+    where: { id },
+  });
+
+  if (!existingSlice) {
+    throw new NotFoundError(`TimeSlice with id ${id}`);
+  }
+
+  // Build update data object
+  const updateData: {
+    start?: Date;
+    end?: Date | null;
+    category?: string;
+  } = {};
+
+  if (data.start !== undefined) {
+    updateData.start = data.start;
+  }
+  if (data.end !== undefined) {
+    updateData.end = data.end;
+  }
+  if (data.category !== undefined) {
+    updateData.category = data.category;
+  }
+
+  // Update the slice
+  const updatedSlice = await prisma.timeSlice.update({
+    where: { id },
+    data: updateData,
+  });
+
+  return updatedSlice;
+}
+
+/**
+ * Deletes a time slice by ID.
+ * @param id - The slice ID to delete
+ * @returns The deleted TimeSlice
+ * @throws {NotFoundError} If the slice doesn't exist
+ */
+export async function deleteSlice(id: string): Promise<TimeSlice> {
+  // Check if slice exists
+  const existingSlice = await prisma.timeSlice.findUnique({
+    where: { id },
+  });
+
+  if (!existingSlice) {
+    throw new NotFoundError(`TimeSlice with id ${id}`);
+  }
+
+  // Delete the slice
+  const deletedSlice = await prisma.timeSlice.delete({
+    where: { id },
+  });
+
+  return deletedSlice;
+}
+
