@@ -28,12 +28,15 @@ export const summarySlicesSchema = z.object({
   endDate: z.string().datetime(),
 });
 
+// Accepts ISO 8601 datetimes with explicit UTC suffix or timezone offset.
+const isoDateTimeString = z.string().datetime({ offset: true });
+
 export const healthSleepSyncSchema = z
   .object({
-    windowStart: z.string().datetime(),
-    windowEnd: z.string().datetime(),
-    sleepStart: z.string().datetime(),
-    sleepEnd: z.string().datetime(),
+    windowStart: isoDateTimeString,
+    windowEnd: isoDateTimeString,
+    sleepStart: isoDateTimeString,
+    sleepEnd: isoDateTimeString,
   })
   .refine((data) => {
     const windowStart = new Date(data.windowStart);
@@ -61,4 +64,3 @@ export const updateSliceSchema = z.object({
 export const sliceIdParamSchema = z.object({
   id: z.string().uuid(),
 });
-
