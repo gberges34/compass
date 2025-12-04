@@ -28,6 +28,27 @@ export const summarySlicesSchema = z.object({
   endDate: z.string().datetime(),
 });
 
+export const healthSleepSyncSchema = z
+  .object({
+    windowStart: z.string().datetime(),
+    windowEnd: z.string().datetime(),
+    sleepStart: z.string().datetime(),
+    sleepEnd: z.string().datetime(),
+  })
+  .refine((data) => {
+    const windowStart = new Date(data.windowStart);
+    const windowEnd = new Date(data.windowEnd);
+    const sleepStart = new Date(data.sleepStart);
+    const sleepEnd = new Date(data.sleepEnd);
+
+    return (
+      windowStart < windowEnd &&
+      sleepStart < sleepEnd &&
+      sleepStart >= windowStart &&
+      sleepEnd <= windowEnd
+    );
+  }, { message: 'Invalid sleep/window bounds' });
+
 export const updateSliceSchema = z.object({
   start: z.string().datetime().optional(),
   end: z.string().datetime().optional().nullable(),
@@ -40,5 +61,4 @@ export const updateSliceSchema = z.object({
 export const sliceIdParamSchema = z.object({
   id: z.string().uuid(),
 });
-
 
