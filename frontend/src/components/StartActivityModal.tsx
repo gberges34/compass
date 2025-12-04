@@ -8,23 +8,26 @@ interface StartActivityModalProps {
 }
 
 // Predefined categories for non-task activities
+// Note: Some activities are automated via external systems:
+// - Sleep → HealthKit API (authoritative source)
+// - Gaming → Discord Bot → Gaming Focus Mode
+// - Discord Call → Discord Bot (usually automatic, but can be started manually)
 const ACTIVITY_CATEGORIES = [
-  // Life Activities
-  'Sleep',
+  // PRIMARY Activities (manual triggers only)
+  'Showering',
   'Commute',
-  'Gaming',
   'Cooking',
   'Workout',
   'Personal Care',
   'Errands',
-  // Work Modes
+  // WORK_MODE Activities
   'Deep Work',
   'Shallow Work',
-  'Admin',
-  // Social
+  // SOCIAL Activities (can overlap with PRIMARY)
   'Discord Call',
-  'In-Person',
-  'Date Night',
+  // SEGMENT Activities
+  'Morning Lag',
+  'Gym Block',
 ] as const;
 
 const DIMENSIONS: Array<{ value: StartSliceRequest['dimension']; label: string }> = [

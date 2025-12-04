@@ -1,5 +1,5 @@
 import { prisma } from '../prisma';
-import { TimeSlice, TimeDimension } from '@prisma/client';
+import { TimeSlice, TimeDimension, Prisma } from '@prisma/client';
 import { NotFoundError } from '../errors/AppError';
 
 // Derive transaction client type from the extended Prisma client to support both base and extended clients
@@ -218,5 +218,50 @@ export async function getCurrentState(): Promise<CurrentState> {
   });
 
   return state;
+}
+
+/**
+ * Updates a time slice by ID.
+ * @param id - The slice ID to update
+ * @param data - Partial update data (start, end, category)
+ * @returns The updated TimeSlice
+ * @throws {NotFoundError} If the slice doesn't exist
+ */
+export async function updateSlice(
+  id: string,
+  data: { start?: Date; end?: Date | null; category?: string }
+): Promise<TimeSlice> {
+  try {
+    const updatedSlice = await prisma.timeSlice.update({
+      where: { id },
+      data,
+    });
+    return updatedSlice;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      throw new NotFoundError(`TimeSlice with id ${id}`);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Deletes a time slice by ID.
+ * @param id - The slice ID to delete
+ * @returns The deleted TimeSlice
+ * @throws {NotFoundError} If the slice doesn't exist
+ */
+export async function deleteSlice(id: string): Promise<TimeSlice> {
+  try {
+    const deletedSlice = await prisma.timeSlice.delete({
+      where: { id },
+    });
+    return deletedSlice;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      throw new NotFoundError(`TimeSlice with id ${id}`);
+    }
+    throw error;
+  }
 }
 

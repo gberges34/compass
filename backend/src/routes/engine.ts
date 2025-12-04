@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { cacheControl, CachePolicies } from '../middleware/cacheControl';
-import { startSliceSchema, stopSliceSchema, querySlicesSchema, summarySlicesSchema } from '../schemas/timeEngine';
+import { startSliceSchema, stopSliceSchema, querySlicesSchema, summarySlicesSchema, updateSliceSchema, sliceIdParamSchema } from '../schemas/timeEngine';
 import * as TimeEngine from '../services/timeEngine';
 import { prisma } from '../prisma';
 import { Prisma } from '@prisma/client';
@@ -75,6 +75,35 @@ router.get(
     });
     
     res.json(slices);
+  })
+);
+
+// PATCH /api/engine/slices/:id - Update a time slice
+router.patch(
+  '/slices/:id',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = sliceIdParamSchema.parse(req.params);
+    const validatedData = updateSliceSchema.parse(req.body);
+    
+    // Convert ISO strings to Date objects
+    const updateData = {
+      ...(validatedData.start && { start: new Date(validatedData.start) }),
+      ...(validatedData.end !== undefined && { end: validatedData.end ? new Date(validatedData.end) : null }),
+      ...(validatedData.category && { category: validatedData.category }),
+    };
+    
+    const slice = await TimeEngine.updateSlice(id, updateData);
+    res.json(slice);
+  })
+);
+
+// DELETE /api/engine/slices/:id - Delete a time slice
+router.delete(
+  '/slices/:id',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = sliceIdParamSchema.parse(req.params);
+    const slice = await TimeEngine.deleteSlice(id);
+    res.json(slice);
   })
 );
 

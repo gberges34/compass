@@ -28,4 +28,17 @@ export const summarySlicesSchema = z.object({
   endDate: z.string().datetime(),
 });
 
+export const updateSliceSchema = z.object({
+  start: z.string().datetime().optional(),
+  end: z.string().datetime().optional().nullable(),
+  category: z.string().min(1).optional(),
+}).refine(
+  (data) => data.start !== undefined || data.end !== undefined || data.category !== undefined,
+  { message: 'At least one field (start, end, or category) must be provided' }
+);
+
+export const sliceIdParamSchema = z.object({
+  id: z.string().uuid(),
+});
+
 

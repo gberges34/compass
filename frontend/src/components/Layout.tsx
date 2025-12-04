@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { prefetchTasks } from '../hooks/useTasks';
 import { prefetchTodayPlan } from '../hooks/useDailyPlans';
 import { prefetchReviews } from '../hooks/useReviews';
+import { prefetchTimeHistory } from '../hooks/useTimeHistory';
 import { prefetchTodoistPending } from '../hooks/useTodoist';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -107,6 +108,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       // Reviews page: prefetch recent reviews
       prefetchReviews(queryClient);
     },
+    '/time-history': () => {
+      // Time History page: prefetch last 7 days
+      prefetchTimeHistory(queryClient);
+    },
     '/clarify': () => {
       // Clarify page: prefetch pending Todoist tasks
       prefetchTodoistPending(queryClient);
@@ -140,7 +145,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     },
     { id: 'today', label: 'Today', to: '/' },
     { id: 'calendar', label: 'Calendar', to: '/calendar' },
-    { id: 'reviews', label: 'Reviews', to: '/reviews' },
+    {
+      id: 'reviews-menu',
+      label: 'Reviews',
+      children: [
+        { id: 'reviews-link', label: 'Reviews', to: '/reviews' },
+        { id: 'time-history-link', label: 'Time History', to: '/time-history' },
+      ],
+    },
   ];
 
   const handlePrefetch = (path?: string) => {
