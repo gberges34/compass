@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { cacheControl, CachePolicies } from '../middleware/cacheControl';
-import { startSliceSchema, stopSliceSchema, querySlicesSchema, summarySlicesSchema, updateSliceSchema, sliceIdParamSchema } from '../schemas/timeEngine';
+import { startSliceSchema, stopSliceSchema, querySlicesSchema, summarySlicesSchema, updateSliceSchema, sliceIdParamSchema, healthSleepSyncSchema } from '../schemas/timeEngine';
 import * as TimeEngine from '../services/timeEngine';
 import { prisma } from '../prisma';
 import { Prisma } from '@prisma/client';
@@ -134,6 +134,15 @@ router.get(
   })
 );
 
-export default router;
+// POST /api/engine/health/sleep-sync - Sync authoritative Sleep block from Health
+router.post(
+  '/health/sleep-sync',
+  asyncHandler(async (req: Request, res: Response) => {
+    const payload = healthSleepSyncSchema.parse(req.body);
+    const slice = await TimeEngine.syncHealthSleep(payload);
+    res.status(201).json(slice);
+  })
+);
 
+export default router;
 

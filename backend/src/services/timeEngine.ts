@@ -29,6 +29,13 @@ export interface CurrentState {
   segment: ActiveSlice | null;
 }
 
+export interface HealthSleepSyncInput {
+  windowStart: string;
+  windowEnd: string;
+  sleepStart: string;
+  sleepEnd: string;
+}
+
 /**
  * Core logic for starting a time slice. Can be used within an existing transaction.
  * @param input - Slice details including category, dimension, source, and optional linkedTaskId
@@ -221,6 +228,46 @@ export async function getCurrentState(): Promise<CurrentState> {
 }
 
 /**
+ * Syncs a single authoritative Sleep slice from Health for a given window.
+ * Deletes overlapping HEALTH Sleep slices in that window before inserting the new one.
+ */
+export async function syncHealthSleep(input: HealthSleepSyncInput): Promise<TimeSlice> {
+  const windowStart = new Date(input.windowStart);
+  const windowEnd = new Date(input.windowEnd);
+  const sleepStart = new Date(input.sleepStart);
+  const sleepEnd = new Date(input.sleepEnd);
+
+  return prisma.$transaction(async (tx) => {
+    await tx.timeSlice.deleteMany({
+      where: {
+        category: 'Sleep',
+        dimension: 'PRIMARY',
+        source: 'API',
+        start: { lt: windowEnd },
+        OR: [
+          { end: { gt: windowStart } },
+          { end: null },
+        ],
+      },
+    });
+
+    const slice = await tx.timeSlice.create({
+      data: {
+        start: sleepStart,
+        end: sleepEnd,
+        category: 'Sleep',
+        dimension: 'PRIMARY',
+        source: 'API',
+        isLocked: true,
+        linkedTaskId: null,
+      },
+    });
+
+    return slice;
+  });
+}
+
+/**
  * Updates a time slice by ID.
  * @param id - The slice ID to update
  * @param data - Partial update data (start, end, category)
@@ -264,4 +311,3 @@ export async function deleteSlice(id: string): Promise<TimeSlice> {
     throw error;
   }
 }
-
