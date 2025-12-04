@@ -28,12 +28,19 @@ export const summarySlicesSchema = z.object({
   endDate: z.string().datetime(),
 });
 
+// Accepts any ISO-8601-compatible datetime string that Date.parse can handle.
+// This is more flexible than z.string().datetime(), which only permits a strict Z-suffixed format.
+const isoDateTimeString = z.string().refine(
+  (value) => !Number.isNaN(Date.parse(value)),
+  { message: 'Invalid ISO datetime' }
+);
+
 export const healthSleepSyncSchema = z
   .object({
-    windowStart: z.string().datetime(),
-    windowEnd: z.string().datetime(),
-    sleepStart: z.string().datetime(),
-    sleepEnd: z.string().datetime(),
+    windowStart: isoDateTimeString,
+    windowEnd: isoDateTimeString,
+    sleepStart: isoDateTimeString,
+    sleepEnd: isoDateTimeString,
   })
   .refine((data) => {
     const windowStart = new Date(data.windowStart);
@@ -61,4 +68,3 @@ export const updateSliceSchema = z.object({
 export const sliceIdParamSchema = z.object({
   id: z.string().uuid(),
 });
-
