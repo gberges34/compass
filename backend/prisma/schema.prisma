@@ -116,6 +116,7 @@ model Review {
   tasksCompleted  Int
   deepWorkHours   Float
   categoryBalance Json // {category: minutes}
+  activityBreakdown Json? // {activity: minutes} - Time Engine PRIMARY
 
   // Time Metrics
   totalTrackedTime Int // minutes

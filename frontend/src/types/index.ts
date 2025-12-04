@@ -98,6 +98,7 @@ export interface Review {
   tasksCompleted: number;
   deepWorkHours: number;
   categoryBalance: Record<string, number>;
+  activityBreakdown?: Record<string, number>;
   totalTrackedTime: number;
   timeCoverage: number;
   contextSwitches?: number;

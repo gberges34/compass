@@ -20,7 +20,8 @@ interface MetricsResult {
   executionRate: number;
   tasksCompleted: number;
   deepWorkHours: number;
-  categoryBalance: Record<string, number>;
+  categoryBalance: Record<string, number>;      // Tasks only
+  activityBreakdown: Record<string, number>;    // Time Engine only
   totalTrackedTime: number;
   timeCoverage: number;
   contextSwitches: number;
@@ -118,15 +119,19 @@ export async function calculateMetrics(
     postDoLogs.map((log) => log.task.id)
   );
 
-  // Merge all three sources
-  const categoryBreakdown = mergeCategoryBalances(
+  // Task categories only (from completed tasks + Toggl)
+  const categoryBalance = mergeCategoryBalances(
     compassCategoryBalance,
-    togglCategoryBalance,
-    timeEngineCategoryBalance
+    togglCategoryBalance
   );
 
-  // Calculate total tracked time
-  const totalTrackedTime = Object.values(categoryBreakdown).reduce((sum, mins) => sum + mins, 0);
+  // Time Engine activities (standalone)
+  const activityBreakdown = timeEngineCategoryBalance;
+
+  // Calculate total tracked time (sum of both sources)
+  const taskTime = Object.values(categoryBalance).reduce((sum, mins) => sum + mins, 0);
+  const activityTime = Object.values(activityBreakdown).reduce((sum, mins) => sum + mins, 0);
+  const totalTrackedTime = taskTime + activityTime;
 
   // Calculate time coverage
   const daysInPeriod = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -140,7 +145,8 @@ export async function calculateMetrics(
     executionRate,
     tasksCompleted: completedTasks,
     deepWorkHours,
-    categoryBalance: categoryBreakdown,
+    categoryBalance,
+    activityBreakdown,
     totalTrackedTime,
     timeCoverage,
     contextSwitches,

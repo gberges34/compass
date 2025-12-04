@@ -122,6 +122,17 @@ const ReviewsPage: React.FC = () => {
     }));
   };
 
+  const getActivityBreakdownData = () => {
+    if (reviews.length === 0) return [];
+    const latestReview = reviews[0];
+    return Object.entries(latestReview.activityBreakdown || {})
+      .map(([activity, minutes]) => ({
+        name: activity,
+        value: Math.round((minutes / 60) * 10) / 10, // Convert to hours
+      }))
+      .sort((a, b) => b.value - a.value);
+  };
+
   const getDeepWorkTrendData = () => {
     return reviews
       .slice(0, 7)
@@ -203,7 +214,7 @@ const ReviewsPage: React.FC = () => {
 
       {/* Charts Section */}
       {reviews.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-24">
           {/* Execution Rate Trend */}
           <Card padding="medium">
             <h3 className="text-h3 text-ink mb-16">
@@ -241,6 +252,20 @@ const ReviewsPage: React.FC = () => {
                 </Pie>
                 <Tooltip />
               </PieChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* Primary Activities (Time Engine) */}
+          <Card padding="medium">
+            <h3 className="text-h3 text-ink mb-16">Primary Activities</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={getActivityBreakdownData()} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" tick={{ fontSize: 12 }} />
+                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} />
+                <Tooltip formatter={(value: number) => `${value}h`} />
+                <Bar dataKey="value" fill="#10b981" />
+              </BarChart>
             </ResponsiveContainer>
           </Card>
 
