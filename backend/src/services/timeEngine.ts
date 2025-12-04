@@ -1,5 +1,5 @@
 import { prisma } from '../prisma';
-import { TimeSlice, TimeDimension } from '@prisma/client';
+import { TimeSlice, TimeDimension, Prisma } from '@prisma/client';
 import { NotFoundError } from '../errors/AppError';
 
 // Derive transaction client type from the extended Prisma client to support both base and extended clients
@@ -231,15 +231,6 @@ export async function updateSlice(
   id: string,
   data: { start?: Date; end?: Date | null; category?: string }
 ): Promise<TimeSlice> {
-  // Check if slice exists
-  const existingSlice = await prisma.timeSlice.findUnique({
-    where: { id },
-  });
-
-  if (!existingSlice) {
-    throw new NotFoundError(`TimeSlice with id ${id}`);
-  }
-
   // Build update data object
   const updateData: {
     start?: Date;
@@ -257,13 +248,18 @@ export async function updateSlice(
     updateData.category = data.category;
   }
 
-  // Update the slice
-  const updatedSlice = await prisma.timeSlice.update({
-    where: { id },
-    data: updateData,
-  });
-
-  return updatedSlice;
+  try {
+    const updatedSlice = await prisma.timeSlice.update({
+      where: { id },
+      data: updateData,
+    });
+    return updatedSlice;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      throw new NotFoundError(`TimeSlice with id ${id}`);
+    }
+    throw error;
+  }
 }
 
 /**
@@ -273,20 +269,16 @@ export async function updateSlice(
  * @throws {NotFoundError} If the slice doesn't exist
  */
 export async function deleteSlice(id: string): Promise<TimeSlice> {
-  // Check if slice exists
-  const existingSlice = await prisma.timeSlice.findUnique({
-    where: { id },
-  });
-
-  if (!existingSlice) {
-    throw new NotFoundError(`TimeSlice with id ${id}`);
+  try {
+    const deletedSlice = await prisma.timeSlice.delete({
+      where: { id },
+    });
+    return deletedSlice;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      throw new NotFoundError(`TimeSlice with id ${id}`);
+    }
+    throw error;
   }
-
-  // Delete the slice
-  const deletedSlice = await prisma.timeSlice.delete({
-    where: { id },
-  });
-
-  return deletedSlice;
 }
 

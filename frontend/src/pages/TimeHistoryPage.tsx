@@ -4,8 +4,9 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import Input from '../components/Input';
+import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDisplayDate, formatDisplayTime, calculateDurationMinutes } from '../lib/dateUtils';
-import { parseISO, subDays, formatISO, startOfDay, endOfDay, format, startOfDay as startOfDayFns } from 'date-fns';
+import { parseISO, subDays, startOfDay, endOfDay, format } from 'date-fns';
 import type { TimeSlice } from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
 
@@ -16,7 +17,7 @@ const TimeHistoryPage: React.FC = () => {
   const [customEndDate, setCustomEndDate] = useState<string>('');
   const [editingSlice, setEditingSlice] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{ start?: string; end?: string; category?: string }>({});
-  const [deletingSlice, setDeletingSlice] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   // Calculate date range
   const { startDate, endDate } = useMemo(() => {
@@ -52,7 +53,7 @@ const TimeHistoryPage: React.FC = () => {
     slices.forEach((slice) => {
       const sliceDate = parseISO(slice.start);
       // Use ISO date string (YYYY-MM-DD) as key for reliable sorting
-      const dayKey = format(startOfDayFns(sliceDate), 'yyyy-MM-dd');
+      const dayKey = format(startOfDay(sliceDate), 'yyyy-MM-dd');
       if (!grouped[dayKey]) {
         grouped[dayKey] = [];
       }
@@ -116,11 +117,23 @@ const TimeHistoryPage: React.FC = () => {
     return map[dimension] || 'mint';
   };
 
+  // Convert UTC ISO string to local datetime-local format
+  const utcToLocalDatetimeString = (isoString: string): string => {
+    const date = new Date(isoString);
+    // Get local date components
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   const handleEdit = (slice: TimeSlice) => {
     setEditingSlice(slice.id);
     setEditForm({
-      start: slice.start.slice(0, 16), // Format for datetime-local input
-      end: slice.end ? slice.end.slice(0, 16) : '',
+      start: utcToLocalDatetimeString(slice.start),
+      end: slice.end ? utcToLocalDatetimeString(slice.end) : '',
       category: slice.category,
     });
   };
@@ -147,17 +160,20 @@ const TimeHistoryPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (sliceId: string) => {
-    if (!window.confirm('Are you sure you want to delete this time slice?')) {
-      return;
-    }
+  const handleDeleteClick = (sliceId: string) => {
+    setConfirmDelete(sliceId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete) return;
 
     try {
-      await deleteSlice(sliceId);
-      setDeletingSlice(null);
+      await deleteSlice(confirmDelete);
+      setConfirmDelete(null);
       toast.showSuccess('Time slice deleted successfully');
     } catch (error) {
       // Error handled by hook
+      setConfirmDelete(null);
     }
   };
 
@@ -394,7 +410,7 @@ const TimeHistoryPage: React.FC = () => {
                           <Button
                             variant="ghost"
                             size="small"
-                            onClick={() => handleDelete(slice.id)}
+                            onClick={() => handleDeleteClick(slice.id)}
                             disabled={isDeleting || isUpdating}
                             className="text-danger hover:text-danger"
                           >
@@ -409,6 +425,20 @@ const TimeHistoryPage: React.FC = () => {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmDelete && (
+        <ConfirmationModal
+          title="Delete Time Slice"
+          message="Are you sure you want to delete this time slice? This action cannot be undone."
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          variant="danger"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmDelete(null)}
+          isConfirming={isDeleting}
+        />
       )}
     </div>
   );

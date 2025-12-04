@@ -58,7 +58,7 @@ export function useTimeHistory(params?: {
       api.updateTimeSlice(id, data),
     onError: (err: AxiosError) => {
       console.error('[useTimeHistory] Error updating slice:', err);
-      toast.showError(err.userMessage || 'Failed to update time slice');
+      toast.showError((err as any).userMessage || 'Failed to update time slice');
     },
     onSuccess: () => {
       log('[useTimeHistory] Slice updated, invalidating queries');
@@ -73,7 +73,7 @@ export function useTimeHistory(params?: {
     mutationFn: (id: string) => api.deleteTimeSlice(id),
     onError: (err: AxiosError) => {
       console.error('[useTimeHistory] Error deleting slice:', err);
-      toast.showError(err.userMessage || 'Failed to delete time slice');
+      toast.showError((err as any).userMessage || 'Failed to delete time slice');
     },
     onSuccess: () => {
       log('[useTimeHistory] Slice deleted, invalidating queries');

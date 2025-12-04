@@ -87,13 +87,13 @@ router.patch(
     
     // Convert ISO strings to Date objects
     const updateData: { start?: Date; end?: Date | null; category?: string } = {};
-    if (validatedData.start) {
+    if (validatedData.start !== undefined) {
       updateData.start = new Date(validatedData.start);
     }
     if (validatedData.end !== undefined) {
       updateData.end = validatedData.end ? new Date(validatedData.end) : null;
     }
-    if (validatedData.category) {
+    if (validatedData.category !== undefined) {
       updateData.category = validatedData.category;
     }
     

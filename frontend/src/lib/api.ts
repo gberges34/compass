@@ -367,8 +367,9 @@ export const updateTimeSlice = async (id: string, data: Partial<{ start: string;
   return response.data;
 };
 
-export const deleteTimeSlice = async (id: string): Promise<void> => {
-  await api.delete(`/engine/slices/${id}`);
+export const deleteTimeSlice = async (id: string): Promise<TimeSlice> => {
+  const response = await api.delete<TimeSlice>(`/engine/slices/${id}`);
+  return response.data;
 };
 
 // Health Check
