@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import * as api from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
-import { subDays, formatISO } from 'date-fns';
+import { subDays } from 'date-fns';
 
 // Development-only logging
 const DEBUG = process.env.NODE_ENV === 'development';
@@ -33,8 +33,8 @@ export function useTimeHistory(params?: {
   const defaultStartDate = params?.startDate || subDays(defaultEndDate, 7);
 
   const queryParams: api.QuerySlicesParams = {
-    startDate: formatISO(defaultStartDate),
-    endDate: formatISO(defaultEndDate),
+    startDate: defaultStartDate.toISOString(),
+    endDate: defaultEndDate.toISOString(),
     ...(params?.dimension && { dimension: params.dimension }),
     ...(params?.category && { category: params.category }),
     ...(params?.linkedTaskId && { linkedTaskId: params.linkedTaskId }),
@@ -100,8 +100,8 @@ export function useTimeHistory(params?: {
  */
 export function prefetchTimeHistory(queryClient: ReturnType<typeof useQueryClient>, params?: api.QuerySlicesParams) {
   const defaultParams: api.QuerySlicesParams = {
-    startDate: formatISO(subDays(new Date(), 7)),
-    endDate: formatISO(new Date()),
+    startDate: subDays(new Date(), 7).toISOString(),
+    endDate: new Date().toISOString(),
     ...params,
   };
 
