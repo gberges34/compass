@@ -28,12 +28,8 @@ export const summarySlicesSchema = z.object({
   endDate: z.string().datetime(),
 });
 
-// Accepts any ISO-8601-compatible datetime string that Date.parse can handle.
-// This is more flexible than z.string().datetime(), which only permits a strict Z-suffixed format.
-const isoDateTimeString = z.string().refine(
-  (value) => !Number.isNaN(Date.parse(value)),
-  { message: 'Invalid ISO datetime' }
-);
+// Accepts ISO 8601 datetimes with explicit UTC suffix or timezone offset.
+const isoDateTimeString = z.string().datetime({ offset: true });
 
 export const healthSleepSyncSchema = z
   .object({
