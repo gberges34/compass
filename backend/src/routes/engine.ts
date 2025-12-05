@@ -138,6 +138,19 @@ router.get(
 router.post(
   '/health/sleep-sync',
   asyncHandler(async (req: Request, res: Response) => {
+    // Temporary diagnostics to inspect incoming payload shape during iOS Shortcut integration.
+    console.log('sleep-sync payload', {
+      windowStart: req.body?.windowStart,
+      windowEnd: req.body?.windowEnd,
+      sleepStart: req.body?.sleepStart,
+      sleepEnd: req.body?.sleepEnd,
+      types: {
+        windowStart: typeof req.body?.windowStart,
+        windowEnd: typeof req.body?.windowEnd,
+        sleepStart: typeof req.body?.sleepStart,
+        sleepEnd: typeof req.body?.sleepEnd,
+      },
+    });
     const payload = healthSleepSyncSchema.parse(req.body);
     const slice = await TimeEngine.syncHealthSleep(payload);
     res.status(201).json(slice);
@@ -145,4 +158,3 @@ router.post(
 );
 
 export default router;
-
