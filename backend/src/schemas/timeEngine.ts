@@ -33,7 +33,8 @@ export const summarySlicesSchema = z.object({
 // iOS Shortcuts can emit offsets without a colon (+0000). Normalize those, then use date-fns parseISO to reject invalid dates.
 const isoDateTimeString = z.string().refine((value) => {
   // Normalize colonless offsets: 2025-12-04T12:00:00-0500 -> 2025-12-04T12:00:00-05:00
-  const normalized = value.replace(/([+-]\d{2})(\d{2})$/, '$1:$2');
+  const trimmed = value.trim();
+  const normalized = trimmed.replace(/([+-]\d{2})(\d{2})$/, '$1:$2');
   const parsed = parseISO(normalized);
   return isValid(parsed);
 }, { message: 'Invalid ISO datetime' });
