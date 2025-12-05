@@ -29,7 +29,14 @@ export const summarySlicesSchema = z.object({
 });
 
 // Accepts ISO 8601 datetimes with explicit UTC suffix or timezone offset.
-const isoDateTimeString = z.string().datetime({ offset: true });
+// Extended to allow offsets without a colon (e.g., +0000) which iOS Shortcuts can emit.
+const isoDateTimeString = z.string().refine((value) => {
+  const isoWithOffset = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/;
+  if (!isoWithOffset.test(value)) {
+    return false;
+  }
+  return !Number.isNaN(Date.parse(value));
+}, { message: 'Invalid ISO datetime' });
 
 export const healthSleepSyncSchema = z
   .object({
