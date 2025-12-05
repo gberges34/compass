@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValid, parseISO } from 'date-fns';
 
 export const timeDimensionEnum = z.enum(['PRIMARY', 'WORK_MODE', 'SOCIAL', 'SEGMENT']);
 export const timeSourceEnum = z.enum(['SHORTCUT', 'TIMERY', 'MANUAL', 'API']);
@@ -29,17 +30,13 @@ export const summarySlicesSchema = z.object({
 });
 
 // Accepts ISO 8601 datetimes with explicit UTC suffix or timezone offset.
-// iOS Shortcuts can emit offsets without a colon (+0000). Normalize those so the stricter Zod validator can parse them.
-const isoDateTimeString = z.preprocess((arg) => {
-  if (typeof arg === 'string') {
-    const match = arg.match(/[+-]\d{4}$/);
-    if (match) {
-      const offset = match[0];
-      return arg.slice(0, -4) + offset.slice(0, 3) + ':' + offset.slice(3);
-    }
-  }
-  return arg;
-}, z.string().datetime({ offset: true, message: 'Invalid ISO datetime' }));
+// iOS Shortcuts can emit offsets without a colon (+0000). Normalize those, then use date-fns parseISO to reject invalid dates.
+const isoDateTimeString = z.string().refine((value) => {
+  // Normalize colonless offsets: 2025-12-04T12:00:00-0500 -> 2025-12-04T12:00:00-05:00
+  const normalized = value.replace(/([+-]\d{2})(\d{2})$/, '$1:$2');
+  const parsed = parseISO(normalized);
+  return isValid(parsed);
+}, { message: 'Invalid ISO datetime' });
 
 export const healthSleepSyncSchema = z
   .object({
