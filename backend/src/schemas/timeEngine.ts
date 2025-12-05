@@ -30,7 +30,7 @@ export const summarySlicesSchema = z.object({
 });
 
 // Accepts ISO 8601 datetimes with explicit UTC suffix or timezone offset.
-// iOS Shortcuts can emit offsets without a colon (+0000). Normalize those, then use date-fns parseISO to reject invalid dates.
+// iOS Shortcuts can emit offsets without a colon (+0000). Normalize those, then use date-fns parseISO/isValid to ensure the date is real (rejects impossible dates like Feb 30).
 const isoDateTimeString = z.string().refine((value) => {
   // Normalize colonless offsets: 2025-12-04T12:00:00-0500 -> 2025-12-04T12:00:00-05:00
   const trimmed = value.trim();

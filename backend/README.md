@@ -47,3 +47,12 @@ GET /api/tasks?status=NEXT&priority=MUST&cursor=abc-123&limit=30
 - Cursor uses `id < cursor` for next page (DESC ordering)
 - Works with filter: type (DAILY/WEEKLY)
 
+## Discord Bot Environment
+
+Set these environment variables to enable the embedded Discord bot that writes Time Engine slices:
+
+- `DISCORD_BOT_ENABLED`: set to `true` to start the bot; unset/anything else disables it.
+- `DISCORD_TOKEN`: Discord bot token.
+- `DISCORD_USER_ID`: Discord user ID to track.
+- `DISCORD_GUILD_IDS`: Comma-separated guild IDs the bot should monitor.
+- `DISCORD_DENYLIST_APPS`: Comma-separated app names/IDs to ignore as games (start with `Spotify`).

@@ -18,6 +18,13 @@ const envSchema = z.object({
   
   // Optional (for Prisma migrations)
   SHADOW_DATABASE_URL: z.string().url().optional(),
+
+  // Optional (for Discord bot)
+  DISCORD_BOT_ENABLED: z.string().optional(),
+  DISCORD_TOKEN: z.string().optional(),
+  DISCORD_USER_ID: z.string().optional(),
+  DISCORD_GUILD_IDS: z.string().optional(), // comma-separated
+  DISCORD_DENYLIST_APPS: z.string().optional(), // comma-separated
 });
 
 export type Env = z.infer<typeof envSchema>;

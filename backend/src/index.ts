@@ -1,6 +1,7 @@
 import { app } from './app';
 import { env } from './config/env';
 import { disconnect } from './prisma';
+import { initDiscordBot, shutdownDiscordBot } from './discord/client';
 
 const PORT = env.PORT;
 
@@ -8,6 +9,11 @@ const PORT = env.PORT;
 if (env.NODE_ENV !== 'test') {
   const server = app.listen(PORT, () => {
     console.log(`🚀 Compass API server running on port ${PORT}`);
+  });
+
+  // Initialize Discord bot asynchronously; log errors but don't crash API
+  initDiscordBot().catch((error) => {
+    console.error('Failed to initialize Discord bot', error);
   });
 
   // Graceful shutdown handling
@@ -23,6 +29,9 @@ if (env.NODE_ENV !== 'test') {
           resolve();
         });
       });
+
+      await shutdownDiscordBot();
+      console.log('Discord bot shut down.');
 
       // Then disconnect database connections
       await disconnect();
