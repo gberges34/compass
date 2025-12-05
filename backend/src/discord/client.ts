@@ -164,6 +164,7 @@ export async function initDiscordBot(): Promise<void> {
   client.on('voiceStateUpdate', async (_oldState, newState) => {
     try {
       if (!newState || newState.id !== env.DISCORD_USER_ID) return;
+      if (!isAllowedGuild(newState.guild?.id, allowedGuilds)) return;
       const normalized = normalizeVoiceState(newState, allowedGuilds);
       await handleVoiceStateUpdate(normalized, state, deps);
     } catch (error) {

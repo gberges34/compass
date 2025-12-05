@@ -36,6 +36,15 @@ function createDeps(overrides: Partial<EngineBridgeDeps> = {}) {
   return { deps: { ...base, ...overrides }, calls };
 }
 
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  jest.clearAllTimers();
+  jest.useRealTimers();
+});
+
 describe('engineBridge presence handling', () => {
   it('starts Gaming and SEGMENT after 120s of continuous game presence', async () => {
     const state = createInitialDiscordState();
@@ -75,6 +84,48 @@ describe('engineBridge presence handling', () => {
     await handlePresenceUpdate(presence, state, deps);
     expect(calls.startedSlices).toHaveLength(0);
     expect(calls.stoppedSlices).toHaveLength(0);
+  });
+
+  it('clears pending stop timer when game presence resumes', async () => {
+    const state = createInitialDiscordState();
+    const { deps } = createDeps();
+
+    state.gaming.gamingActive = true;
+    state.gaming.stopTimer = setTimeout(() => {
+      throw new Error('should have been cleared');
+    }, 60_000);
+
+    const presence: NormalizedPresence = {
+      hasGame: true,
+      gameName: 'Hades',
+      isOnlyDenylisted: false,
+      forceStartNow: true,
+    };
+
+    await handlePresenceUpdate(presence, state, deps);
+
+    expect(state.gaming.stopTimer).toBeNull();
+  });
+
+  it('schedules stop when only denylisted presence while gaming is active', async () => {
+    const state = createInitialDiscordState();
+    state.gaming.gamingActive = true;
+    const { deps, calls } = createDeps();
+
+    const presence: NormalizedPresence = {
+      hasGame: false,
+      gameName: null,
+      isOnlyDenylisted: true,
+    };
+
+    await handlePresenceUpdate(presence, state, deps);
+    expect(state.gaming.stopTimer).not.toBeNull();
+
+    jest.runAllTimers();
+
+    expect(calls.stoppedSlices).toEqual([
+      { dimension: 'PRIMARY', category: 'Gaming' },
+    ]);
   });
 });
 

@@ -32,26 +32,33 @@ export async function handlePresenceUpdate(
   state: DiscordTrackingState,
   deps: EngineBridgeDeps
 ): Promise<void> {
+  const scheduleGamingStop = () => {
+    if (state.gaming.stopTimer) {
+      clearTimeout(state.gaming.stopTimer);
+    }
+    state.gaming.stopTimer = setTimeout(async () => {
+      try {
+        await deps.stopSlice({ dimension: 'PRIMARY', category: 'Gaming' });
+        await deps.stopSliceIfExists({ dimension: 'SEGMENT' });
+        state.gaming.gamingActive = false;
+        state.gaming.currentGame = null;
+      } catch (error) {
+        deps.log.error('Failed to stop Gaming slice', error);
+      }
+    }, GAMING_STOP_DEBOUNCE_MS);
+  };
+
   if (presence.isOnlyDenylisted) {
+    if (state.gaming.gamingActive) {
+      scheduleGamingStop();
+    }
     return;
   }
 
   // No game present: schedule stop if active
   if (!presence.hasGame || !presence.gameName) {
     if (state.gaming.gamingActive && !presence.forceStartNow) {
-      if (state.gaming.stopTimer) {
-        clearTimeout(state.gaming.stopTimer);
-      }
-      state.gaming.stopTimer = setTimeout(async () => {
-        try {
-          await deps.stopSlice({ dimension: 'PRIMARY', category: 'Gaming' });
-          await deps.stopSliceIfExists({ dimension: 'SEGMENT' });
-          state.gaming.gamingActive = false;
-          state.gaming.currentGame = null;
-        } catch (error) {
-          deps.log.error('Failed to stop Gaming slice', error);
-        }
-      }, GAMING_STOP_DEBOUNCE_MS);
+      scheduleGamingStop();
     }
     return;
   }
@@ -82,13 +89,19 @@ export async function handlePresenceUpdate(
     state.gaming.currentGame = gameName;
   };
 
-  if (startNow) {
-    await scheduleStart();
-    return;
+  if (state.gaming.stopTimer) {
+    clearTimeout(state.gaming.stopTimer);
+    state.gaming.stopTimer = null;
   }
 
   if (state.gaming.startTimer) {
     clearTimeout(state.gaming.startTimer);
+    state.gaming.startTimer = null;
+  }
+
+  if (startNow) {
+    await scheduleStart();
+    return;
   }
 
   state.gaming.startTimer = setTimeout(() => {
@@ -122,6 +135,7 @@ export async function handleVoiceStateUpdate(
 
   if (state.social.stopTimer) {
     clearTimeout(state.social.stopTimer);
+    state.social.stopTimer = null;
   }
 
   state.social.stopTimer = setTimeout(async () => {
