@@ -66,8 +66,8 @@ api.interceptors.response.use(
       // Handle 401 Unauthorized globally
       if (status === 401) {
         localStorage.removeItem('apiSecret');
-        // Force reload to reset state and show login screen
-        window.location.href = '/';
+        // Dispatch custom event instead of hard reload to preserve form data
+        window.dispatchEvent(new CustomEvent('session-expired'));
         return Promise.reject(error);
       }
 

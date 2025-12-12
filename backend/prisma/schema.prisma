@@ -160,6 +160,7 @@ model TimeSlice {
   source       TimeSource
   isLocked     Boolean       @default(false)
   linkedTaskId String?
+  togglEntryId String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 

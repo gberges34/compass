@@ -17,11 +17,13 @@ const LoginGate: React.FC<LoginGateProps> = ({ children }) => {
   const [isChecking, setIsChecking] = useState(true);
   const [apiKey, setApiKey] = useState("");
   const [error, setError] = useState("");
+  const [sessionExpired, setSessionExpired] = useState(false);
   const toast = useToast();
 
   // Check if API key exists in localStorage on mount
-  // Check if API key exists in localStorage on mount
   useEffect(() => {
+    const abortController = new AbortController();
+    
     const verifyStoredKey = async () => {
       const storedKey = localStorage.getItem("apiSecret");
       if (storedKey) {
@@ -30,19 +32,43 @@ const LoginGate: React.FC<LoginGateProps> = ({ children }) => {
           await api.get("/tasks", {
             params: { limit: 1 },
           });
-          setIsAuthenticated(true);
+          if (!abortController.signal.aborted) {
+            setIsAuthenticated(true);
+          }
         } catch (error) {
           // If verification fails, clear the invalid key
-          localStorage.removeItem("apiSecret");
-          setIsAuthenticated(false);
-          toast.showError("Session expired. Please login again.");
+          if (!abortController.signal.aborted) {
+            localStorage.removeItem("apiSecret");
+            setIsAuthenticated(false);
+            toast.showError("Session expired. Please login again.");
+          }
         }
       }
-      setIsChecking(false);
+      if (!abortController.signal.aborted) {
+        setIsChecking(false);
+      }
     };
 
     verifyStoredKey();
+    
+    return () => {
+      abortController.abort();
+    };
   }, [toast]);
+
+  // Listen for session-expired events from API interceptor
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setSessionExpired(true);
+      setIsAuthenticated(false);
+    };
+
+    window.addEventListener('session-expired', handleSessionExpired);
+    
+    return () => {
+      window.removeEventListener('session-expired', handleSessionExpired);
+    };
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +100,13 @@ const LoginGate: React.FC<LoginGateProps> = ({ children }) => {
     localStorage.removeItem("apiSecret");
     setIsAuthenticated(false);
     setApiKey("");
+    setSessionExpired(false);
     toast.showInfo("Logged out");
+  };
+
+  const handleSessionExpiredDismiss = () => {
+    setSessionExpired(false);
+    setApiKey("");
   };
 
   // Show loading state while checking
@@ -85,6 +117,27 @@ const LoginGate: React.FC<LoginGateProps> = ({ children }) => {
           <div className="animate-spin rounded-full h-48 w-48 border-b-4 border-action mx-auto"></div>
           <p className="mt-16 text-slate">Checking authentication...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Show session expired modal overlay if session expired
+  if (sessionExpired) {
+    return (
+      <div className="fixed inset-0 bg-ink/50 backdrop-blur-sm flex items-center justify-center z-50 p-24">
+        <Card padding="large" className="w-full max-w-md">
+          <h2 className="text-h2 text-ink mb-8">Session Expired</h2>
+          <p className="text-slate mb-24">
+            Your session has expired. Please re-authenticate to continue.
+          </p>
+          <Button
+            variant="primary"
+            onClick={handleSessionExpiredDismiss}
+            fullWidth
+          >
+            Re-authenticate
+          </Button>
+        </Card>
       </div>
     );
   }

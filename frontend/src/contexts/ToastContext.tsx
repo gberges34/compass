@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import ToastContainer, { Toast, ToastType } from '../components/Toast';
 
 interface ToastContextValue {
@@ -45,16 +45,19 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast(message, 'info');
   }, [showToast]);
 
+  const value = useMemo(
+    () => ({
+      showToast,
+      showSuccess,
+      showError,
+      showWarning,
+      showInfo,
+    }),
+    [showToast, showSuccess, showError, showWarning, showInfo]
+  );
+
   return (
-    <ToastContext.Provider
-      value={{
-        showToast,
-        showSuccess,
-        showError,
-        showWarning,
-        showInfo,
-      }}
-    >
+    <ToastContext.Provider value={value}>
       {children}
       <ToastContainer toasts={toasts} onClose={removeToast} />
     </ToastContext.Provider>

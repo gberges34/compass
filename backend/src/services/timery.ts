@@ -32,6 +32,61 @@ const TOGGL_PROJECT_CATEGORY_MAP: Record<string, Category> = {
   'Admin': 'ADMIN',
 };
 
+type TogglContext = {
+  workspaceId: number;
+  projectNameToId: Map<string, number>;
+};
+
+const CATEGORY_TO_TOGGL_PROJECT_NAME: Partial<Record<Category, string>> =
+  Object.fromEntries(
+    Object.entries(TOGGL_PROJECT_CATEGORY_MAP).map(([projectName, category]) => [category, projectName])
+  );
+
+let cachedContext: { value: TogglContext; fetchedAt: number } | null = null;
+const TOGGL_CONTEXT_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+async function fetchDefaultWorkspaceId(): Promise<number> {
+  const response = await withRetry(() =>
+    togglAPI.get('/me')
+  );
+  const workspaceId = response.data?.default_workspace_id;
+  if (!workspaceId) {
+    throw new InternalError('Failed to resolve default Toggl workspace');
+  }
+  return workspaceId;
+}
+
+/**
+ * Fetches and caches Toggl workspace + project metadata.
+ */
+export async function getTogglContext(): Promise<TogglContext> {
+  if (cachedContext && Date.now() - cachedContext.fetchedAt < TOGGL_CONTEXT_TTL_MS) {
+    return cachedContext.value;
+  }
+
+  const [workspaceId, projectIdToName] = await Promise.all([
+    fetchDefaultWorkspaceId(),
+    getProjects(),
+  ]);
+
+  const projectNameToId = new Map<string, number>();
+  projectIdToName.forEach((name, id) => projectNameToId.set(name, id));
+
+  const value = { workspaceId, projectNameToId };
+  cachedContext = { value, fetchedAt: Date.now() };
+  return value;
+}
+
+/**
+ * Resolves Compass Category to Toggl project_id if mapped; otherwise null.
+ */
+export async function resolveProjectIdForCategory(category: string): Promise<number | null> {
+  const ctx = await getTogglContext();
+  const projectName = CATEGORY_TO_TOGGL_PROJECT_NAME[category as Category];
+  if (!projectName) return null;
+  return ctx.projectNameToId.get(projectName) ?? null;
+}
+
 export const TOGGL_OVERLAP_TOLERANCE_MINUTES = 15;
 
 export interface TimeryEntry {
@@ -79,7 +134,7 @@ export async function fetchTimeryEntry(entryId: string): Promise<TimeryEntry> {
 export async function getCurrentRunningEntry(): Promise<TimeryEntry | null> {
   try {
     const response = await withRetry(() =>
-      togglAPI.get('/time_entries/current')
+      togglAPI.get('/me/time_entries/current')
     );
 
     if (!response.data) {
@@ -118,15 +173,67 @@ export async function stopRunningEntry(): Promise<TimeryEntry | null> {
       return null;
     }
 
+    const { workspaceId } = await getTogglContext();
+
     // Use the entry ID from currentEntry (no duplicate API call)
     await withRetry(() =>
-      togglAPI.patch(`/time_entries/${currentEntry.id}/stop`)
+      togglAPI.patch(`/workspaces/${workspaceId}/time_entries/${currentEntry.id}/stop`)
     );
     return await fetchTimeryEntry(currentEntry.id);
   } catch (error: any) {
     console.error('Error stopping entry:', error.response?.data || error.message);
     throw new InternalError(`Failed to stop Timery entry: ${error.message}`);
   }
+}
+
+export async function createRunningTimeEntry(input: {
+  workspaceId: number;
+  description: string;
+  start: Date;
+  projectId: number | null;
+  tags: string[];
+}): Promise<{ id: number }> {
+  const payload: Record<string, any> = {
+    workspace_id: input.workspaceId,
+    description: input.description,
+    start: input.start.toISOString(),
+    duration: -1, // running entry
+    created_with: 'Compass Time Engine',
+    tags: input.tags,
+  };
+
+  if (input.projectId) {
+    payload.project_id = input.projectId;
+  }
+
+  const response = await withRetry(() =>
+    togglAPI.post(`/workspaces/${input.workspaceId}/time_entries`, payload)
+  );
+
+  return response.data;
+}
+
+export async function stopTimeEntry(input: {
+  workspaceId: number;
+  entryId: number;
+}): Promise<void> {
+  await withRetry(() =>
+    togglAPI.patch(`/workspaces/${input.workspaceId}/time_entries/${input.entryId}/stop`)
+  );
+}
+
+export async function updateTimeEntryTags(input: {
+  workspaceId: number;
+  entryId: number;
+  tags: string[];
+  action: 'add' | 'delete';
+}): Promise<void> {
+  await withRetry(() =>
+    togglAPI.put(`/workspaces/${input.workspaceId}/time_entries/${input.entryId}`, {
+      tag_action: input.action,
+      tags: input.tags,
+    })
+  );
 }
 
 export type PostDoLogTimeRange = Pick<PostDoLog, 'startTime' | 'endTime'>;
@@ -164,6 +271,7 @@ interface TogglTimeEntry {
   stop: string | null;
   description: string;
   project_id: number | null;
+  tags?: string[] | null;
 }
 
 /**
@@ -232,6 +340,10 @@ export async function getCategoryBalanceFromToggl(
   entries.forEach(entry => {
     // Skip running entries (negative duration)
     if (entry.duration < 0) return;
+
+    // Skip Compass-created entries (avoid double counting projection)
+    const hasCompassTag = (entry.tags || []).some((tag) => tag.toLowerCase() === 'compass');
+    if (hasCompassTag) return;
 
     // Skip if this overlaps with a Compass task (dedupe)
     if (isTogglEntryDuplicate(entry, postDoLogs)) {
