@@ -222,16 +222,41 @@ export async function stopTimeEntry(input: {
   );
 }
 
+async function fetchTimeEntryTags(entryId: number): Promise<string[]> {
+  const response = await withRetry(() =>
+    togglAPI.get(`/me/time_entries/${entryId}`)
+  );
+  const data = response.data as { tags?: string[] | null } | null;
+  return (data?.tags || []).filter(Boolean);
+}
+
 export async function updateTimeEntryTags(input: {
   workspaceId: number;
   entryId: number;
   tags: string[];
   action: 'add' | 'delete';
 }): Promise<void> {
+  if (input.action === 'add') {
+    await withRetry(() =>
+      togglAPI.put(`/workspaces/${input.workspaceId}/time_entries/${input.entryId}`, {
+        tag_action: 'add',
+        tags: input.tags,
+      })
+    );
+    return;
+  }
+
+  const existingTags = await fetchTimeEntryTags(input.entryId).catch((error) => {
+    console.warn('Failed to fetch existing tags for Toggl entry; skipping delete', error);
+    return [];
+  });
+
+  const removeSet = new Set(input.tags.map((tag) => tag.toLowerCase()));
+  const remainingTags = existingTags.filter((tag) => !removeSet.has(tag.toLowerCase()));
+
   await withRetry(() =>
     togglAPI.put(`/workspaces/${input.workspaceId}/time_entries/${input.entryId}`, {
-      tag_action: input.action,
-      tags: input.tags,
+      tags: remainingTags,
     })
   );
 }
