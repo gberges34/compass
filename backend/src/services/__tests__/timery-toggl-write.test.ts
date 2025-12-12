@@ -67,4 +67,19 @@ describe('Toggl write helpers', () => {
       expect.objectContaining({ tag_action: 'add', tags: ['deep-work'] })
     );
   });
+
+  it('removes tags by replacing tag list', async () => {
+    mockGet.mockResolvedValue({ data: { id: 123, tags: ['compass', 'deep-work'] } });
+    mockPut.mockResolvedValue({ data: { id: 123 } });
+
+    await updateTimeEntryTags({ workspaceId: 999, entryId: 123, tags: ['deep-work'], action: 'delete' });
+
+    expect(mockGet).toHaveBeenCalledWith('/me/time_entries/123');
+    expect(mockPut).toHaveBeenCalledWith(
+      '/workspaces/999/time_entries/123',
+      expect.objectContaining({ tags: ['compass'] })
+    );
+    const putBody = mockPut.mock.calls[0][1];
+    expect(putBody.tag_action).toBeUndefined();
+  });
 });
