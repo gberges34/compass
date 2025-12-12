@@ -36,19 +36,37 @@ function buildDeps(): EngineBridgeDeps {
     async startSlice(input) {
       await callWithRetry('discord-startSlice', async () => {
         const { startSlice } = await import('../services/timeEngine');
-        await startSlice(input);
+        const slice = await startSlice(input);
+        if (input.dimension === 'PRIMARY') {
+          const { syncPrimaryStart } = await import('../services/togglProjection');
+          syncPrimaryStart(slice).catch((error) =>
+            console.error('Toggl projection failed (discord PRIMARY start)', error)
+          );
+        }
       });
     },
     async stopSlice(input) {
       await callWithRetry('discord-stopSlice', async () => {
         const { stopSlice } = await import('../services/timeEngine');
-        await stopSlice(input);
+        const slice = await stopSlice(input);
+        if (input.dimension === 'PRIMARY') {
+          const { syncPrimaryStop } = await import('../services/togglProjection');
+          syncPrimaryStop(slice).catch((error) =>
+            console.error('Toggl projection failed (discord PRIMARY stop)', error)
+          );
+        }
       });
     },
     async stopSliceIfExists(input) {
       await callWithRetry('discord-stopSliceIfExists', async () => {
         const { stopSliceIfExists } = await import('../services/timeEngine');
-        await stopSliceIfExists(input);
+        const slice = await stopSliceIfExists(input);
+        if (input.dimension === 'PRIMARY') {
+          const { syncPrimaryStop } = await import('../services/togglProjection');
+          syncPrimaryStop(slice).catch((error) =>
+            console.error('Toggl projection failed (discord PRIMARY stopIfExists)', error)
+          );
+        }
       });
     },
     async isSleepingNow() {

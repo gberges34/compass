@@ -485,11 +485,11 @@ describe('togglProjection', () => {
     expect(mockStopTimeEntry).toHaveBeenCalledWith({ workspaceId: 999, entryId: 123 });
   });
 
-  it('syncWorkModeTags adds tag to current primary', async () => {
-    await syncWorkModeTags(baseSlice({ togglEntryId: '123' }), 'Deep Work');
-    expect(mockUpdateTimeEntryTags).toHaveBeenCalledWith({
-      workspaceId: 999,
-      entryId: 123,
+	  it('syncWorkModeTags adds tag to current primary', async () => {
+	    await syncWorkModeTags(baseSlice({ togglEntryId: '123' }), 'Deep Work', 'add');
+	    expect(mockUpdateTimeEntryTags).toHaveBeenCalledWith({
+	      workspaceId: 999,
+	      entryId: 123,
       tags: ['deep-work'],
       action: 'add',
     });
@@ -526,33 +526,46 @@ import {
   getCurrentRunningEntry,
 } from './timery';
 
-function workModeToTag(category: string): string {
-  return category.trim().toLowerCase().replace(/\\s+/g, '-');
-}
+	function workModeToTag(category: string): string {
+	  return category.trim().toLowerCase().replace(/\s+/g, '-');
+	}
 
-export async function syncPrimaryStart(slice: TimeSlice): Promise<void> {
-  if (!env.TOGGL_API_TOKEN || slice.dimension !== 'PRIMARY') return;
-  const { workspaceId } = await getTogglContext();
+	export async function syncPrimaryStart(slice: TimeSlice): Promise<void> {
+	  if (!env.TOGGL_API_TOKEN || slice.dimension !== 'PRIMARY') return;
+	  const { workspaceId } = await getTogglContext();
 
-  await stopRunningEntry().catch(() => {});
+	  try {
+	    await stopRunningEntry();
+	  } catch (error) {
+	    console.warn('Failed to stop running Toggl entry before PRIMARY start', error);
+	  }
 
-  const workMode = await prisma.timeSlice.findFirst({
-    where: { dimension: 'WORK_MODE', end: null },
-    select: { category: true },
-  });
+	  const workMode = await prisma.timeSlice.findFirst({
+	    where: { dimension: 'WORK_MODE', end: null },
+	    select: { category: true },
+	  });
 
-  const projectId = await resolveProjectIdForCategory(slice.category);
+	  const projectId = await resolveProjectIdForCategory(slice.category);
 
-  const tags = ['compass'];
-  if (workMode?.category) tags.push(workModeToTag(workMode.category));
+	  const tags = ['compass'];
+	  if (workMode?.category) tags.push(workModeToTag(workMode.category));
 
-  const entry = await createRunningTimeEntry({
-    workspaceId,
-    description: slice.linkedTaskId ? slice.category : slice.category,
-    start: slice.start,
-    projectId,
-    tags,
-  });
+	  let description = slice.category;
+	  if (slice.linkedTaskId) {
+	    const task = await prisma.task.findUnique({
+	      where: { id: slice.linkedTaskId },
+	      select: { name: true },
+	    });
+	    if (task?.name) description = task.name;
+	  }
+
+	  const entry = await createRunningTimeEntry({
+	    workspaceId,
+	    description,
+	    start: slice.start,
+	    projectId,
+	    tags,
+	  });
 
   await prisma.timeSlice.update({
     where: { id: slice.id },
@@ -567,12 +580,13 @@ export async function syncPrimaryStop(slice: TimeSlice | null): Promise<void> {
   await stopTimeEntry({ workspaceId, entryId: Number(slice.togglEntryId) });
 }
 
-export async function syncWorkModeTags(
-  primarySlice: TimeSlice | null,
-  workModeCategory: string | null
-): Promise<void> {
-  if (!env.TOGGL_API_TOKEN || !primarySlice || primarySlice.dimension !== 'PRIMARY') return;
-  const { workspaceId } = await getTogglContext();
+	export async function syncWorkModeTags(
+	  primarySlice: TimeSlice | null,
+	  workModeCategory: string | null,
+	  action: 'add' | 'delete'
+	): Promise<void> {
+	  if (!env.TOGGL_API_TOKEN || !primarySlice || primarySlice.dimension !== 'PRIMARY') return;
+	  const { workspaceId } = await getTogglContext();
 
   let entryId = primarySlice.togglEntryId ? Number(primarySlice.togglEntryId) : null;
   if (!entryId) {
@@ -584,13 +598,13 @@ export async function syncWorkModeTags(
   const tag = workModeCategory ? workModeToTag(workModeCategory) : null;
   if (!tag) return;
 
-  await updateTimeEntryTags({
-    workspaceId,
-    entryId,
-    tags: [tag],
-    action: 'add',
-  });
-}
+	  await updateTimeEntryTags({
+	    workspaceId,
+	    entryId,
+	    tags: [tag],
+	    action,
+	  });
+	}
 ```
 
 Then extend `syncWorkModeTags` to accept a delete action in the next step.
@@ -1045,4 +1059,3 @@ git commit -m "fix(backend): skip compass-tagged Toggl entries in metrics"
    - Expected: Toggl entry stops.
 6. Run: `cd backend && npm test`.
    - Expected: all updated unit tests pass. (If existing integration suite fails due to unrelated issues, run targeted tests listed above.)
-

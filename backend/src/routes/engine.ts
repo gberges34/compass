@@ -5,6 +5,7 @@ import { startSliceSchema, stopSliceSchema, querySlicesSchema, summarySlicesSche
 import * as TimeEngine from '../services/timeEngine';
 import { prisma } from '../prisma';
 import { Prisma } from '@prisma/client';
+import { syncPrimaryStart, syncPrimaryStop, syncWorkModeTags } from '../services/togglProjection';
 
 const router = Router();
 
@@ -14,6 +15,20 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const validatedData = startSliceSchema.parse(req.body);
     const slice = await TimeEngine.startSlice(validatedData);
+
+    if (slice.dimension === 'PRIMARY') {
+      syncPrimaryStart(slice).catch((error) =>
+        console.error('Toggl projection failed (PRIMARY start)', error)
+      );
+    } else if (slice.dimension === 'WORK_MODE') {
+      const primarySlice = await prisma.timeSlice.findFirst({
+        where: { dimension: 'PRIMARY', end: null },
+      });
+      syncWorkModeTags(primarySlice, slice.category, 'add').catch((error) =>
+        console.error('Toggl projection failed (WORK_MODE add)', error)
+      );
+    }
+
     res.status(201).json(slice);
   })
 );
@@ -24,6 +39,20 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const validatedData = stopSliceSchema.parse(req.body);
     const slice = await TimeEngine.stopSlice(validatedData);
+
+    if (slice.dimension === 'PRIMARY') {
+      syncPrimaryStop(slice).catch((error) =>
+        console.error('Toggl projection failed (PRIMARY stop)', error)
+      );
+    } else if (slice.dimension === 'WORK_MODE') {
+      const primarySlice = await prisma.timeSlice.findFirst({
+        where: { dimension: 'PRIMARY', end: null },
+      });
+      syncWorkModeTags(primarySlice, slice.category, 'delete').catch((error) =>
+        console.error('Toggl projection failed (WORK_MODE delete)', error)
+      );
+    }
+
     res.json(slice);
   })
 );

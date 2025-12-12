@@ -229,7 +229,7 @@ export function useUpdateTask() {
         'useUpdateTask'
       );
 
-      return { cacheSnapshots, updates };
+      return { cacheSnapshots };
     },
     onError: (err: AxiosError, variables, context) => {
       restoreCacheSnapshots(queryClient, context?.cacheSnapshots);

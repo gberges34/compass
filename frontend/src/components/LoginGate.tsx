@@ -121,6 +121,27 @@ const LoginGate: React.FC<LoginGateProps> = ({ children }) => {
     );
   }
 
+  // Show session expired modal overlay if session expired
+  if (sessionExpired) {
+    return (
+      <div className="fixed inset-0 bg-ink/50 backdrop-blur-sm flex items-center justify-center z-50 p-24">
+        <Card padding="large" className="w-full max-w-md">
+          <h2 className="text-h2 text-ink mb-8">Session Expired</h2>
+          <p className="text-slate mb-24">
+            Your session has expired. Please re-authenticate to continue.
+          </p>
+          <Button
+            variant="primary"
+            onClick={handleSessionExpiredDismiss}
+            fullWidth
+          >
+            Re-authenticate
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
   // Show login form if not authenticated
   if (!isAuthenticated) {
     return (
@@ -147,27 +168,6 @@ const LoginGate: React.FC<LoginGateProps> = ({ children }) => {
               Login
             </Button>
           </form>
-        </Card>
-      </div>
-    );
-  }
-
-  // Show session expired modal overlay if session expired
-  if (sessionExpired && isAuthenticated === false) {
-    return (
-      <div className="fixed inset-0 bg-ink/50 backdrop-blur-sm flex items-center justify-center z-50 p-24">
-        <Card padding="large" className="w-full max-w-md">
-          <h2 className="text-h2 text-ink mb-8">Session Expired</h2>
-          <p className="text-slate mb-24">
-            Your session has expired. Please re-authenticate to continue.
-          </p>
-          <Button
-            variant="primary"
-            onClick={handleSessionExpiredDismiss}
-            fullWidth
-          >
-            Re-authenticate
-          </Button>
         </Card>
       </div>
     );

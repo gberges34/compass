@@ -107,4 +107,4 @@
 - Define exact category → Toggl project mapping and fallback for unmapped categories.
 - Decide import cadence (nightly vs on-demand) for foreign Toggl entries.
 - Decide debounce thresholds for WORK_MODE tag churn.
-
+- Consider a durable projection queue (DB-backed) for Toggl writes to survive long outages/restarts; not required for MVP.

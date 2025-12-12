@@ -75,4 +75,52 @@ describe('getCategoryBalanceFromToggl (integration)', () => {
     expect(balance).toEqual({ FITNESS: 30 });
     expect(mockGet).toHaveBeenCalledTimes(2);
   });
+
+  it('skips compass-tagged entries to avoid double counting', async () => {
+    mockGet.mockImplementation((path: string) => {
+      if (path === '/me/time_entries') {
+        return Promise.resolve({
+          data: [
+            {
+              id: 1,
+              duration: 600,
+              start: '2025-01-01T10:00:00Z',
+              stop: '2025-01-01T10:10:00Z',
+              description: 'Compass entry',
+              project_id: 1,
+              tags: ['compass'],
+            },
+            {
+              id: 2,
+              duration: 1800,
+              start: '2025-01-01T11:00:00Z',
+              stop: '2025-01-01T11:30:00Z',
+              description: 'Gym',
+              project_id: 2,
+              tags: [],
+            },
+          ],
+        });
+      }
+
+      if (path === '/me/projects') {
+        return Promise.resolve({
+          data: [
+            { id: 1, name: 'School' },
+            { id: 2, name: 'Fitness' },
+          ],
+        });
+      }
+
+      return Promise.resolve({ data: null });
+    });
+
+    const balance = await getCategoryBalanceFromToggl(
+      new Date('2025-01-01T00:00:00Z'),
+      new Date('2025-01-02T00:00:00Z'),
+      []
+    );
+
+    expect(balance).toEqual({ FITNESS: 30 });
+  });
 });
