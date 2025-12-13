@@ -15,6 +15,9 @@ import TaskActions from '../components/TaskActions';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
+import Select from '../components/Select';
+import Tabs from '../components/Tabs';
+import EmptyState from '../components/EmptyState';
 import { getCategoryStyle } from '../lib/designTokens';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
 
@@ -122,64 +125,64 @@ const TasksPage: React.FC = () => {
         </div>
 
         {/* Tabs */}
-        <div className="mt-24 flex space-x-4 border-b border-fog">
-          {(['NEXT', 'WAITING', 'ACTIVE', 'DONE', 'SOMEDAY'] as TaskStatus[]).map((status) => (
-            <button
-              key={status}
-              onClick={() => setSelectedTab(status)}
-              className={`px-16 py-8 font-medium text-body transition-standard border-b-2 ${
-                selectedTab === status
-                  ? 'border-action text-action'
-                  : 'border-transparent text-slate hover:text-ink'
-              }`}
-            >
-              {status}
-            </button>
-          ))}
+        <div className="mt-24">
+          <Tabs<TaskStatus>
+            value={selectedTab}
+            onChange={setSelectedTab}
+            variant="underline"
+            ariaLabel="Task status"
+            items={(['NEXT', 'WAITING', 'ACTIVE', 'DONE', 'SOMEDAY'] as TaskStatus[]).map((status) => ({
+              id: status,
+              label: status,
+            }))}
+          />
         </div>
 
         {/* Filters */}
         <div className="mt-16 flex flex-wrap gap-12">
-          <select
+          <Select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value as Category | '')}
-            className="px-12 py-8 border border-stone rounded-default text-small bg-snow focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
-          >
-              <option value="">All Categories</option>
-              <option value="SCHOOL">School</option>
-              <option value="MUSIC">Music</option>
-              <option value="FITNESS">Fitness</option>
-              <option value="GAMING">Gaming</option>
-              <option value="NUTRITION">Nutrition</option>
-              <option value="HYGIENE">Hygiene</option>
-              <option value="PET">Pet</option>
-              <option value="SOCIAL">Social</option>
-              <option value="PERSONAL">Personal</option>
-              <option value="ADMIN">Admin</option>
-            </select>
+            className="w-auto"
+            placeholder="All Categories"
+            options={[
+              { value: 'SCHOOL', label: 'School' },
+              { value: 'MUSIC', label: 'Music' },
+              { value: 'FITNESS', label: 'Fitness' },
+              { value: 'GAMING', label: 'Gaming' },
+              { value: 'NUTRITION', label: 'Nutrition' },
+              { value: 'HYGIENE', label: 'Hygiene' },
+              { value: 'PET', label: 'Pet' },
+              { value: 'SOCIAL', label: 'Social' },
+              { value: 'PERSONAL', label: 'Personal' },
+              { value: 'ADMIN', label: 'Admin' },
+            ]}
+          />
 
-          <select
+          <Select
             value={energyFilter}
             onChange={(e) => setEnergyFilter(e.target.value as Energy | '')}
-            className="px-12 py-8 border border-stone rounded-default text-small bg-snow focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
-          >
-            <option value="">All Energy Levels</option>
-            <option value="HIGH">High</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="LOW">Low</option>
-          </select>
+            className="w-auto"
+            placeholder="All Energy Levels"
+            options={[
+              { value: 'HIGH', label: 'High' },
+              { value: 'MEDIUM', label: 'Medium' },
+              { value: 'LOW', label: 'Low' },
+            ]}
+          />
 
-          <select
+          <Select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value as Priority | '')}
-            className="px-12 py-8 border border-stone rounded-default text-small bg-snow focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
-          >
-            <option value="">All Priorities</option>
-            <option value="MUST">Must</option>
-            <option value="SHOULD">Should</option>
-            <option value="COULD">Could</option>
-            <option value="MAYBE">Maybe</option>
-          </select>
+            className="w-auto"
+            placeholder="All Priorities"
+            options={[
+              { value: 'MUST', label: 'Must' },
+              { value: 'SHOULD', label: 'Should' },
+              { value: 'COULD', label: 'Could' },
+              { value: 'MAYBE', label: 'Maybe' },
+            ]}
+          />
         </div>
       </Card>
 
@@ -189,12 +192,10 @@ const TasksPage: React.FC = () => {
           <div className="animate-spin rounded-full h-48 w-48 border-b-4 border-action"></div>
         </div>
       ) : tasks.length === 0 ? (
-        <Card padding="large">
-          <div className="text-center py-32">
-            <p className="text-slate text-body mb-8">No tasks found</p>
-            <p className="text-slate text-small">Try adjusting your filters or create a new task</p>
-          </div>
-        </Card>
+        <EmptyState
+          title="No tasks found"
+          description="Try adjusting your filters or create a new task."
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
           {tasks.map((task: Task) => (

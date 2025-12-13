@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { ReviewType, Energy, CreateReviewRequest } from '../types';
 import Button from './Button';
+import Modal from './Modal';
 
 interface CreateReviewModalProps {
   reviewType: ReviewType;
@@ -119,40 +120,16 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-      onKeyDown={handleKeyDown}
+    <Modal
+      title={`Create ${reviewType === 'DAILY' ? 'Daily' : 'Weekly'} Review`}
+      description="Reflect on your progress and plan ahead."
+      onClose={onClose}
+      size="lg"
+      headerVariant="sky"
     >
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit}>
-          {/* Header */}
-          <div className="p-6 border-b border-gray-200 bg-blue-50">
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Create {reviewType === 'DAILY' ? 'Daily' : 'Weekly'} Review
-                </h2>
-                <p className="text-gray-600 mt-1">
-                  Reflect on your progress and plan ahead
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="p-6 space-y-6">
+      <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-24">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-800 text-sm">
+              <div className="bg-danger/10 border border-danger/30 rounded-default p-12 text-danger text-small">
                 {error}
               </div>
             )}
@@ -173,7 +150,7 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                       addWin();
                     }
                   }}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                  className="flex-1 px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action/20 focus:border-action resize-none"
                   rows={2}
                   placeholder="What went well? What are you proud of?"
                 />
@@ -188,15 +165,15 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                 </Button>
               </div>
               {wins.length > 0 && (
-                <ul className="space-y-2 bg-green-50 rounded-lg p-3">
+                <ul className="space-y-8 bg-mint rounded-default p-12 border border-mint">
                   {wins.map((win, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-sm">
                       <span className="text-green-500 mt-0.5">✓</span>
-                      <span className="flex-1 text-gray-700">{win}</span>
+                      <span className="flex-1 text-ink">{win}</span>
                       <button
                         type="button"
                         onClick={() => removeWin(idx)}
-                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        className="text-slate hover:text-danger transition-colors"
                         aria-label={`Remove win: ${win.slice(0, 50)}`}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,7 +201,7 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                       addMiss();
                     }
                   }}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                  className="flex-1 px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action/20 focus:border-action resize-none"
                   rows={2}
                   placeholder="What didn't go as planned? What would you change?"
                 />
@@ -239,15 +216,15 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                 </Button>
               </div>
               {misses.length > 0 && (
-                <ul className="space-y-2 bg-red-50 rounded-lg p-3">
+                <ul className="space-y-8 bg-blush rounded-default p-12 border border-blush">
                   {misses.map((miss, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-sm">
                       <span className="text-red-500 mt-0.5">✗</span>
-                      <span className="flex-1 text-gray-700">{miss}</span>
+                      <span className="flex-1 text-ink">{miss}</span>
                       <button
                         type="button"
                         onClick={() => removeMiss(idx)}
-                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        className="text-slate hover:text-danger transition-colors"
                         aria-label={`Remove miss: ${miss.slice(0, 50)}`}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -275,7 +252,7 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                       addLesson();
                     }
                   }}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="flex-1 px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action/20 focus:border-action resize-none"
                   rows={2}
                   placeholder="What insights did you gain? What will you remember?"
                 />
@@ -290,15 +267,15 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                 </Button>
               </div>
               {lessons.length > 0 && (
-                <ul className="space-y-2 bg-blue-50 rounded-lg p-3">
+                <ul className="space-y-8 bg-sky rounded-default p-12 border border-sky">
                   {lessons.map((lesson, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-sm">
                       <span className="mt-0.5">💡</span>
-                      <span className="flex-1 text-gray-700">{lesson}</span>
+                      <span className="flex-1 text-ink">{lesson}</span>
                       <button
                         type="button"
                         onClick={() => removeLesson(idx)}
-                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        className="text-slate hover:text-danger transition-colors"
                         aria-label={`Remove lesson: ${lesson.slice(0, 50)}`}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -326,7 +303,7 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                       addGoal();
                     }
                   }}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                  className="flex-1 px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action/20 focus:border-action resize-none"
                   rows={2}
                   placeholder="What will you focus on next?"
                 />
@@ -341,15 +318,15 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                 </Button>
               </div>
               {nextGoals.length > 0 && (
-                <ul className="space-y-2 bg-purple-50 rounded-lg p-3">
+                <ul className="space-y-8 bg-lavender rounded-default p-12 border border-lavender">
                   {nextGoals.map((goal, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-sm">
                       <span className="text-purple-500 mt-0.5">→</span>
-                      <span className="flex-1 text-gray-700">{goal}</span>
+                      <span className="flex-1 text-ink">{goal}</span>
                       <button
                         type="button"
                         onClick={() => removeGoal(idx)}
-                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        className="text-slate hover:text-danger transition-colors"
                         aria-label={`Remove goal: ${goal.slice(0, 50)}`}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -364,17 +341,17 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
 
             {/* Energy Assessment (Optional) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-small font-medium text-ink mb-8">
                 Energy Assessment (Optional)
               </label>
               <div className="flex gap-3">
                 {(['HIGH', 'MEDIUM', 'LOW'] as const).map((level) => (
                   <label
                     key={level}
-                    className={`flex-1 cursor-pointer border-2 rounded-lg p-3 transition-all ${
+                    className={`flex-1 cursor-pointer border rounded-default p-12 transition-standard ${
                       energyAssessment === level
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-action bg-sky shadow-e01'
+                        : 'border-stone hover:bg-cloud'
                     }`}
                   >
                     <input
@@ -391,7 +368,7 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                         {level === 'MEDIUM' && '😊'}
                         {level === 'LOW' && '😴'}
                       </div>
-                      <div className="font-medium text-gray-900 text-sm">{level}</div>
+                      <div className="font-medium text-ink text-small">{level}</div>
                     </div>
                   </label>
                 ))}
@@ -400,35 +377,22 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setEnergyAssessment('')}
-                  className="text-sm text-gray-500 hover:text-gray-700 mt-2"
+                  className="text-small text-slate hover:text-ink mt-8"
                 >
                   Clear selection
                 </button>
               )}
             </div>
-          </div>
-
-          {/* Footer */}
-          <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              disabled={submitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={submitting}
-            >
-              {submitting ? 'Creating...' : `Create ${reviewType === 'DAILY' ? 'Daily' : 'Weekly'} Review`}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex justify-end gap-12 pt-8">
+          <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="primary" disabled={submitting}>
+            {submitting ? 'Creating...' : `Create ${reviewType === 'DAILY' ? 'Daily' : 'Weekly'} Review`}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 };
 
