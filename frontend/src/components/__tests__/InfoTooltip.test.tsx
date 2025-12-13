@@ -32,7 +32,9 @@ describe('InfoTooltip (touch mode)', () => {
     );
 
     const trigger = screen.getByRole('button', { name: /about execution rate/i });
-    expect(screen.getByRole('tooltip')).toHaveAttribute('data-open', 'false');
+    const tooltip = screen.getByRole('tooltip');
+    expect(tooltip).toHaveAttribute('data-open', 'false');
+    expect(tooltip.className).not.toContain('group-hover:opacity-100');
 
     fireEvent.click(trigger);
     expect(screen.getByRole('tooltip')).toHaveAttribute('data-open', 'true');
@@ -50,6 +52,29 @@ describe('InfoTooltip (touch mode)', () => {
 
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.getByRole('tooltip')).toHaveAttribute('data-open', 'false');
+  });
+});
+
+describe('InfoTooltip (desktop mode)', () => {
+  beforeEach(() => {
+    setTouchMatchMedia(false);
+  });
+
+  it('does not toggle open on click', () => {
+    render(<InfoTooltip ariaLabel="About execution rate" content={<div>Tooltip body</div>} />);
+    const trigger = screen.getByRole('button', { name: /about execution rate/i });
+
+    fireEvent.click(trigger);
+    expect(screen.getByRole('tooltip')).toHaveAttribute('data-open', 'false');
+  });
+
+  it('includes hover-only classes when not a touch device', () => {
+    render(<InfoTooltip ariaLabel="About execution rate" content={<div>Tooltip body</div>} />);
+    const tooltip = screen.getByRole('tooltip');
+
+    expect(tooltip.className).toContain('group-hover:opacity-100');
+    expect(tooltip.className).toContain('group-hover:pointer-events-auto');
+    expect(tooltip.className).toContain('group-hover:translate-y-0');
   });
 });
 

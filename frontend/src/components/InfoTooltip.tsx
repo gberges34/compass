@@ -84,12 +84,16 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
     const hidden = 'opacity-0 pointer-events-none -translate-y-2';
     const visible = 'opacity-100 pointer-events-auto translate-y-0';
     const visibleOnHover = 'group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0';
+    const hoverClasses = !isTouch ? visibleOnHover : '';
 
-    return `${base} ${hidden} ${visibleOnHover} ${isTooltipVisibleOnTouch ? visible : ''} ${tooltipClassName}`.trim();
-  }, [isTooltipVisibleOnTouch, tooltipClassName]);
+    return `${base} ${hidden} ${hoverClasses} ${isTooltipVisibleOnTouch ? visible : ''} ${tooltipClassName}`.trim();
+  }, [isTouch, isTooltipVisibleOnTouch, tooltipClassName]);
 
   return (
-    <span ref={wrapperRef} className={`relative inline-flex group ${className}`.trim()}>
+    <span
+      ref={wrapperRef}
+      className={`relative inline-flex ${!isTouch ? 'group' : ''} ${className}`.trim()}
+    >
       <button
         type="button"
         aria-label={ariaLabel}
