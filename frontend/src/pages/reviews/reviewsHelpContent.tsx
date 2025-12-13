@@ -4,43 +4,33 @@ export type ReviewsHelpId = 'chart-execution' | 'chart-cat-balance' | 'chart-act
 
 export const reviewsHelpContent: Record<ReviewsHelpId, React.ReactNode> = {
   'chart-execution': (
-    <div className="space-y-8">
-      <p>
-        <span className="font-semibold">What it is:</span> Percentage of planned outcomes you actually achieved.
-      </p>
-      <p>
-        <span className="font-semibold">Where it comes from:</span> Historical Review records.
-      </p>
-      <p>
-        <span className="font-semibold">How it’s derived:</span> (Completed Outcomes / Planned Outcomes) × 100 per day.
-      </p>
-    </div>
+    <dl className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-4">
+      <dt className="font-semibold whitespace-nowrap">What it is:</dt>
+      <dd>Percentage of planned outcomes you actually achieved.</dd>
+      <dt className="font-semibold whitespace-nowrap">Where it comes from:</dt>
+      <dd>Historical Review records.</dd>
+      <dt className="font-semibold whitespace-nowrap">How it’s derived:</dt>
+      <dd>(Completed Outcomes / Planned Outcomes) × 100 per day.</dd>
+    </dl>
   ),
   'chart-cat-balance': (
-    <div className="space-y-8">
-      <p>
-        <span className="font-semibold">What it is:</span> Breakdown of time spent on structured work/tasks.
-      </p>
-      <p>
-        <span className="font-semibold">Where it comes from:</span> Completed Compass tasks + Linked Toggl entries.
-      </p>
-      <p>
-        <span className="font-semibold">How it’s derived:</span> Sum of PostDoLog durations grouped by category.
-      </p>
-    </div>
+    <dl className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-4">
+      <dt className="font-semibold whitespace-nowrap">What it is:</dt>
+      <dd>Breakdown of time spent on structured work/tasks.</dd>
+      <dt className="font-semibold whitespace-nowrap">Where it comes from:</dt>
+      <dd>Completed Compass tasks + Linked Toggl entries.</dd>
+      <dt className="font-semibold whitespace-nowrap">How it’s derived:</dt>
+      <dd>Sum of PostDoLog durations grouped by category.</dd>
+    </dl>
   ),
   'chart-activities': (
-    <div className="space-y-8">
-      <p>
-        <span className="font-semibold">What it is:</span> Breakdown of unstructured life time (e.g., Sleep, Commute, Chores).
-      </p>
-      <p>
-        <span className="font-semibold">Where it comes from:</span> Time Engine slices not linked to specific tasks.
-      </p>
-      <p>
-        <span className="font-semibold">How it’s derived:</span> PRIMARY dimension slices summed by category.
-      </p>
-    </div>
+    <dl className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-4">
+      <dt className="font-semibold whitespace-nowrap">What it is:</dt>
+      <dd>Breakdown of unstructured life time (e.g., Sleep, Commute, Chores).</dd>
+      <dt className="font-semibold whitespace-nowrap">Where it comes from:</dt>
+      <dd>Time Engine slices not linked to specific tasks.</dd>
+      <dt className="font-semibold whitespace-nowrap">How it’s derived:</dt>
+      <dd>PRIMARY dimension slices summed by category.</dd>
+    </dl>
   ),
 };
-
