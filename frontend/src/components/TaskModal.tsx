@@ -110,14 +110,14 @@ const TaskModal: React.FC<TaskModalProps> = ({ mode, task, onClose, onSave }) =>
             <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" disabled={saving}>
+            <Button type="submit" form="task-form" variant="primary" disabled={saving}>
               {saving ? 'Saving...' : mode === 'create' ? 'Create Task' : 'Save Changes'}
             </Button>
           </div>
         </div>
       }
     >
-      <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-16">
+      <form id="task-form" onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-16">
         {error && (
           <div className="bg-danger/10 border border-danger/30 rounded-default p-12 text-danger text-small">
             {error}

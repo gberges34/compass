@@ -108,13 +108,15 @@ const CompleteTaskModal: React.FC<CompleteTaskModalProps> = ({ task, onClose, on
 
         <div>
           <label className="block text-small font-medium text-ink mb-4">How hard was it?</label>
-          <div className="flex gap-12 flex-wrap">
+          <div className="flex gap-12 flex-wrap" role="radiogroup" aria-label="Effort level">
             {(['SMALL', 'MEDIUM', 'LARGE'] as Effort[]).map((level) => {
               const isActive = effortLevel === level;
               return (
                 <button
                   key={level}
                   type="button"
+                  role="radio"
+                  aria-checked={isActive}
                   onClick={() => setEffortLevel(level)}
                   disabled={completing}
                   className={`px-16 py-12 rounded-default border transition-standard ${
