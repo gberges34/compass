@@ -257,11 +257,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 } min-h-[53px] px-24 py-12`
               }
             >
-              <span className="text-body">{todayItem.label}</span>
+              <span className="text-body font-semibold">{todayItem.label}</span>
             </NavLink>
 
             {/* Right: Calendar icon + Logout */}
-            <div className="justify-self-end flex items-center gap-8">
+            <div className="justify-self-end flex items-center gap-8 md:gap-24">
               <NavLink
                 to={calendarItem.to!}
                 onMouseEnter={() => handlePrefetch(calendarItem.to)}
