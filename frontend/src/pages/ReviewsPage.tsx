@@ -19,8 +19,10 @@ import { useToast } from '../contexts/ToastContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import CreateReviewModal from '../components/CreateReviewModal';
+import InfoTooltip from '../components/InfoTooltip';
 import Tabs from '../components/Tabs';
 import { categoryColors } from '../lib/designTokens';
+import { reviewsHelpContent } from './reviews/reviewsHelpContent';
 
 const ReviewsPage: React.FC = () => {
   const toast = useToast();
@@ -208,9 +210,13 @@ const ReviewsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-24">
           {/* Execution Rate Trend */}
           <Card padding="medium">
-            <h3 className="text-h3 text-ink mb-16">
-              Execution Rate Trend (Last 7)
-            </h3>
+            <div className="flex items-center gap-8 mb-16">
+              <InfoTooltip
+                ariaLabel="About Execution Rate Trend"
+                content={reviewsHelpContent['chart-execution']}
+              />
+              <h3 className="text-h3 text-ink">Execution Rate Trend (Last 7)</h3>
+            </div>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={getExecutionRateChartData()}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -224,7 +230,13 @@ const ReviewsPage: React.FC = () => {
 
           {/* Category Balance */}
           <Card padding="medium">
-            <h3 className="text-h3 text-ink mb-16">Category Balance</h3>
+            <div className="flex items-center gap-8 mb-16">
+              <InfoTooltip
+                ariaLabel="About Category Balance"
+                content={reviewsHelpContent['chart-cat-balance']}
+              />
+              <h3 className="text-h3 text-ink">Category Balance</h3>
+            </div>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
@@ -248,7 +260,13 @@ const ReviewsPage: React.FC = () => {
 
           {/* Primary Activities (Time Engine) */}
           <Card padding="medium">
-            <h3 className="text-h3 text-ink mb-16">Primary Activities</h3>
+            <div className="flex items-center gap-8 mb-16">
+              <InfoTooltip
+                ariaLabel="About Primary Activities"
+                content={reviewsHelpContent['chart-activities']}
+              />
+              <h3 className="text-h3 text-ink">Primary Activities</h3>
+            </div>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={getActivityBreakdownData()} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
