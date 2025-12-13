@@ -18,13 +18,28 @@ import {
 import { callWithRetry } from './retry';
 
 let client: Client | null = null;
+let debugInterval: NodeJS.Timeout | null = null;
+
+function normalizeEnvString(value?: string): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
 
 function parseCommaSeparated(value?: string): Set<string> {
-  if (!value) return new Set();
+  const normalized = normalizeEnvString(value);
+  if (!normalized) return new Set();
   return new Set(
-    value
+    normalized
       .split(',')
       .map((s) => s.trim())
+      .map((s) => normalizeEnvString(s) || '')
       .filter(Boolean)
   );
 }
@@ -121,7 +136,8 @@ function normalizeVoiceState(
   allowedGuilds: Set<string>
 ): NormalizedVoiceState {
   const guildId = voice.guild?.id;
-  const inAllowedGuild = allowedGuilds.size === 0 || (guildId ? allowedGuilds.has(guildId) : false);
+  const inAllowedGuild =
+    allowedGuilds.size === 0 || (guildId ? allowedGuilds.has(guildId) : false);
   const inTrackedVoice = inAllowedGuild && Boolean(voice.channelId);
   return {
     inTrackedVoice,
@@ -139,7 +155,10 @@ export async function initDiscordBot(): Promise<void> {
     return;
   }
 
-  if (!env.DISCORD_TOKEN || !env.DISCORD_USER_ID) {
+  const discordToken = normalizeEnvString(env.DISCORD_TOKEN);
+  const trackedUserId = normalizeEnvString(env.DISCORD_USER_ID);
+
+  if (!discordToken || !trackedUserId) {
     console.warn('Discord bot enabled but DISCORD_TOKEN or DISCORD_USER_ID missing; skipping init.');
     return;
   }
@@ -149,6 +168,13 @@ export async function initDiscordBot(): Promise<void> {
   }
 
   const allowedGuilds = parseCommaSeparated(env.DISCORD_GUILD_IDS);
+
+  console.info('[discord] init', {
+    trackedUserIdLength: trackedUserId.length,
+    allowedGuildCount: allowedGuilds.size,
+    allowedGuilds: Array.from(allowedGuilds.values()),
+    denylist: Array.from(parseCommaSeparated(env.DISCORD_DENYLIST_APPS).values()),
+  });
 
   const intents = [
     GatewayIntentBits.Guilds,
@@ -164,14 +190,41 @@ export async function initDiscordBot(): Promise<void> {
   const state = createInitialDiscordState();
   const deps = buildDeps();
 
+  const counters = {
+    presenceEvents: 0,
+    presenceForTrackedUser: 0,
+    presenceDroppedGuild: 0,
+    voiceEvents: 0,
+    voiceForTrackedUser: 0,
+    voiceDroppedGuild: 0,
+    voiceInTrackedVoice: 0,
+  };
+
+  debugInterval = setInterval(() => {
+    console.info('[discord] heartbeat', { ...counters });
+    counters.presenceEvents = 0;
+    counters.presenceForTrackedUser = 0;
+    counters.presenceDroppedGuild = 0;
+    counters.voiceEvents = 0;
+    counters.voiceForTrackedUser = 0;
+    counters.voiceDroppedGuild = 0;
+    counters.voiceInTrackedVoice = 0;
+  }, 60_000);
+
   client.on('ready', () => {
     console.log(`Discord bot logged in as ${client?.user?.tag}`);
   });
 
   client.on('presenceUpdate', async (_oldPresence, newPresence) => {
     try {
-      if (!newPresence || newPresence.userId !== env.DISCORD_USER_ID) return;
-      if (!isAllowedGuild(newPresence.guild?.id, allowedGuilds)) return;
+      counters.presenceEvents += 1;
+      const presenceUserId = normalizeEnvString(newPresence?.userId);
+      if (!newPresence || !presenceUserId || presenceUserId !== trackedUserId) return;
+      counters.presenceForTrackedUser += 1;
+      if (!isAllowedGuild(newPresence.guild?.id, allowedGuilds)) {
+        counters.presenceDroppedGuild += 1;
+        return;
+      }
       const normalized = normalizePresence(newPresence, deps.denylistedApps);
       await handlePresenceUpdate(normalized, state, deps);
     } catch (error) {
@@ -181,19 +234,32 @@ export async function initDiscordBot(): Promise<void> {
 
   client.on('voiceStateUpdate', async (_oldState, newState) => {
     try {
-      if (!newState || newState.id !== env.DISCORD_USER_ID) return;
-      if (!isAllowedGuild(newState.guild?.id, allowedGuilds)) return;
+      counters.voiceEvents += 1;
+      const voiceUserId = normalizeEnvString(newState?.id);
+      if (!newState || !voiceUserId || voiceUserId !== trackedUserId) return;
+      counters.voiceForTrackedUser += 1;
+      if (!isAllowedGuild(newState.guild?.id, allowedGuilds)) {
+        counters.voiceDroppedGuild += 1;
+        return;
+      }
       const normalized = normalizeVoiceState(newState, allowedGuilds);
+      if (normalized.inTrackedVoice) {
+        counters.voiceInTrackedVoice += 1;
+      }
       await handleVoiceStateUpdate(normalized, state, deps);
     } catch (error) {
       console.error('Error in voiceStateUpdate handler', error);
     }
   });
 
-  await client.login(env.DISCORD_TOKEN);
+  await client.login(discordToken);
 }
 
 export async function shutdownDiscordBot(): Promise<void> {
+  if (debugInterval) {
+    clearInterval(debugInterval);
+    debugInterval = null;
+  }
   if (client) {
     await client.destroy();
     client = null;
