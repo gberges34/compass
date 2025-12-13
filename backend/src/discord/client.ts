@@ -19,6 +19,8 @@ import { callWithRetry } from './retry';
 
 let client: Client | null = null;
 let debugInterval: NodeJS.Timeout | null = null;
+const loggedVoiceMismatches = new Set<string>();
+const loggedPresenceMismatches = new Set<string>();
 
 function normalizeEnvString(value?: string): string | undefined {
   if (!value) return undefined;
@@ -192,10 +194,14 @@ export async function initDiscordBot(): Promise<void> {
 
   const counters = {
     presenceEvents: 0,
+    presenceInAllowedGuild: 0,
     presenceForTrackedUser: 0,
+    presenceUserMismatch: 0,
     presenceDroppedGuild: 0,
     voiceEvents: 0,
+    voiceInAllowedGuild: 0,
     voiceForTrackedUser: 0,
+    voiceUserMismatch: 0,
     voiceDroppedGuild: 0,
     voiceInTrackedVoice: 0,
   };
@@ -203,10 +209,14 @@ export async function initDiscordBot(): Promise<void> {
   debugInterval = setInterval(() => {
     console.info('[discord] heartbeat', { ...counters });
     counters.presenceEvents = 0;
+    counters.presenceInAllowedGuild = 0;
     counters.presenceForTrackedUser = 0;
+    counters.presenceUserMismatch = 0;
     counters.presenceDroppedGuild = 0;
     counters.voiceEvents = 0;
+    counters.voiceInAllowedGuild = 0;
     counters.voiceForTrackedUser = 0;
+    counters.voiceUserMismatch = 0;
     counters.voiceDroppedGuild = 0;
     counters.voiceInTrackedVoice = 0;
   }, 60_000);
@@ -218,13 +228,30 @@ export async function initDiscordBot(): Promise<void> {
   client.on('presenceUpdate', async (_oldPresence, newPresence) => {
     try {
       counters.presenceEvents += 1;
-      const presenceUserId = normalizeEnvString(newPresence?.userId);
-      if (!newPresence || !presenceUserId || presenceUserId !== trackedUserId) return;
-      counters.presenceForTrackedUser += 1;
+      if (!newPresence) return;
       if (!isAllowedGuild(newPresence.guild?.id, allowedGuilds)) {
         counters.presenceDroppedGuild += 1;
         return;
       }
+      counters.presenceInAllowedGuild += 1;
+      const presenceUserId = normalizeEnvString(newPresence.userId);
+      if (!presenceUserId || presenceUserId !== trackedUserId) {
+        counters.presenceUserMismatch += 1;
+        if (
+          presenceUserId &&
+          !loggedPresenceMismatches.has(presenceUserId) &&
+          newPresence.activities?.some((a) => a.type === 0)
+        ) {
+          loggedPresenceMismatches.add(presenceUserId);
+          console.warn('[discord] presence user mismatch', {
+            eventUserId: presenceUserId,
+            trackedUserId,
+            guildId: newPresence.guild?.id,
+          });
+        }
+        return;
+      }
+      counters.presenceForTrackedUser += 1;
       const normalized = normalizePresence(newPresence, deps.denylistedApps);
       await handlePresenceUpdate(normalized, state, deps);
     } catch (error) {
@@ -235,13 +262,27 @@ export async function initDiscordBot(): Promise<void> {
   client.on('voiceStateUpdate', async (_oldState, newState) => {
     try {
       counters.voiceEvents += 1;
-      const voiceUserId = normalizeEnvString(newState?.id);
-      if (!newState || !voiceUserId || voiceUserId !== trackedUserId) return;
-      counters.voiceForTrackedUser += 1;
+      if (!newState) return;
       if (!isAllowedGuild(newState.guild?.id, allowedGuilds)) {
         counters.voiceDroppedGuild += 1;
         return;
       }
+      counters.voiceInAllowedGuild += 1;
+      const voiceUserId = normalizeEnvString(newState.id);
+      if (!voiceUserId || voiceUserId !== trackedUserId) {
+        counters.voiceUserMismatch += 1;
+        if (voiceUserId && newState.channelId && !loggedVoiceMismatches.has(voiceUserId)) {
+          loggedVoiceMismatches.add(voiceUserId);
+          console.warn('[discord] voice user mismatch', {
+            eventUserId: voiceUserId,
+            trackedUserId,
+            guildId: newState.guild?.id,
+            channelId: newState.channelId,
+          });
+        }
+        return;
+      }
+      counters.voiceForTrackedUser += 1;
       const normalized = normalizeVoiceState(newState, allowedGuilds);
       if (normalized.inTrackedVoice) {
         counters.voiceInTrackedVoice += 1;
