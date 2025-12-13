@@ -19,8 +19,10 @@ import { useToast } from '../contexts/ToastContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import CreateReviewModal from '../components/CreateReviewModal';
+import SectionTitleWithInfo from '../components/SectionTitleWithInfo';
 import Tabs from '../components/Tabs';
 import { categoryColors } from '../lib/designTokens';
+import { reviewsHelpContent } from './reviews/reviewsHelpContent';
 
 const ReviewsPage: React.FC = () => {
   const toast = useToast();
@@ -208,9 +210,11 @@ const ReviewsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-24">
           {/* Execution Rate Trend */}
           <Card padding="medium">
-            <h3 className="text-h3 text-ink mb-16">
-              Execution Rate Trend (Last 7)
-            </h3>
+            <SectionTitleWithInfo
+              title="Execution Rate Trend (Last 7)"
+              tooltipAriaLabel="About Execution Rate Trend"
+              tooltipContent={reviewsHelpContent['chart-execution']}
+            />
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={getExecutionRateChartData()}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -224,7 +228,11 @@ const ReviewsPage: React.FC = () => {
 
           {/* Category Balance */}
           <Card padding="medium">
-            <h3 className="text-h3 text-ink mb-16">Category Balance</h3>
+            <SectionTitleWithInfo
+              title="Category Balance"
+              tooltipAriaLabel="About Category Balance"
+              tooltipContent={reviewsHelpContent['chart-cat-balance']}
+            />
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
@@ -248,7 +256,11 @@ const ReviewsPage: React.FC = () => {
 
           {/* Primary Activities (Time Engine) */}
           <Card padding="medium">
-            <h3 className="text-h3 text-ink mb-16">Primary Activities</h3>
+            <SectionTitleWithInfo
+              title="Primary Activities"
+              tooltipAriaLabel="About Primary Activities"
+              tooltipContent={reviewsHelpContent['chart-activities']}
+            />
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={getActivityBreakdownData()} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
