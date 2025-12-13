@@ -34,7 +34,7 @@ const IconButton: React.FC<IconButtonProps> = ({
       className={`${base} ${variantStyles[variant]} ${className}`}
       {...props}
     >
-      <span className="w-20 h-20 flex items-center justify-center [&_svg]:w-full [&_svg]:h-full [&_svg]:block">
+      <span className="w-24 h-24 flex items-center justify-center [&_svg]:w-full [&_svg]:h-full [&_svg]:block">
         {icon}
       </span>
     </button>
@@ -42,4 +42,3 @@ const IconButton: React.FC<IconButtonProps> = ({
 };
 
 export default IconButton;
-
