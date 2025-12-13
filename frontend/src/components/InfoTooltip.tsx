@@ -78,9 +78,11 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
 
   const isTooltipVisibleOnTouch = isTouch && isOpen;
 
+  const triggerSizeClasses = isTouch ? 'min-w-[44px] min-h-[44px]' : 'min-w-[32px] min-h-[32px]';
+
   const tooltipClasses = useMemo(() => {
     const base =
-      'absolute left-0 top-full mt-8 max-w-[320px] bg-snow text-ink border border-stone rounded-default shadow-e02 p-12 text-small leading-snug z-50 transition-standard';
+      'absolute left-0 top-full mt-8 w-80 max-w-[calc(100vw-32px)] bg-snow text-ink border border-stone rounded-default shadow-e02 p-12 text-small leading-snug z-50 transition-standard';
     const hidden = 'opacity-0 pointer-events-none -translate-y-2';
     const visible = 'opacity-100 pointer-events-auto translate-y-0';
     const visibleOnHover = 'group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0';
@@ -102,7 +104,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
           if (!isTouch) return;
           setIsOpen((prev) => !prev);
         }}
-        className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-default text-slate hover:text-ink hover:bg-fog transition-standard focus:outline-none focus:ring-2 focus:ring-action focus:ring-offset-2"
+        className={`inline-flex items-center justify-center ${triggerSizeClasses} rounded-default text-slate hover:text-ink hover:bg-fog transition-standard focus:outline-none focus:ring-2 focus:ring-action focus:ring-offset-2`}
       >
         <Info size={16} strokeWidth={2} />
       </button>
@@ -115,4 +117,3 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
 };
 
 export default InfoTooltip;
-
