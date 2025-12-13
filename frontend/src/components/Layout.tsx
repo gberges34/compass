@@ -209,16 +209,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         onMouseEnter={() => openMenuNow(item.id)}
                         onMouseLeave={queueCloseMenu}
                       >
-                        <div className="flex flex-col gap-4 p-8">
+                        <div className="flex flex-col gap-4 p-8 bg-cloud/40 rounded-default">
                           {item.children.map((child) => (
                             <NavLink
                               key={child.id}
                               to={child.to}
                               className={({ isActive }) =>
-                                `px-16 py-12 rounded-default font-medium transition-standard text-left ${
+                                `px-16 py-12 rounded-default font-medium transition-standard text-left border ${
                                   isActive
-                                    ? 'bg-action text-snow shadow-e02'
-                                    : 'bg-snow text-ink border border-stone hover:bg-fog hover:shadow-e01'
+                                    ? 'bg-sky text-ink border-sky shadow-e01 border-l-4 border-l-action'
+                                    : 'bg-snow text-ink border-stone hover:bg-fog hover:shadow-e01'
                                 }`
                               }
                               onMouseEnter={() => handlePrefetch(child.to)}

@@ -6,6 +6,8 @@ import { useProcessCapturedTask } from '../hooks/useTasks';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import EmptyState from '../components/EmptyState';
+import Select from '../components/Select';
 
 const ClarifyPage: React.FC = () => {
   const toast = useToast();
@@ -121,12 +123,10 @@ const ClarifyPage: React.FC = () => {
             </h2>
 
             {pendingTasks.length === 0 ? (
-              <Card padding="large">
-                <div className="text-center">
-                  <p className="text-slate">No pending tasks to clarify</p>
-                  <p className="text-small text-slate mt-8">All caught up!</p>
-                </div>
-              </Card>
+              <EmptyState
+                title="No pending tasks"
+                description="All caught up — nothing to clarify right now."
+              />
             ) : (
               <div className="space-y-12">
                 {pendingTasks.map((task) => (
@@ -176,17 +176,18 @@ const ClarifyPage: React.FC = () => {
                       <label className="block text-small font-medium text-ink mb-4">
                         Priority
                       </label>
-                      <select
-                        value={priority}
+                      <Select
+                        value={String(priority)}
                         onChange={(e) => setPriority(Number(e.target.value))}
-                        className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
+                        options={[
+                          { value: '1', label: '1 - Must' },
+                          { value: '2', label: '2 - Should' },
+                          { value: '3', label: '3 - Could' },
+                          { value: '4', label: '4 - Maybe' },
+                        ]}
+                        fullWidth
                         disabled={isProcessing}
-                      >
-                        <option value={1}>1 - Must</option>
-                        <option value={2}>2 - Should</option>
-                        <option value={3}>3 - Could</option>
-                        <option value={4}>4 - Maybe</option>
-                      </select>
+                      />
                     </div>
 
                     <Input
@@ -207,39 +208,41 @@ const ClarifyPage: React.FC = () => {
                       <label className="block text-small font-medium text-ink mb-4">
                         Category
                       </label>
-                      <select
+                      <Select
                         value={category}
                         onChange={(e) => setCategory(e.target.value as Category)}
-                        className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
+                        options={[
+                          { value: 'SCHOOL', label: 'School' },
+                          { value: 'MUSIC', label: 'Music' },
+                          { value: 'FITNESS', label: 'Fitness' },
+                          { value: 'GAMING', label: 'Gaming' },
+                          { value: 'NUTRITION', label: 'Nutrition' },
+                          { value: 'HYGIENE', label: 'Hygiene' },
+                          { value: 'PET', label: 'Pet' },
+                          { value: 'SOCIAL', label: 'Social' },
+                          { value: 'PERSONAL', label: 'Personal' },
+                          { value: 'ADMIN', label: 'Admin' },
+                        ]}
+                        fullWidth
                         disabled={isProcessing}
-                      >
-                        <option value="SCHOOL">School</option>
-                        <option value="MUSIC">Music</option>
-                        <option value="FITNESS">Fitness</option>
-                        <option value="GAMING">Gaming</option>
-                        <option value="NUTRITION">Nutrition</option>
-                        <option value="HYGIENE">Hygiene</option>
-                        <option value="PET">Pet</option>
-                        <option value="SOCIAL">Social</option>
-                        <option value="PERSONAL">Personal</option>
-                        <option value="ADMIN">Admin</option>
-                      </select>
+                      />
                     </div>
 
                     <div>
                       <label className="block text-small font-medium text-ink mb-4">
                         Energy
                       </label>
-                      <select
+                      <Select
                         value={energy}
                         onChange={(e) => setEnergy(e.target.value as Energy)}
-                        className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
+                        options={[
+                          { value: 'HIGH', label: 'High' },
+                          { value: 'MEDIUM', label: 'Medium' },
+                          { value: 'LOW', label: 'Low' },
+                        ]}
+                        fullWidth
                         disabled={isProcessing}
-                      >
-                        <option value="HIGH">High</option>
-                        <option value="MEDIUM">Medium</option>
-                        <option value="LOW">Low</option>
-                      </select>
+                      />
                     </div>
                   </div>
 
@@ -248,19 +251,20 @@ const ClarifyPage: React.FC = () => {
                     <label className="block text-small font-medium text-ink mb-4">
                       Context
                     </label>
-                    <select
+                    <Select
                       value={context}
                       onChange={(e) => setContext(e.target.value as Context)}
-                      className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action focus:border-action"
+                      options={[
+                        { value: 'HOME', label: 'Home' },
+                        { value: 'OFFICE', label: 'Office' },
+                        { value: 'COMPUTER', label: 'Computer' },
+                        { value: 'PHONE', label: 'Phone' },
+                        { value: 'ERRANDS', label: 'Errands' },
+                        { value: 'ANYWHERE', label: 'Anywhere' },
+                      ]}
+                      fullWidth
                       disabled={isProcessing}
-                    >
-                      <option value="HOME">Home</option>
-                      <option value="OFFICE">Office</option>
-                      <option value="COMPUTER">Computer</option>
-                      <option value="PHONE">Phone</option>
-                      <option value="ERRANDS">Errands</option>
-                      <option value="ANYWHERE">Anywhere</option>
-                    </select>
+                    />
                   </div>
 
                   {/* Definition of Done */}
