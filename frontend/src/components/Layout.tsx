@@ -90,16 +90,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [openMenu]);
 
   // Prefetch handlers for each route
+  const prefetchForTodayPage = () => {
+    prefetchTasks(queryClient, { status: 'ACTIVE' });
+    prefetchTodayPlan(queryClient);
+  };
+
   const prefetchHandlers: Record<string, () => void> = {
     '/': () => {
       // Today page: prefetch active tasks + today's plan
-      prefetchTasks(queryClient, { status: 'ACTIVE' });
-      prefetchTodayPlan(queryClient);
+      prefetchForTodayPage();
     },
     '/today': () => {
       // Today page: prefetch active tasks + today's plan
-      prefetchTasks(queryClient, { status: 'ACTIVE' });
-      prefetchTodayPlan(queryClient);
+      prefetchForTodayPage();
     },
     '/tasks': () => {
       // Tasks page: prefetch NEXT tasks
@@ -243,7 +246,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             {/* Center: Today (home) */}
             <NavLink
-              to={todayItem.to ?? '/today'}
+              to={todayItem.to!}
               end
               onMouseEnter={() => handlePrefetch(todayItem.to)}
               className={({ isActive }) =>
@@ -260,7 +263,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Right: Calendar icon + Logout */}
             <div className="justify-self-end flex items-center gap-8">
               <NavLink
-                to={calendarItem.to ?? '/calendar'}
+                to={calendarItem.to!}
                 onMouseEnter={() => handlePrefetch(calendarItem.to)}
                 aria-label={calendarItem.label}
                 title={calendarItem.label}
