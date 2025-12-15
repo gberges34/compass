@@ -2,6 +2,23 @@ import React from 'react';
 import type { Task } from '../types';
 import IconButton from './IconButton';
 
+const ActivateIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+    />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+    />
+  </svg>
+);
+
 interface TaskActionsProps {
   task: Task;
   onActivate?: () => Promise<void>;
@@ -45,22 +62,7 @@ const TaskActions: React.FC<TaskActionsProps> = ({
             disabled={loading}
             variant="success"
             label="Activate task"
-            icon={
-              <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            }
+            icon={<ActivateIcon />}
             className="min-w-[36px] min-h-[36px]"
           />
         )}
@@ -153,10 +155,7 @@ const TaskActions: React.FC<TaskActionsProps> = ({
           disabled={loading}
           className={`${buttonClass} ${baseClass} bg-success text-snow hover:bg-green-600 flex items-center`}
         >
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <ActivateIcon className="w-4 h-4 mr-1" />
           {loading ? 'Activating...' : 'Activate'}
         </button>
       )}
