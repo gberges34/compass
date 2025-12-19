@@ -32,15 +32,42 @@ const TOGGL_PROJECT_CATEGORY_MAP: Record<string, Category> = {
   'Admin': 'ADMIN',
 };
 
+function normalizeProjectNameKey(value: string): string {
+  return value
+    .trim()
+    .replace(/[\s_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+function toTitleCase(value: string): string {
+  const normalized = value
+    .trim()
+    .replace(/[\s_-]+/g, ' ')
+    .replace(/\s+/g, ' ');
+  if (!normalized) return '';
+
+  return normalized
+    .split(' ')
+    .map((token) => {
+      if (!token) return token;
+      return token[0].toUpperCase() + token.slice(1).toLowerCase();
+    })
+    .join(' ');
+}
+
 type TogglContext = {
   workspaceId: number;
   projectNameToId: Map<string, number>;
+  projectNameKeyToId: Map<string, number>;
 };
 
 const CATEGORY_TO_TOGGL_PROJECT_NAME: Partial<Record<Category, string>> =
   Object.fromEntries(
     Object.entries(TOGGL_PROJECT_CATEGORY_MAP).map(([projectName, category]) => [category, projectName])
   );
+
+const prismaCategorySet = new Set<string>(Object.values(Category));
 
 let cachedContext: { value: TogglContext; fetchedAt: number } | null = null;
 const TOGGL_CONTEXT_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -54,6 +81,10 @@ async function fetchDefaultWorkspaceId(): Promise<number> {
     throw new InternalError('Failed to resolve default Toggl workspace');
   }
   return workspaceId;
+}
+
+export function clearTogglContextCache(): void {
+  cachedContext = null;
 }
 
 /**
@@ -70,11 +101,27 @@ export async function getTogglContext(): Promise<TogglContext> {
   ]);
 
   const projectNameToId = new Map<string, number>();
+  const projectNameKeyToId = new Map<string, number>();
   projectIdToName.forEach((name, id) => projectNameToId.set(name, id));
+  projectIdToName.forEach((name, id) =>
+    projectNameKeyToId.set(normalizeProjectNameKey(name), id)
+  );
 
-  const value = { workspaceId, projectNameToId };
+  const value = { workspaceId, projectNameToId, projectNameKeyToId };
   cachedContext = { value, fetchedAt: Date.now() };
   return value;
+}
+
+async function createProject(input: {
+  workspaceId: number;
+  name: string;
+}): Promise<{ id: number; name: string }> {
+  const response = await withRetry(() =>
+    togglAPI.post(`/workspaces/${input.workspaceId}/projects`, {
+      name: input.name,
+    })
+  );
+  return response.data;
 }
 
 /**
@@ -82,9 +129,40 @@ export async function getTogglContext(): Promise<TogglContext> {
  */
 export async function resolveProjectIdForCategory(category: string): Promise<number | null> {
   const ctx = await getTogglContext();
-  const projectName = CATEGORY_TO_TOGGL_PROJECT_NAME[category as Category];
-  if (!projectName) return null;
-  return ctx.projectNameToId.get(projectName) ?? null;
+
+  const desiredProjectName = prismaCategorySet.has(category)
+    ? CATEGORY_TO_TOGGL_PROJECT_NAME[category as Category] || toTitleCase(category)
+    : toTitleCase(category);
+  if (!desiredProjectName) return null;
+
+  const key = normalizeProjectNameKey(desiredProjectName);
+  const existingId = ctx.projectNameKeyToId.get(key);
+  if (existingId) return existingId;
+
+  try {
+    const created = await createProject({
+      workspaceId: ctx.workspaceId,
+      name: desiredProjectName,
+    });
+    ctx.projectNameToId.set(created.name, created.id);
+    ctx.projectNameKeyToId.set(normalizeProjectNameKey(created.name), created.id);
+    cachedContext = { value: ctx, fetchedAt: Date.now() };
+    return created.id;
+  } catch (error) {
+    console.warn(
+      'Failed to auto-create Toggl project; will refresh and retry once',
+      error
+    );
+  }
+
+  clearTogglContextCache();
+  try {
+    const refreshed = await getTogglContext();
+    return refreshed.projectNameKeyToId.get(key) ?? null;
+  } catch (error) {
+    console.warn('Failed to refresh Toggl context after project create failure', error);
+    return null;
+  }
 }
 
 export const TOGGL_OVERLAP_TOLERANCE_MINUTES = 15;
