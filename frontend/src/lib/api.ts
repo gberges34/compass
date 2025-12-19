@@ -358,14 +358,7 @@ export const getTimeSlices = async (params: QuerySlicesParams): Promise<TimeSlic
   if (params.category) queryParams.append('category', params.category);
   if (params.linkedTaskId) queryParams.append('linkedTaskId', params.linkedTaskId);
 
-  const url = `/engine/slices?${queryParams.toString()}`;
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/2761dbf6-7b0b-437d-af41-cb3c6ac13e5f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.ts:361',message:'getTimeSlices API call',data:{url,params},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
-  const response = await api.get<TimeSlice[]>(url);
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/2761dbf6-7b0b-437d-af41-cb3c6ac13e5f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.ts:366',message:'getTimeSlices API response',data:{slicesCount:response.data.length,firstFew:response.data.slice(0,3)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
+  const response = await api.get<TimeSlice[]>(`/engine/slices?${queryParams.toString()}`);
   return response.data;
 };
 

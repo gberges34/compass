@@ -157,35 +157,15 @@ export default function RadialClockChart(props: { date: Date }) {
   const dayStart = useMemo(() => startOfDay(props.date), [props.date]);
   const dayEnd = useMemo(() => addDays(dayStart, 1), [dayStart]); // end-exclusive boundary
 
-  // #region agent log
-  React.useEffect(() => {
-    fetch('http://127.0.0.1:7242/ingest/2761dbf6-7b0b-437d-af41-cb3c6ac13e5f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RadialClockChart.tsx:161',message:'Date props and computed bounds',data:{propsDate:props.date.toISOString(),dayStartISO:dayStart.toISOString(),dayEndISO:dayEnd.toISOString(),dayStartLocal:dayStart.toString(),dayEndLocal:dayEnd.toString()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B'})}).catch(()=>{});
-  }, [props.date, dayStart, dayEnd]);
-  // #endregion
-
   const { slices, loading, error } = useTimeHistory({
     startDate: dayStart,
     endDate: dayEnd,
     dimension: 'PRIMARY',
   });
 
-  // #region agent log
-  React.useEffect(() => {
-    if (!loading) {
-      fetch('http://127.0.0.1:7242/ingest/2761dbf6-7b0b-437d-af41-cb3c6ac13e5f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RadialClockChart.tsx:175',message:'useTimeHistory result',data:{slicesCount:slices.length,slicesSummary:slices.slice(0,5).map(s=>({start:s.start,end:s.end,category:s.category})),errorMsg:error?.message||null},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-    }
-  }, [slices, loading, error]);
-  // #endregion
-
   const segments = useMemo(() => {
     return buildClockSegments({ dayStart, dayEnd, slices });
   }, [dayStart, dayEnd, slices]);
-
-  // #region agent log
-  React.useEffect(() => {
-    const tracked = segments.filter(s => !s.isUntracked);
-    fetch('http://127.0.0.1:7242/ingest/2761dbf6-7b0b-437d-af41-cb3c6ac13e5f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RadialClockChart.tsx:185',message:'Built segments',data:{totalSegments:segments.length,trackedSegments:tracked.length,trackedSummary:tracked.slice(0,5).map(s=>({startMin:s.startMin,endMin:s.endMin,category:s.category}))},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D,E'})}).catch(()=>{});
-  }, [segments]);
 
   const totals = useMemo(() => {
     const byCategory = new Map<string, number>();
