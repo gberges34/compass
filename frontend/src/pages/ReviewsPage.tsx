@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFlatReviews, useCreateDailyReview, useCreateWeeklyReview } from '../hooks/useReviews';
 import type { Review, ReviewType, CreateReviewRequest } from '../types';
 import {
@@ -23,12 +23,16 @@ import SectionTitleWithInfo from '../components/SectionTitleWithInfo';
 import Tabs from '../components/Tabs';
 import { categoryColors } from '../lib/designTokens';
 import { reviewsHelpContent } from './reviews/reviewsHelpContent';
+import DaySelector from '../components/DaySelector';
+import RadialClockChart from '../components/RadialClockChart';
+import { startOfDay } from 'date-fns';
 
 const ReviewsPage: React.FC = () => {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<ReviewType>('DAILY');
   const [expandedReview, setExpandedReview] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedClockDate, setSelectedClockDate] = useState<Date>(startOfDay(new Date()));
   const [expandedSections, setExpandedSections] = useState<{
     [reviewId: string]: {
       wins?: boolean;
@@ -125,17 +129,6 @@ const ReviewsPage: React.FC = () => {
     }));
   };
 
-  const getActivityBreakdownData = () => {
-    if (reviews.length === 0) return [];
-    const latestReview = reviews[0];
-    return Object.entries(latestReview.activityBreakdown || {})
-      .map(([activity, minutes]) => ({
-        name: activity,
-        value: Math.round((minutes / 60) * 10) / 10, // Convert to hours
-      }))
-      .sort((a, b) => b.value - a.value);
-  };
-
   const getDeepWorkTrendData = () => {
     return reviews
       .slice(0, 7)
@@ -147,6 +140,12 @@ const ReviewsPage: React.FC = () => {
   };
 
   const CATEGORY_COLORS = Object.values(categoryColors).map(config => config.hex);
+
+  useEffect(() => {
+    if (reviews.length === 0) return;
+    // Default weekly clock selection to the first day in the period
+    setSelectedClockDate(startOfDay(new Date(reviews[0].periodStart)));
+  }, [activeTab, reviews]);
 
   if (loading) {
     return (
@@ -257,19 +256,21 @@ const ReviewsPage: React.FC = () => {
           {/* Primary Activities (Time Engine) */}
           <Card padding="medium">
             <SectionTitleWithInfo
-              title="Primary Activities"
+              title="Daily Activity Clock"
               tooltipAriaLabel="About Primary Activities"
               tooltipContent={reviewsHelpContent['chart-activities']}
             />
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={getActivityBreakdownData()} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" tick={{ fontSize: 12 }} />
-                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value: number) => `${value}h`} />
-                <Bar dataKey="value" fill="#10b981" />
-              </BarChart>
-            </ResponsiveContainer>
+            {activeTab === 'WEEKLY' && (
+              <DaySelector
+                periodStart={new Date(reviews[0].periodStart)}
+                periodEnd={new Date(reviews[0].periodEnd)}
+                selectedDate={selectedClockDate}
+                onDateChange={setSelectedClockDate}
+              />
+            )}
+            <RadialClockChart
+              date={activeTab === 'DAILY' ? new Date(reviews[0].periodStart) : selectedClockDate}
+            />
           </Card>
 
           {/* Deep Work Hours Trend */}
