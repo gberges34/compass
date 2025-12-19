@@ -3,12 +3,34 @@ import { useTimeHistory } from '../hooks/useTimeHistory';
 import { getActivityColor, activityColors } from '../lib/designTokens';
 import { addDays, format, startOfDay } from 'date-fns';
 
+const MINUTES_IN_DAY = 24 * 60;
+const CLOCK_HEIGHT_PX = 200;
+const VIEWBOX_SIZE = 220;
+const OUTER_RADIUS = 96;
+const INNER_RADIUS = 64;
+const BACKGROUND_STROKE = '#eef2f7';
+
+const HOUR_LABEL_TOP_OFFSET = 6;
+const HOUR_LABEL_SIDE_OFFSET = 10;
+const HOUR_LABEL_SIDE_Y = 3;
+const HOUR_LABEL_BOTTOM_OFFSET = 14;
+
+const CENTER_TITLE_Y = -4;
+const CENTER_SUBTITLE_Y = 14;
+
 type ClockSegment = {
   startMin: number; // minutes since dayStart
   endMin: number; // minutes since dayStart
   category: string;
   isUntracked: boolean;
   isActive: boolean;
+};
+
+type LegendItem = {
+  category: string;
+  minutes: number;
+  hours: number;
+  isUntracked: boolean;
 };
 
 function clamp(n: number, min: number, max: number) {
@@ -21,7 +43,7 @@ function minutesBetween(a: Date, b: Date) {
 
 function timeToAngleDeg(minSinceDayStart: number) {
   // 0 min => -90deg (12 o'clock). 360deg => full day clockwise.
-  return (minSinceDayStart / 1440) * 360 - 90;
+  return (minSinceDayStart / MINUTES_IN_DAY) * 360 - 90;
 }
 
 function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
@@ -71,7 +93,6 @@ function buildClockSegments(input: {
   slices: Array<{ start: string; end: string | null; category: string }>;
 }) {
   const { dayStart, dayEnd, slices } = input;
-  const dayMinutes = 1440;
 
   const rawSegments: ClockSegment[] = slices
     .map((s) => {
@@ -79,8 +100,8 @@ function buildClockSegments(input: {
       const end = s.end ? new Date(s.end) : new Date();
       const clampedStart = start < dayStart ? dayStart : start;
       const clampedEnd = end > dayEnd ? dayEnd : end;
-      const startMin = clamp(minutesBetween(dayStart, clampedStart), 0, dayMinutes);
-      const endMin = clamp(minutesBetween(dayStart, clampedEnd), 0, dayMinutes);
+      const startMin = clamp(minutesBetween(dayStart, clampedStart), 0, MINUTES_IN_DAY);
+      const endMin = clamp(minutesBetween(dayStart, clampedEnd), 0, MINUTES_IN_DAY);
       return {
         startMin,
         endMin,
@@ -119,10 +140,10 @@ function buildClockSegments(input: {
     }
   }
 
-  if (cursor < dayMinutes) {
+  if (cursor < MINUTES_IN_DAY) {
     timeline.push({
       startMin: cursor,
-      endMin: dayMinutes,
+      endMin: MINUTES_IN_DAY,
       category: 'Untracked',
       isUntracked: true,
       isActive: false,
@@ -161,26 +182,33 @@ export default function RadialClockChart(props: { date: Date }) {
       byCategory.set(seg.category, (byCategory.get(seg.category) || 0) + dur);
     }
 
-    const items = Array.from(byCategory.entries())
+    const items: LegendItem[] = Array.from(byCategory.entries())
       .map(([category, minutes]) => ({
         category,
         minutes,
         hours: Math.round((minutes / 60) * 10) / 10,
+        isUntracked: false,
       }))
       .sort((a, b) => b.minutes - a.minutes);
+
+    const untrackedItem: LegendItem = {
+      category: 'Untracked',
+      minutes: untrackedMin,
+      hours: Math.round((untrackedMin / 60) * 10) / 10,
+      isUntracked: true,
+    };
+
+    const legendItems = [...items, untrackedItem];
 
     return {
       trackedH: Math.round((trackedMin / 60) * 10) / 10,
       untrackedH: Math.round((untrackedMin / 60) * 10) / 10,
-      items,
+      legendItems,
     };
   }, [segments]);
 
-  const size = 220;
-  const cx = size / 2;
-  const cy = size / 2;
-  const outerR = 96;
-  const innerR = 64;
+  const cx = VIEWBOX_SIZE / 2;
+  const cy = VIEWBOX_SIZE / 2;
 
   if (loading) {
     return (
@@ -206,23 +234,30 @@ export default function RadialClockChart(props: { date: Date }) {
           tabIndex={0}
           className="recharts-surface"
           width="100%"
-          height="200"
-          viewBox={`0 0 ${size} ${size}`}
+          height={CLOCK_HEIGHT_PX}
+          viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
           style={{ display: 'block' }}
         >
           {/* Background ring */}
-          <circle cx={cx} cy={cy} r={(innerR + outerR) / 2} fill="none" stroke="#eef2f7" strokeWidth={outerR - innerR} />
+          <circle
+            cx={cx}
+            cy={cy}
+            r={(INNER_RADIUS + OUTER_RADIUS) / 2}
+            fill="none"
+            stroke={BACKGROUND_STROKE}
+            strokeWidth={OUTER_RADIUS - INNER_RADIUS}
+          />
 
           {/* Segments */}
-          {segments.map((seg, idx) => {
+          {segments.map((seg) => {
             const startAngle = timeToAngleDeg(seg.startMin);
             const endAngle = timeToAngleDeg(seg.endMin);
             const fill = seg.isUntracked ? activityColors._untracked : getActivityColor(seg.category);
-            const d = ringSegmentPath(cx, cy, innerR, outerR, startAngle, endAngle);
+            const d = ringSegmentPath(cx, cy, INNER_RADIUS, OUTER_RADIUS, startAngle, endAngle);
 
             return (
               <path
-                key={`${seg.category}-${seg.startMin}-${seg.endMin}-${idx}`}
+                key={`${seg.startMin}-${seg.endMin}-${seg.category}-${seg.isUntracked ? 'u' : 't'}`}
                 d={d}
                 fill={fill}
                 opacity={seg.isUntracked ? 0.7 : 1}
@@ -234,24 +269,61 @@ export default function RadialClockChart(props: { date: Date }) {
           })}
 
           {/* Hour markers */}
-          <text x={cx} y={cy - outerR - 6} textAnchor="middle" className="fill-current text-slate" fontSize="10">
+          <text
+            x={cx}
+            y={cy - OUTER_RADIUS - HOUR_LABEL_TOP_OFFSET}
+            textAnchor="middle"
+            className="fill-current text-slate"
+            fontSize="10"
+          >
             12a
           </text>
-          <text x={cx + outerR + 10} y={cy + 3} textAnchor="middle" className="fill-current text-slate" fontSize="10">
+          <text
+            x={cx + OUTER_RADIUS + HOUR_LABEL_SIDE_OFFSET}
+            y={cy + HOUR_LABEL_SIDE_Y}
+            textAnchor="middle"
+            className="fill-current text-slate"
+            fontSize="10"
+          >
             6a
           </text>
-          <text x={cx} y={cy + outerR + 14} textAnchor="middle" className="fill-current text-slate" fontSize="10">
+          <text
+            x={cx}
+            y={cy + OUTER_RADIUS + HOUR_LABEL_BOTTOM_OFFSET}
+            textAnchor="middle"
+            className="fill-current text-slate"
+            fontSize="10"
+          >
             12p
           </text>
-          <text x={cx - outerR - 10} y={cy + 3} textAnchor="middle" className="fill-current text-slate" fontSize="10">
+          <text
+            x={cx - OUTER_RADIUS - HOUR_LABEL_SIDE_OFFSET}
+            y={cy + HOUR_LABEL_SIDE_Y}
+            textAnchor="middle"
+            className="fill-current text-slate"
+            fontSize="10"
+          >
             6p
           </text>
 
           {/* Center labels */}
-          <text x={cx} y={cy - 4} textAnchor="middle" className="fill-current text-ink" fontSize="12" fontWeight="600">
+          <text
+            x={cx}
+            y={cy + CENTER_TITLE_Y}
+            textAnchor="middle"
+            className="fill-current text-ink"
+            fontSize="12"
+            fontWeight="600"
+          >
             {totals.trackedH}h tracked
           </text>
-          <text x={cx} y={cy + 14} textAnchor="middle" className="fill-current text-slate" fontSize="10">
+          <text
+            x={cx}
+            y={cy + CENTER_SUBTITLE_Y}
+            textAnchor="middle"
+            className="fill-current text-slate"
+            fontSize="10"
+          >
             {totals.untrackedH}h untracked
           </text>
         </svg>
@@ -259,11 +331,13 @@ export default function RadialClockChart(props: { date: Date }) {
 
       {/* Legend */}
       <div className="flex flex-wrap gap-x-16 gap-y-8">
-        {totals.items.map((item) => (
+        {totals.legendItems.map((item) => (
           <div key={item.category} className="flex items-center gap-8">
             <span
               className="inline-block h-10 w-10 rounded-sm border border-fog"
-              style={{ backgroundColor: getActivityColor(item.category) }}
+              style={{
+                backgroundColor: item.isUntracked ? activityColors._untracked : getActivityColor(item.category),
+              }}
               aria-hidden
             />
             <span className="text-small text-ink">
@@ -274,16 +348,6 @@ export default function RadialClockChart(props: { date: Date }) {
             </span>
           </div>
         ))}
-        <div className="flex items-center gap-8">
-          <span
-            className="inline-block h-10 w-10 rounded-sm border border-fog"
-            style={{ backgroundColor: activityColors._untracked }}
-            aria-hidden
-          />
-          <span className="text-small text-ink">
-            Untracked <span className="text-slate">{totals.untrackedH}h</span>
-          </span>
-        </div>
       </div>
 
       {/* Small hint */}
