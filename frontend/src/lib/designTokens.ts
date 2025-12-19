@@ -87,6 +87,24 @@ export const categoryColors: Record<Category, CategoryConfig> = {
   },
 };
 
+// Time Engine PRIMARY activity colors (string-keyed because activities are user/system-defined)
+// Fallbacks:
+// - `_default`: unknown activity
+// - `_untracked`: gaps between slices (derived in UI)
+export const activityColors: Record<string, string> = {
+  Sleep: '#6366f1',
+  Commute: '#f59e0b',
+  Chores: '#10b981',
+  Meal: '#ef4444',
+  Exercise: '#22c55e',
+  _default: '#9ca3af',
+  _untracked: '#e5e7eb',
+};
+
+export function getActivityColor(activity: string): string {
+  return activityColors[activity] || activityColors._default;
+}
+
 // Priority color mapping (maintain existing color associations)
 export const priorityColors = {
   MUST: {

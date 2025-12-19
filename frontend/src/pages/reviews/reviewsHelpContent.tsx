@@ -26,11 +26,11 @@ export const reviewsHelpContent: Record<ReviewsHelpId, React.ReactNode> = {
   'chart-activities': (
     <dl className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-4">
       <dt className="font-semibold whitespace-nowrap">What it is:</dt>
-      <dd>Breakdown of unstructured life time (e.g., Sleep, Commute, Chores).</dd>
+      <dd>A 24-hour clock view of your PRIMARY Time Engine slices, plus any untracked gaps.</dd>
       <dt className="font-semibold whitespace-nowrap">Where it comes from:</dt>
-      <dd>Time Engine slices not linked to specific tasks.</dd>
+      <dd>Time Engine PRIMARY time slices.</dd>
       <dt className="font-semibold whitespace-nowrap">How it’s derived:</dt>
-      <dd>PRIMARY dimension slices summed by category.</dd>
+      <dd>Slices are positioned by start/end time; gaps between slices are shown as Untracked.</dd>
     </dl>
   ),
 };
