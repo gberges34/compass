@@ -253,7 +253,7 @@ const ReviewsPage: React.FC = () => {
             </ResponsiveContainer>
           </Card>
 
-          {/* Primary Activities (Time Engine) */}
+          {/* Primary Activities (Time Engine) - Always shows TODAY's live slices */}
           <Card padding="medium">
             <SectionTitleWithInfo
               title="Daily Activity Clock"
@@ -269,7 +269,7 @@ const ReviewsPage: React.FC = () => {
               />
             )}
             <RadialClockChart
-              date={activeTab === 'DAILY' ? new Date(reviews[0].periodStart) : selectedClockDate}
+              date={activeTab === 'DAILY' ? new Date() : selectedClockDate}
             />
           </Card>
 
