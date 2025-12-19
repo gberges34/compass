@@ -40,6 +40,10 @@ export function useTimeHistory(params?: {
     ...(params?.linkedTaskId && { linkedTaskId: params.linkedTaskId }),
   };
 
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/2761dbf6-7b0b-437d-af41-cb3c6ac13e5f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useTimeHistory.ts:42',message:'Query params computed',data:{queryParams,inputStartDate:params?.startDate?.toISOString(),inputEndDate:params?.endDate?.toISOString(),inputDimension:params?.dimension},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,C'})}).catch(()=>{});
+  // #endregion
+
   // Query for historical slices
   const {
     data: slices = [],
