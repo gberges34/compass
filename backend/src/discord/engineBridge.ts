@@ -24,7 +24,7 @@ export interface NormalizedVoiceState {
 }
 
 const GAMING_START_DEBOUNCE_MS = 120_000;
-const GAMING_STOP_DEBOUNCE_MS = 60_000;
+const GAMING_STOP_DEBOUNCE_MS = 180_000;
 const SOCIAL_STOP_DEBOUNCE_MS = 30_000;
 
 export async function handlePresenceUpdate(
@@ -36,14 +36,30 @@ export async function handlePresenceUpdate(
     if (state.gaming.stopTimer) {
       clearTimeout(state.gaming.stopTimer);
     }
+    state.gaming.stopEffectiveAt = deps.getNow();
     state.gaming.stopTimer = setTimeout(async () => {
+      const effectiveEndAt =
+        state.gaming.stopEffectiveAt ??
+        new Date(deps.getNow().getTime() - GAMING_STOP_DEBOUNCE_MS);
       try {
-        await deps.stopSlice({ dimension: 'PRIMARY', category: 'Gaming' });
-        await deps.stopSliceIfExists({ dimension: 'SEGMENT' });
+        await deps.stopSlice({
+          dimension: 'PRIMARY',
+          category: 'Gaming',
+          endAt: effectiveEndAt,
+        });
+        if (state.gaming.currentGame) {
+          await deps.stopSliceIfExists({
+            dimension: 'SEGMENT',
+            category: state.gaming.currentGame,
+            endAt: effectiveEndAt,
+          });
+        }
         state.gaming.gamingActive = false;
         state.gaming.currentGame = null;
       } catch (error) {
         deps.log.error('Failed to stop Gaming slice', error);
+      } finally {
+        state.gaming.stopEffectiveAt = null;
       }
     }, GAMING_STOP_DEBOUNCE_MS);
   };
@@ -67,6 +83,24 @@ export async function handlePresenceUpdate(
 
   const startNow = presence.forceStartNow === true;
 
+  if (state.gaming.stopTimer) {
+    clearTimeout(state.gaming.stopTimer);
+    state.gaming.stopTimer = null;
+  }
+  state.gaming.stopEffectiveAt = null;
+
+  if (state.gaming.gamingActive) {
+    if (state.gaming.currentGame !== gameName) {
+      await deps.startSlice({
+        category: gameName,
+        dimension: 'SEGMENT',
+        source: 'API',
+      });
+      state.gaming.currentGame = gameName;
+    }
+    return;
+  }
+
   const scheduleStart = async () => {
     if (await deps.isSleepingNow()) {
       deps.log.info('Skipping Gaming start due to Sleep');
@@ -88,11 +122,6 @@ export async function handlePresenceUpdate(
     state.gaming.gamingActive = true;
     state.gaming.currentGame = gameName;
   };
-
-  if (state.gaming.stopTimer) {
-    clearTimeout(state.gaming.stopTimer);
-    state.gaming.stopTimer = null;
-  }
 
   if (state.gaming.startTimer) {
     clearTimeout(state.gaming.startTimer);

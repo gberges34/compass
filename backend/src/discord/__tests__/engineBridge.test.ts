@@ -108,9 +108,12 @@ describe('engineBridge presence handling', () => {
   });
 
   it('schedules stop when only denylisted presence while gaming is active', async () => {
+    const now = new Date('2025-01-01T10:00:00Z');
     const state = createInitialDiscordState();
     state.gaming.gamingActive = true;
-    const { deps, calls } = createDeps();
+    const { deps, calls } = createDeps({
+      getNow: () => now,
+    });
 
     const presence: NormalizedPresence = {
       hasGame: false,
@@ -124,7 +127,7 @@ describe('engineBridge presence handling', () => {
     jest.runAllTimers();
 
     expect(calls.stoppedSlices).toEqual([
-      { dimension: 'PRIMARY', category: 'Gaming' },
+      { dimension: 'PRIMARY', category: 'Gaming', endAt: now },
     ]);
   });
 });

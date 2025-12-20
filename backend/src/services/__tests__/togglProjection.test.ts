@@ -28,7 +28,7 @@ jest.mock('../../prisma', () => ({
 
 const mockStopRunningEntry = jest.fn();
 const mockCreateRunningTimeEntry = jest.fn();
-const mockStopTimeEntry = jest.fn();
+const mockStopTimeEntryAt = jest.fn();
 const mockUpdateTimeEntryTags = jest.fn();
 const mockGetTogglContext = jest.fn();
 const mockResolveProjectIdForCategory = jest.fn();
@@ -37,7 +37,7 @@ const mockGetCurrentRunningEntry = jest.fn();
 jest.mock('../timery', () => ({
   stopRunningEntry: mockStopRunningEntry,
   createRunningTimeEntry: mockCreateRunningTimeEntry,
-  stopTimeEntry: mockStopTimeEntry,
+  stopTimeEntryAt: mockStopTimeEntryAt,
   updateTimeEntryTags: mockUpdateTimeEntryTags,
   getTogglContext: mockGetTogglContext,
   resolveProjectIdForCategory: mockResolveProjectIdForCategory,
@@ -90,8 +90,17 @@ describe('togglProjection', () => {
   });
 
   it('syncPrimaryStop stops linked entry', async () => {
-    await syncPrimaryStop(baseSlice({ togglEntryId: '123' }));
-    expect(mockStopTimeEntry).toHaveBeenCalledWith({ workspaceId: 999, entryId: 123 });
+    const stop = new Date('2025-01-01T10:20:00Z');
+    const start = new Date('2025-01-01T10:00:00Z');
+    await syncPrimaryStop(
+      baseSlice({ togglEntryId: '123', start, end: stop })
+    );
+    expect(mockStopTimeEntryAt).toHaveBeenCalledWith({
+      workspaceId: 999,
+      entryId: 123,
+      start,
+      stop,
+    });
   });
 
   it('syncWorkModeTags adds tag to current primary', async () => {

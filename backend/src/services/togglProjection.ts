@@ -4,12 +4,14 @@ import { env } from '../config/env';
 import {
   stopRunningEntry,
   createRunningTimeEntry,
-  stopTimeEntry,
+  stopTimeEntryAt,
   updateTimeEntryTags,
   getTogglContext,
   resolveProjectIdForCategory,
   getCurrentRunningEntry,
 } from './timery';
+
+const primaryStartInFlight = new Map<string, Promise<void>>();
 
 function workModeToTag(category: string): string {
   return category.trim().toLowerCase().replace(/\s+/g, '-');
@@ -20,7 +22,12 @@ function workModeToTag(category: string): string {
  */
 export async function syncPrimaryStart(slice: TimeSlice): Promise<void> {
   if (!env.TOGGL_API_TOKEN || slice.dimension !== 'PRIMARY') return;
+  if (slice.togglEntryId) return;
 
+  const inFlight = primaryStartInFlight.get(slice.id);
+  if (inFlight) return inFlight;
+
+  const job = (async () => {
   const { workspaceId } = await getTogglContext();
 
   // Stop any running Toggl entry to avoid overlap
@@ -66,6 +73,16 @@ export async function syncPrimaryStart(slice: TimeSlice): Promise<void> {
     where: { id: slice.id },
     data: { togglEntryId: entry.id.toString() },
   });
+  })();
+
+  primaryStartInFlight.set(slice.id, job);
+  try {
+    await job;
+  } finally {
+    if (primaryStartInFlight.get(slice.id) === job) {
+      primaryStartInFlight.delete(slice.id);
+    }
+  }
 }
 
 /**
@@ -77,7 +94,12 @@ export async function syncPrimaryStop(slice: TimeSlice | null): Promise<void> {
 
   const { workspaceId } = await getTogglContext();
   try {
-    await stopTimeEntry({ workspaceId, entryId: Number(slice.togglEntryId) });
+    await stopTimeEntryAt({
+      workspaceId,
+      entryId: Number(slice.togglEntryId),
+      start: slice.start,
+      stop: slice.end ?? new Date(),
+    });
   } catch (error) {
     console.warn('Failed to stop Toggl entry for PRIMARY stop', error);
   }

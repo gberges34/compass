@@ -300,6 +300,33 @@ export async function stopTimeEntry(input: {
   );
 }
 
+export async function stopTimeEntryAt(input: {
+  workspaceId: number;
+  entryId: number;
+  start: Date;
+  stop: Date;
+}): Promise<void> {
+  const stopMs = input.stop.getTime();
+  const startMs = input.start.getTime();
+  const durationSeconds = Math.max(0, Math.floor((stopMs - startMs) / 1000));
+
+  // Ensure the entry is no longer running (safe to ignore failures here)
+  try {
+    await withRetry(() =>
+      togglAPI.patch(`/workspaces/${input.workspaceId}/time_entries/${input.entryId}/stop`)
+    );
+  } catch (error) {
+    console.warn('Failed to stop Toggl entry before backdating; continuing', error);
+  }
+
+  await withRetry(() =>
+    togglAPI.put(`/workspaces/${input.workspaceId}/time_entries/${input.entryId}`, {
+      stop: input.stop.toISOString(),
+      duration: durationSeconds,
+    })
+  );
+}
+
 async function fetchTimeEntryTags(entryId: number): Promise<string[]> {
   const response = await withRetry(() =>
     togglAPI.get(`/me/time_entries/${entryId}`)

@@ -84,34 +84,58 @@ GET /api/engine/summary with startDate, endDate
 
 These are useful for "Daily/Weekly Time Review" shortcuts or analytics, but not required for basic start/stop flows.
 
-e) Health Sleep Sync – POST /api/engine/health/sleep-sync
+e) Health Sync – POST /api/engine/health/sync
 
-Syncs an authoritative Sleep block from HealthKit/Health data.
+Unified endpoint for syncing all health data from HealthKit (Sleep sessions, Workouts, Activity metrics).
 
 Method: POST
-URL: BASE_URL/api/engine/health/sleep-sync
+URL: BASE_URL/api/engine/health/sync
 Body:
 
 {
-  "windowStart": "2025-12-03T00:00:00.000Z",  // Start of sync window (ISO datetime)
-  "windowEnd": "2025-12-04T00:00:00.000Z",    // End of sync window (ISO datetime)
-  "sleepStart": "2025-12-03T23:00:00.000Z",   // Sleep session start (ISO datetime)
-  "sleepEnd": "2025-12-04T07:00:00.000Z"      // Sleep session end (ISO datetime)
+  "date": "2025-12-19T00:00:00.000Z",  // The day being synced (usually yesterday)
+  "sleepSessions": [                    // Optional: array of sleep sessions
+    {
+      "start": "2025-12-18T23:00:00.000Z",
+      "end": "2025-12-19T07:00:00.000Z",
+      "quality": "GOOD"                 // Optional: POOR, FAIR, GOOD, EXCELLENT
+    }
+  ],
+  "workouts": [                         // Optional: array of workout sessions
+    {
+      "start": "2025-12-19T06:00:00.000Z",
+      "end": "2025-12-19T07:00:00.000Z",
+      "type": "Strength Training",      // Workout type name
+      "calories": 350                   // Optional: calories burned
+    }
+  ],
+  "activity": {                         // Optional: daily activity metrics
+    "steps": 8500,
+    "activeCalories": 450,
+    "exerciseMinutes": 45,
+    "standHours": 10
+  }
 }
 
 Validation:
-- windowStart < windowEnd
-- sleepStart < sleepEnd
-- sleepStart >= windowStart and sleepEnd <= windowEnd
+- At least one of sleepSessions, workouts, or activity must be provided
+- All datetime strings must be valid ISO 8601 format
+- sleepStart < sleepEnd for each session
+- workoutStart < workoutEnd for each workout
 
 Behavior:
-- Deletes all overlapping Sleep slices in PRIMARY dimension within the window.
-- Creates a new locked Sleep slice with the provided times.
-- Source is set to 'API'.
-- Uses a transaction to ensure atomicity.
-- Response: the newly created TimeSlice.
+- Idempotent: Re-running for the same date replaces data cleanly
+- Deletes existing Sleep/Workout TimeSlices for the sync date (PRIMARY dimension, source: 'API')
+- Creates new Sleep TimeSlices (PRIMARY, source: 'API', isLocked: true)
+- Creates new Workout TimeSlices (PRIMARY, source: 'API', category: "Workout: {type}")
+- Upserts DailyHealthMetric record with activity data and aggregated sleep metrics
+- Does NOT call Toggl projection (health data stays Compass-only)
+- Uses a transaction to ensure atomicity
+- Response: { sleepSlicesCreated, workoutSlicesCreated, healthMetricUpdated }
 
-This endpoint is designed for iOS Shortcuts that read sleep data from HealthKit and push it to Compass as the authoritative source of truth.
+This endpoint is designed for iOS Shortcuts that run daily (e.g., scheduled automation at 6 AM) to sync yesterday's health data from HealthKit to Compass as the authoritative source of truth.
+
+Note: The old `/api/engine/health/sleep-sync` endpoint is deprecated but still available for backward compatibility.
 
 2) Recommended shortcut template/framework
 
