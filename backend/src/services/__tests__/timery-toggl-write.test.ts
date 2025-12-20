@@ -22,7 +22,7 @@ jest.mock('../../config/env', () => ({
   },
 }));
 
-import { createRunningTimeEntry, stopTimeEntry, updateTimeEntryTags } from '../timery';
+import { createRunningTimeEntry, stopTimeEntry, stopTimeEntryAt, updateTimeEntryTags } from '../timery';
 
 describe('Toggl write helpers', () => {
   beforeEach(() => {
@@ -57,6 +57,25 @@ describe('Toggl write helpers', () => {
     mockPatch.mockResolvedValue({ data: { id: 123 } });
     await stopTimeEntry({ workspaceId: 999, entryId: 123 });
     expect(mockPatch).toHaveBeenCalledWith('/workspaces/999/time_entries/123/stop');
+  });
+
+  it('stops and backdates an entry by id', async () => {
+    const start = new Date('2025-01-01T10:00:00Z');
+    const stop = new Date('2025-01-01T10:20:00Z');
+
+    mockPatch.mockResolvedValue({ data: { id: 123 } });
+    mockPut.mockResolvedValue({ data: { id: 123 } });
+
+    await stopTimeEntryAt({ workspaceId: 999, entryId: 123, start, stop });
+
+    expect(mockPatch).toHaveBeenCalledWith('/workspaces/999/time_entries/123/stop');
+    expect(mockPut).toHaveBeenCalledWith(
+      '/workspaces/999/time_entries/123',
+      expect.objectContaining({
+        stop: stop.toISOString(),
+        duration: 1200,
+      })
+    );
   });
 
   it('adds tags using tag_action', async () => {

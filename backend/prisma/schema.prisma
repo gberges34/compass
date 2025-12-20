@@ -185,8 +185,6 @@ model DailyHealthMetric {
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
-  @@index([date])
 }
 
 // ============================================================================

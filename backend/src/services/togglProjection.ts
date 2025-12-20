@@ -20,69 +20,73 @@ function workModeToTag(category: string): string {
 /**
  * Projects a PRIMARY slice start into Toggl (running entry).
  */
-export async function syncPrimaryStart(slice: TimeSlice): Promise<void> {
-  if (!env.TOGGL_API_TOKEN || slice.dimension !== 'PRIMARY') return;
-  if (slice.togglEntryId) return;
+export function syncPrimaryStart(slice: TimeSlice): Promise<void> {
+  if (!env.TOGGL_API_TOKEN || slice.dimension !== 'PRIMARY') {
+    return Promise.resolve();
+  }
+  if (slice.togglEntryId) {
+    return Promise.resolve();
+  }
 
-  const inFlight = primaryStartInFlight.get(slice.id);
-  if (inFlight) return inFlight;
+  const existing = primaryStartInFlight.get(slice.id);
+  if (existing) return existing;
 
   const job = (async () => {
-  const { workspaceId } = await getTogglContext();
+    const { workspaceId } = await getTogglContext();
 
-  // Stop any running Toggl entry to avoid overlap
-  try {
-    await stopRunningEntry();
-  } catch (error) {
-    console.warn('Failed to stop running Toggl entry before PRIMARY start', error);
-  }
-
-  // Grab current WORK_MODE (if any) to tag the running entry
-  const workMode = await prisma.timeSlice.findFirst({
-    where: { dimension: 'WORK_MODE', end: null },
-    select: { category: true },
-  });
-
-  let description = slice.category;
-  if (slice.linkedTaskId) {
-    const task = await prisma.task.findUnique({
-      where: { id: slice.linkedTaskId },
-      select: { name: true },
-    });
-    if (task?.name) {
-      description = task.name;
+    // Stop any running Toggl entry to avoid overlap
+    try {
+      await stopRunningEntry();
+    } catch (error) {
+      console.warn('Failed to stop running Toggl entry before PRIMARY start', error);
     }
-  }
 
-  const projectId = await resolveProjectIdForCategory(slice.category);
+    // Grab current WORK_MODE (if any) to tag the running entry
+    const workMode = await prisma.timeSlice.findFirst({
+      where: { dimension: 'WORK_MODE', end: null },
+      select: { category: true },
+    });
 
-  const tags = ['compass'];
-  if (workMode?.category) {
-    tags.push(workModeToTag(workMode.category));
-  }
+    let description = slice.category;
+    if (slice.linkedTaskId) {
+      const task = await prisma.task.findUnique({
+        where: { id: slice.linkedTaskId },
+        select: { name: true },
+      });
+      if (task?.name) {
+        description = task.name;
+      }
+    }
 
-  const entry = await createRunningTimeEntry({
-    workspaceId,
-    description,
-    start: slice.start,
-    projectId,
-    tags,
-  });
+    const projectId = await resolveProjectIdForCategory(slice.category);
 
-  await prisma.timeSlice.update({
-    where: { id: slice.id },
-    data: { togglEntryId: entry.id.toString() },
-  });
+    const tags = ['compass'];
+    if (workMode?.category) {
+      tags.push(workModeToTag(workMode.category));
+    }
+
+    const entry = await createRunningTimeEntry({
+      workspaceId,
+      description,
+      start: slice.start,
+      projectId,
+      tags,
+    });
+
+    await prisma.timeSlice.update({
+      where: { id: slice.id },
+      data: { togglEntryId: entry.id.toString() },
+    });
   })();
 
-  primaryStartInFlight.set(slice.id, job);
-  try {
-    await job;
-  } finally {
-    if (primaryStartInFlight.get(slice.id) === job) {
+  let wrapped: Promise<void>;
+  wrapped = job.finally(() => {
+    if (primaryStartInFlight.get(slice.id) === wrapped) {
       primaryStartInFlight.delete(slice.id);
     }
-  }
+  });
+  primaryStartInFlight.set(slice.id, wrapped);
+  return wrapped;
 }
 
 /**

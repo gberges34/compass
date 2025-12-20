@@ -34,7 +34,7 @@ export async function handlePresenceUpdate(
 ): Promise<void> {
   const scheduleGamingStop = () => {
     if (state.gaming.stopTimer) {
-      clearTimeout(state.gaming.stopTimer);
+      return;
     }
     state.gaming.stopEffectiveAt = deps.getNow();
     state.gaming.stopTimer = setTimeout(async () => {
@@ -59,6 +59,7 @@ export async function handlePresenceUpdate(
       } catch (error) {
         deps.log.error('Failed to stop Gaming slice', error);
       } finally {
+        state.gaming.stopTimer = null;
         state.gaming.stopEffectiveAt = null;
       }
     }, GAMING_STOP_DEBOUNCE_MS);

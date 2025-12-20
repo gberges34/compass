@@ -329,15 +329,28 @@ export async function syncHealthData(input: HealthSyncInput): Promise<HealthSync
     let sleepSlicesCreated = 0;
     let workoutSlicesCreated = 0;
 
-    // Delete existing Sleep and Workout TimeSlices for this day (idempotent)
+    // Delete existing Sleep and Workout TimeSlices that overlap this day window (idempotent).
+    // Important: Sleep often spans midnight, so we must delete by overlap, not by start-in-window.
     if (input.sleepSessions?.length || input.workouts?.length) {
       await tx.timeSlice.deleteMany({
         where: {
           dimension: 'PRIMARY',
-          start: { gte: dayStart, lte: dayEnd },
-          OR: [
-            { category: 'Sleep', source: 'API' },
-            { category: { startsWith: 'Workout' }, source: 'API' },
+          source: 'API',
+          AND: [
+            {
+              OR: [
+                { category: 'Sleep' },
+                { category: { startsWith: 'Workout' } },
+              ],
+            },
+            // overlap with [dayStart, dayEnd]
+            { start: { lt: dayEnd } },
+            {
+              OR: [
+                { end: { gt: dayStart } },
+                { end: null },
+              ],
+            },
           ],
         },
       });
@@ -386,27 +399,28 @@ export async function syncHealthData(input: HealthSyncInput): Promise<HealthSync
       }
     }
 
-    // Upsert DailyHealthMetric with activity data
+    // Upsert DailyHealthMetric with activity data and derived sleep aggregates
     let healthMetricUpdated = false;
-    if (input.activity) {
+    const hasSleepSessions = !!input.sleepSessions?.length;
+    const hasActivity = !!input.activity;
+    if (hasSleepSessions || hasActivity) {
       // Calculate total sleep duration from sessions if provided
-      let totalSleepDuration: number | undefined;
-      if (input.sleepSessions?.length) {
-        totalSleepDuration = input.sleepSessions.reduce((total, session) => {
-          const start = new Date(session.start);
-          const end = new Date(session.end);
-          return total + Math.floor((end.getTime() - start.getTime()) / 60000);
-        }, 0);
-      }
+      const totalSleepDuration = hasSleepSessions
+        ? input.sleepSessions!.reduce((total, session) => {
+            const start = new Date(session.start);
+            const end = new Date(session.end);
+            return total + Math.floor((end.getTime() - start.getTime()) / 60000);
+          }, 0)
+        : undefined;
 
       // Determine sleep quality (use best quality if multiple sessions)
-      let sleepQuality: string | undefined;
-      if (input.sleepSessions?.length) {
-        const qualities = input.sleepSessions
-          .map(s => s.quality)
+      let sleepQuality: 'POOR' | 'FAIR' | 'GOOD' | 'EXCELLENT' | undefined;
+      if (hasSleepSessions) {
+        const qualities = input.sleepSessions!
+          .map((s) => s.quality)
           .filter((q): q is 'POOR' | 'FAIR' | 'GOOD' | 'EXCELLENT' => !!q);
         if (qualities.length > 0) {
-          const qualityOrder = { POOR: 0, FAIR: 1, GOOD: 2, EXCELLENT: 3 };
+          const qualityOrder = { POOR: 0, FAIR: 1, GOOD: 2, EXCELLENT: 3 } as const;
           sleepQuality = qualities.reduce((best, current) =>
             qualityOrder[current] > qualityOrder[best] ? current : best
           );
@@ -416,19 +430,19 @@ export async function syncHealthData(input: HealthSyncInput): Promise<HealthSync
       await tx.dailyHealthMetric.upsert({
         where: { date: dayStart },
         update: {
-          steps: input.activity.steps ?? undefined,
-          activeCalories: input.activity.activeCalories ?? undefined,
-          exerciseMinutes: input.activity.exerciseMinutes ?? undefined,
-          standHours: input.activity.standHours ?? undefined,
+          steps: hasActivity ? (input.activity!.steps ?? undefined) : undefined,
+          activeCalories: hasActivity ? (input.activity!.activeCalories ?? undefined) : undefined,
+          exerciseMinutes: hasActivity ? (input.activity!.exerciseMinutes ?? undefined) : undefined,
+          standHours: hasActivity ? (input.activity!.standHours ?? undefined) : undefined,
           sleepDuration: totalSleepDuration ?? undefined,
           sleepQuality: sleepQuality ?? undefined,
         },
         create: {
           date: dayStart,
-          steps: input.activity.steps ?? null,
-          activeCalories: input.activity.activeCalories ?? null,
-          exerciseMinutes: input.activity.exerciseMinutes ?? null,
-          standHours: input.activity.standHours ?? null,
+          steps: hasActivity ? (input.activity!.steps ?? null) : null,
+          activeCalories: hasActivity ? (input.activity!.activeCalories ?? null) : null,
+          exerciseMinutes: hasActivity ? (input.activity!.exerciseMinutes ?? null) : null,
+          standHours: hasActivity ? (input.activity!.standHours ?? null) : null,
           sleepDuration: totalSleepDuration ?? null,
           sleepQuality: sleepQuality ?? null,
         },

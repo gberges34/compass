@@ -87,10 +87,40 @@ export const healthSyncSchema = z.object({
     exerciseMinutes: z.number().optional(),
     standHours: z.number().optional(),
   }).optional(),
-}).refine((data) => {
-  // Validate that at least one data type is provided
-  return !!(data.sleepSessions?.length || data.workouts?.length || data.activity);
-}, { message: 'At least one health data type must be provided' });
+})
+  .refine((data) => {
+    // Validate that at least one data type is provided
+    return !!(data.sleepSessions?.length || data.workouts?.length || data.activity);
+  }, { message: 'Provide at least one of: sleepSessions, workouts, activity' })
+  .superRefine((data, ctx) => {
+    if (data.sleepSessions?.length) {
+      data.sleepSessions.forEach((session, idx) => {
+        const start = new Date(session.start);
+        const end = new Date(session.end);
+        if (!(start < end)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['sleepSessions', idx],
+            message: 'sleepSessions items must have start < end',
+          });
+        }
+      });
+    }
+
+    if (data.workouts?.length) {
+      data.workouts.forEach((workout, idx) => {
+        const start = new Date(workout.start);
+        const end = new Date(workout.end);
+        if (!(start < end)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['workouts', idx],
+            message: 'workouts items must have start < end',
+          });
+        }
+      });
+    }
+  });
 
 export const updateSliceSchema = z.object({
   start: z.string().datetime().optional(),
