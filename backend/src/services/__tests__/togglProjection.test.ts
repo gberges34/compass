@@ -28,7 +28,7 @@ jest.mock('../../prisma', () => ({
 
 const mockStopRunningEntry = jest.fn();
 const mockCreateRunningTimeEntry = jest.fn();
-const mockStopTimeEntry = jest.fn();
+const mockStopTimeEntryAt = jest.fn();
 const mockUpdateTimeEntryTags = jest.fn();
 const mockGetTogglContext = jest.fn();
 const mockResolveProjectIdForCategory = jest.fn();
@@ -37,7 +37,7 @@ const mockGetCurrentRunningEntry = jest.fn();
 jest.mock('../timery', () => ({
   stopRunningEntry: mockStopRunningEntry,
   createRunningTimeEntry: mockCreateRunningTimeEntry,
-  stopTimeEntry: mockStopTimeEntry,
+  stopTimeEntryAt: mockStopTimeEntryAt,
   updateTimeEntryTags: mockUpdateTimeEntryTags,
   getTogglContext: mockGetTogglContext,
   resolveProjectIdForCategory: mockResolveProjectIdForCategory,
@@ -89,9 +89,52 @@ describe('togglProjection', () => {
     });
   });
 
+  it('syncPrimaryStart is idempotent when togglEntryId already exists', async () => {
+    await syncPrimaryStart(baseSlice({ togglEntryId: '123' }));
+    expect(mockCreateRunningTimeEntry).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('deduplicates concurrent syncPrimaryStart calls for the same slice id', async () => {
+    mockFindFirst.mockResolvedValue(null);
+
+    let resolveCreate: ((value: { id: number }) => void) | null = null;
+    mockCreateRunningTimeEntry.mockImplementation(
+      () =>
+        new Promise<{ id: number }>((resolve) => {
+          resolveCreate = resolve;
+        })
+    );
+
+    const slice = baseSlice({ togglEntryId: null });
+    const p1 = syncPrimaryStart(slice);
+    const p2 = syncPrimaryStart(slice);
+
+    // Allow the async projection to reach createRunningTimeEntry().
+    for (let i = 0; i < 20 && !resolveCreate; i += 1) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+
+    expect(resolveCreate).not.toBeNull();
+    resolveCreate!({ id: 123 });
+    await Promise.all([p1, p2]);
+
+    expect(mockCreateRunningTimeEntry).toHaveBeenCalledTimes(1);
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+  });
+
   it('syncPrimaryStop stops linked entry', async () => {
-    await syncPrimaryStop(baseSlice({ togglEntryId: '123' }));
-    expect(mockStopTimeEntry).toHaveBeenCalledWith({ workspaceId: 999, entryId: 123 });
+    const stop = new Date('2025-01-01T10:20:00Z');
+    const start = new Date('2025-01-01T10:00:00Z');
+    await syncPrimaryStop(
+      baseSlice({ togglEntryId: '123', start, end: stop })
+    );
+    expect(mockStopTimeEntryAt).toHaveBeenCalledWith({
+      workspaceId: 999,
+      entryId: 123,
+      start,
+      stop,
+    });
   });
 
   it('syncWorkModeTags adds tag to current primary', async () => {

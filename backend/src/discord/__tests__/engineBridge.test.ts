@@ -108,9 +108,12 @@ describe('engineBridge presence handling', () => {
   });
 
   it('schedules stop when only denylisted presence while gaming is active', async () => {
+    const now = new Date('2025-01-01T10:00:00Z');
     const state = createInitialDiscordState();
     state.gaming.gamingActive = true;
-    const { deps, calls } = createDeps();
+    const { deps, calls } = createDeps({
+      getNow: () => now,
+    });
 
     const presence: NormalizedPresence = {
       hasGame: false,
@@ -124,7 +127,36 @@ describe('engineBridge presence handling', () => {
     jest.runAllTimers();
 
     expect(calls.stoppedSlices).toEqual([
-      { dimension: 'PRIMARY', category: 'Gaming' },
+      { dimension: 'PRIMARY', category: 'Gaming', endAt: now },
+    ]);
+  });
+
+  it('uses the first no-game timestamp for endAt across the debounce window', async () => {
+    const t1 = new Date('2025-01-01T10:00:00Z');
+    const t2 = new Date('2025-01-01T10:01:00Z');
+    let now = t1;
+
+    const state = createInitialDiscordState();
+    state.gaming.gamingActive = true;
+    state.gaming.currentGame = 'Hades';
+    const { deps, calls } = createDeps({
+      getNow: () => now,
+    });
+
+    const noGame: NormalizedPresence = {
+      hasGame: false,
+      gameName: null,
+      isOnlyDenylisted: false,
+    };
+
+    await handlePresenceUpdate(noGame, state, deps);
+    now = t2;
+    await handlePresenceUpdate(noGame, state, deps);
+
+    jest.runAllTimers();
+
+    expect(calls.stoppedSlices).toEqual([
+      { dimension: 'PRIMARY', category: 'Gaming', endAt: t1 },
     ]);
   });
 });

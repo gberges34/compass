@@ -39,6 +39,7 @@ const isoDateTimeString = z.string().refine((value) => {
   return isValid(parsed);
 }, { message: 'Invalid ISO datetime' });
 
+// Deprecated: Use healthSyncSchema instead
 export const healthSleepSyncSchema = z
   .object({
     windowStart: isoDateTimeString,
@@ -59,6 +60,67 @@ export const healthSleepSyncSchema = z
       sleepEnd <= windowEnd
     );
   }, { message: 'Invalid sleep/window bounds' });
+
+// Unified health sync schema for Sleep, Workouts, and Activity metrics
+export const healthSyncSchema = z.object({
+  date: isoDateTimeString,  // The day being synced (usually yesterday)
+  
+  // Sleep sessions (array - HealthKit can report multiple)
+  sleepSessions: z.array(z.object({
+    start: isoDateTimeString,
+    end: isoDateTimeString,
+    quality: z.enum(['POOR', 'FAIR', 'GOOD', 'EXCELLENT']).optional(),
+  })).optional(),
+  
+  // Workout sessions
+  workouts: z.array(z.object({
+    start: isoDateTimeString,
+    end: isoDateTimeString,
+    type: z.string(),  // "Running", "Strength Training", etc.
+    calories: z.number().optional(),
+  })).optional(),
+  
+  // Daily activity metrics
+  activity: z.object({
+    steps: z.number().optional(),
+    activeCalories: z.number().optional(),
+    exerciseMinutes: z.number().optional(),
+    standHours: z.number().optional(),
+  }).optional(),
+})
+  .refine((data) => {
+    // Validate that at least one data type is provided
+    return !!(data.sleepSessions?.length || data.workouts?.length || data.activity);
+  }, { message: 'Provide at least one of: sleepSessions, workouts, activity' })
+  .superRefine((data, ctx) => {
+    if (data.sleepSessions?.length) {
+      data.sleepSessions.forEach((session, idx) => {
+        const start = new Date(session.start);
+        const end = new Date(session.end);
+        if (!(start < end)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['sleepSessions', idx],
+            message: 'sleepSessions items must have start < end',
+          });
+        }
+      });
+    }
+
+    if (data.workouts?.length) {
+      data.workouts.forEach((workout, idx) => {
+        const start = new Date(workout.start);
+        const end = new Date(workout.end);
+        if (!(start < end)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['workouts', idx],
+            message: 'workouts items must have start < end',
+          });
+        }
+      });
+    }
+  });
 
 export const updateSliceSchema = z.object({
   start: z.string().datetime().optional(),

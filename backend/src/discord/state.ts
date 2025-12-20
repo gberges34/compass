@@ -3,6 +3,7 @@ export interface GamingState {
   gamingActive: boolean;
   startTimer: NodeJS.Timeout | null;
   stopTimer: NodeJS.Timeout | null;
+  stopEffectiveAt: Date | null;
 }
 
 export interface SocialState {
@@ -23,6 +24,7 @@ export function createInitialDiscordState(): DiscordTrackingState {
       gamingActive: false,
       startTimer: null,
       stopTimer: null,
+      stopEffectiveAt: null,
     },
     social: {
       socialActive: false,

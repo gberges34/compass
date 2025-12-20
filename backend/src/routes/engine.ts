@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { cacheControl, CachePolicies } from '../middleware/cacheControl';
-import { startSliceSchema, stopSliceSchema, querySlicesSchema, summarySlicesSchema, updateSliceSchema, sliceIdParamSchema, healthSleepSyncSchema } from '../schemas/timeEngine';
+import { startSliceSchema, stopSliceSchema, querySlicesSchema, summarySlicesSchema, updateSliceSchema, sliceIdParamSchema, healthSleepSyncSchema, healthSyncSchema } from '../schemas/timeEngine';
 import * as TimeEngine from '../services/timeEngine';
 import { prisma } from '../prisma';
 import { Prisma } from '@prisma/client';
@@ -164,12 +164,23 @@ router.get(
 );
 
 // POST /api/engine/health/sleep-sync - Sync authoritative Sleep block from Health
+// @deprecated Use POST /api/engine/health/sync instead for unified health data sync
 router.post(
   '/health/sleep-sync',
   asyncHandler(async (req: Request, res: Response) => {
     const payload = healthSleepSyncSchema.parse(req.body);
     const slice = await TimeEngine.syncHealthSleep(payload);
     res.status(201).json(slice);
+  })
+);
+
+// POST /api/engine/health/sync - Unified health data sync (Sleep, Workouts, Activity)
+router.post(
+  '/health/sync',
+  asyncHandler(async (req: Request, res: Response) => {
+    const payload = healthSyncSchema.parse(req.body);
+    const result = await TimeEngine.syncHealthData(payload);
+    res.status(201).json(result);
   })
 );
 

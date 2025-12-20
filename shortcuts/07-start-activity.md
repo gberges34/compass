@@ -18,7 +18,7 @@ Use this shortcut when you're starting an activity that is NOT a Compass Task:
 - Workout (via gym location/Focus)
 
 **Note:** Some activities have dedicated automation sources:
-- **Sleep** → HealthKit API (no shortcut needed - authoritative source)
+- **Sleep & Workouts** → Health Sync shortcut (daily automation syncs HealthKit data)
 - **Gaming** → Discord Bot → Gaming Focus Mode (automatic)
 - **Discord Call** → Discord Bot (usually automatic) - SOCIAL dimension, can overlap with PRIMARY activities
 
@@ -207,9 +207,14 @@ This is by design - the Time Engine supports multi-dimensional tracking.
 
 You typically do NOT need manual shortcuts for Gaming or Discord Call - the Discord Bot handles them. However, Discord Call can be started manually if needed.
 
-### HealthKit (Sleep)
+### HealthKit (Sleep, Workouts, Activity)
 
-Sleep data comes from HealthKit, not from manual shortcuts. A background ingestion job syncs sleep data to TimeSlices.
+Health data comes from HealthKit via the unified Health Sync shortcut. This daily automation (typically scheduled for 6 AM) syncs yesterday's:
+- Sleep sessions → PRIMARY TimeSlices (locked)
+- Workout sessions → PRIMARY TimeSlices
+- Activity metrics → DailyHealthMetric records
+
+See the Health Sync shortcut documentation for setup instructions.
 
 ## Testing
 
