@@ -13,50 +13,67 @@ module.exports = function ({ types: t }) {
         ) {
           const envVar = path.node.property.name;
 
-          if (envVar === 'DEV') {
-            // (process.env.NODE_ENV !== "production")
-            path.replaceWith(
-              t.binaryExpression(
-                '!==',
-                t.memberExpression(
-                  t.memberExpression(t.identifier('process'), t.identifier('env')),
-                  t.identifier('NODE_ENV')
-                ),
-                t.stringLiteral('production')
-              )
-            );
-          } else if (envVar === 'PROD') {
-            // (process.env.NODE_ENV === "production")
-            path.replaceWith(
-              t.binaryExpression(
-                '===',
-                t.memberExpression(
-                  t.memberExpression(t.identifier('process'), t.identifier('env')),
-                  t.identifier('NODE_ENV')
-                ),
-                t.stringLiteral('production')
-              )
-            );
-          } else if (envVar === 'MODE') {
-            // (process.env.NODE_ENV || "test")
-            path.replaceWith(
-              t.logicalExpression(
-                '||',
-                t.memberExpression(
-                  t.memberExpression(t.identifier('process'), t.identifier('env')),
-                  t.identifier('NODE_ENV')
-                ),
-                t.stringLiteral('test')
-              )
-            );
-          } else {
-            // process.env.VAR
-            path.replaceWith(
-              t.memberExpression(
-                t.memberExpression(t.identifier('process'), t.identifier('env')),
-                t.identifier(envVar)
-              )
-            );
+          switch (envVar) {
+            case 'DEV':
+              // (process.env.NODE_ENV !== "production")
+              path.replaceWith(
+                t.binaryExpression(
+                  '!==',
+                  t.memberExpression(
+                    t.memberExpression(t.identifier('process'), t.identifier('env')),
+                    t.identifier('NODE_ENV')
+                  ),
+                  t.stringLiteral('production')
+                )
+              );
+              break;
+            case 'PROD':
+              // (process.env.NODE_ENV === "production")
+              path.replaceWith(
+                t.binaryExpression(
+                  '===',
+                  t.memberExpression(
+                    t.memberExpression(t.identifier('process'), t.identifier('env')),
+                    t.identifier('NODE_ENV')
+                  ),
+                  t.stringLiteral('production')
+                )
+              );
+              break;
+            case 'MODE':
+              // (process.env.NODE_ENV || "test")
+              path.replaceWith(
+                t.logicalExpression(
+                  '||',
+                  t.memberExpression(
+                    t.memberExpression(t.identifier('process'), t.identifier('env')),
+                    t.identifier('NODE_ENV')
+                  ),
+                  t.stringLiteral('test')
+                )
+              );
+              break;
+            case 'BASE_URL':
+              // "/" (default base URL in Vite)
+              path.replaceWith(t.stringLiteral('/'));
+              break;
+            case 'SSR':
+              // false (not server-side rendering in Jest browser tests)
+              path.replaceWith(t.booleanLiteral(false));
+              break;
+            default:
+              // Only transform VITE_ prefixed variables to avoid accidentally
+              // transforming other import.meta.env properties
+              if (envVar.startsWith('VITE_')) {
+                // process.env.VITE_VAR
+                path.replaceWith(
+                  t.memberExpression(
+                    t.memberExpression(t.identifier('process'), t.identifier('env')),
+                    t.identifier(envVar)
+                  )
+                );
+              }
+              break;
           }
         }
       },
