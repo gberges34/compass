@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTodayPlan, useUpdateDailyPlanReflection } from '../hooks/useDailyPlans';
 import type { EnergyMatch, UpdateDailyPlanRequest } from '../types';
 import { useToast } from '../contexts/ToastContext';

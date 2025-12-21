@@ -1,5 +1,5 @@
 // Custom babel plugin to transform import.meta.env to process.env equivalents for Jest
-module.exports = function () {
+module.exports = function ({ types: t }) {
   return {
     visitor: {
       MemberExpression(path) {
@@ -12,20 +12,54 @@ module.exports = function () {
           path.node.object.property?.name === 'env'
         ) {
           const envVar = path.node.property.name;
-          
+
           if (envVar === 'DEV') {
-            path.replaceWithSourceString('(process.env.NODE_ENV !== "production")');
+            // (process.env.NODE_ENV !== "production")
+            path.replaceWith(
+              t.binaryExpression(
+                '!==',
+                t.memberExpression(
+                  t.memberExpression(t.identifier('process'), t.identifier('env')),
+                  t.identifier('NODE_ENV')
+                ),
+                t.stringLiteral('production')
+              )
+            );
           } else if (envVar === 'PROD') {
-            path.replaceWithSourceString('(process.env.NODE_ENV === "production")');
+            // (process.env.NODE_ENV === "production")
+            path.replaceWith(
+              t.binaryExpression(
+                '===',
+                t.memberExpression(
+                  t.memberExpression(t.identifier('process'), t.identifier('env')),
+                  t.identifier('NODE_ENV')
+                ),
+                t.stringLiteral('production')
+              )
+            );
           } else if (envVar === 'MODE') {
-            path.replaceWithSourceString('(process.env.NODE_ENV || "test")');
+            // (process.env.NODE_ENV || "test")
+            path.replaceWith(
+              t.logicalExpression(
+                '||',
+                t.memberExpression(
+                  t.memberExpression(t.identifier('process'), t.identifier('env')),
+                  t.identifier('NODE_ENV')
+                ),
+                t.stringLiteral('test')
+              )
+            );
           } else {
-            // For VITE_* variables, map to process.env
-            path.replaceWithSourceString(`process.env.${envVar}`);
+            // process.env.VAR
+            path.replaceWith(
+              t.memberExpression(
+                t.memberExpression(t.identifier('process'), t.identifier('env')),
+                t.identifier(envVar)
+              )
+            );
           }
         }
       },
     },
   };
 };
-

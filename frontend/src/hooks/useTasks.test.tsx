@@ -3,7 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useScheduleTask, useUnscheduleTask, taskKeys } from './useTasks';
 import * as api from '../lib/api';
-import type { Task, PaginatedResponse } from '../types';
+import type { Task, TaskFilters } from '../types';
 
 // Mock the API
 jest.mock('../lib/api', () => ({
@@ -23,7 +23,7 @@ describe('Task Scheduling', () => {
   let queryClient: QueryClient;
 
   // Helper to build infinite query key (matches implementation)
-  const buildInfiniteKey = (filters?: { status?: string }) =>
+  const buildInfiniteKey = (filters?: TaskFilters) =>
     [...taskKeys.list(filters), 'infinite'] as const;
 
   // Helper to create infinite query data structure
