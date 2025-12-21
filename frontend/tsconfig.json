@@ -15,7 +15,6 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["vite/client", "node"],
     "typeRoots": ["./node_modules/@types", "../shared"]
   },
   "include": ["src", "../shared/**/*.d.ts"],

@@ -19,7 +19,7 @@ import {
 } from './taskCache';
 
 // Development-only logging
-const DEBUG = process.env.NODE_ENV === 'development';
+const DEBUG = import.meta.env.DEV;
 const log = DEBUG ? console.log : () => {};
 
 // Query Keys

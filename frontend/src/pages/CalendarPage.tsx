@@ -30,7 +30,7 @@ import {
 } from '../lib/dateUtils';
 
 // Development-only logging
-const DEBUG = process.env.NODE_ENV === 'development';
+const DEBUG = import.meta.env.DEV;
 const log = DEBUG ? console.log : () => {};
 
 // Configure date-fns localizer for react-big-calendar

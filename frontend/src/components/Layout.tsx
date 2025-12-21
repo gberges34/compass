@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Calendar } from 'lucide-react';
 import { prefetchTasks } from '../hooks/useTasks';

@@ -5,17 +5,11 @@ module.exports = {
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': '<rootDir>/src/__mocks__/styleMock.js',
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^react-router-dom$': '<rootDir>/node_modules/react-router-dom/dist/index.js',
-    '^react-router/dom$': '<rootDir>/node_modules/react-router/dist/development/dom-export.js',
-    '^react-router(.*)$': '<rootDir>/node_modules/react-router/dist/development/index.js',
     '^axios$': 'axios/dist/node/axios.cjs',
   },
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: 'tsconfig.json',
-    }],
+    '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
   },
-  testMatch: ['**/__tests__/**/*.(test|spec).(ts|tsx)', '**/*.(test|spec).(ts|tsx)'],
+  testMatch: ['**/__tests__/**/?(*.)+(spec|test).[tj]s?(x)', '**/?(*.)+(spec|test).[tj]s?(x)'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
 };
-

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useTodayPlan, useCreateDailyPlan } from '../hooks/useDailyPlans';
 import type { Energy, DeepWorkBlock, TimeBlock, CreateDailyPlanRequest } from '../types';
 import { useToast } from '../contexts/ToastContext';

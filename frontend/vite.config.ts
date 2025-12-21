@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   plugins: [react()],
@@ -15,11 +18,6 @@ export default defineConfig({
   },
   build: {
     outDir: 'build',  // Match CRA's output directory
-  },
-  // Expose REACT_APP_* variables for backward compatibility
-  define: {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-    'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL),
   },
 })
 

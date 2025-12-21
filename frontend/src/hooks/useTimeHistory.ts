@@ -5,7 +5,7 @@ import { useToast } from '../contexts/ToastContext';
 import { subDays } from 'date-fns';
 
 // Development-only logging
-const DEBUG = process.env.NODE_ENV === 'development';
+const DEBUG = import.meta.env.DEV;
 const log = DEBUG ? console.log : () => {};
 
 // Query Keys
