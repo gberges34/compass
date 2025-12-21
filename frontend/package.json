@@ -16,6 +16,7 @@
     "react": "^19.2.0",
     "react-big-calendar": "^1.19.4",
     "react-dom": "^19.2.0",
+    "react-error-boundary": "^6.0.0",
     "react-router-dom": "^7.9.5",
     "recharts": "^3.3.0",
     "typescript": "^5.9.0"
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
+    "@babel/plugin-syntax-import-meta": "^7.10.4",
     "@babel/preset-env": "^7.26.0",
     "@babel/preset-react": "^7.26.0",
     "@babel/preset-typescript": "^7.26.0",
@@ -40,7 +42,6 @@
     "@types/node": "^22.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
-    "@babel/plugin-syntax-import-meta": "^7.10.4",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8.5.6",
