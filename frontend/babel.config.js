@@ -5,7 +5,6 @@ module.exports = {
     '@babel/preset-typescript',
   ],
   plugins: [
-    '@babel/plugin-syntax-import-meta',
     './babel-plugin-import-meta-env.js',
   ],
 };
