@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Calendar, dateFnsLocalizer, Event as BigCalendarEvent, View } from 'react-big-calendar';
-import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
+import withDragAndDrop, { EventInteractionArgs, DragFromOutsideItemArgs } from 'react-big-calendar/lib/addons/dragAndDrop';
 import CalendarToolbar from '../components/CalendarToolbar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
-import enUS from 'date-fns/locale/en-US';
+import { enUS } from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import type { Task, CalendarEvent, Category } from '../types';
@@ -42,7 +42,7 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales,
 });
-const DnDCalendar = withDragAndDrop(Calendar);
+const DnDCalendar = withDragAndDrop<CalendarEvent>(Calendar);
 
 // Category color mapping - defined outside component to prevent recreations
 const getCategoryColor = (category: Category): string => {
@@ -287,7 +287,11 @@ const CalendarPage: React.FC = () => {
     }
   };
 
-  const handleEventDrop = async ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
+  const handleEventDrop = async (args: EventInteractionArgs<CalendarEvent>) => {
+    const { event } = args;
+    // react-big-calendar types use stringOrDate; coerce to Date
+    const start = new Date(args.start);
+    const end = new Date(args.end);
     log('[handleEventDrop] Dropping event:', { event, start, end });
 
     // Only allow rescheduling task events, not time blocks
@@ -326,7 +330,11 @@ const CalendarPage: React.FC = () => {
     }
   };
 
-  const handleEventResize = async ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
+  const handleEventResize = async (args: EventInteractionArgs<CalendarEvent>) => {
+    const { event } = args;
+    // react-big-calendar types use stringOrDate; coerce to Date
+    const start = new Date(args.start);
+    const end = new Date(args.end);
     log('[handleEventResize] Resizing event:', { event, start, end });
 
     // Only allow resizing task events
@@ -470,7 +478,9 @@ const CalendarPage: React.FC = () => {
   }, []);
 
   const handleDropFromOutside = useCallback(
-    async ({ start }: { start: Date }) => {
+    async (args: DragFromOutsideItemArgs) => {
+      // react-big-calendar types use stringOrDate; coerce to Date
+      const start = new Date(args.start);
       if (!draggedTask) return;
       if (scheduleTaskMutation.isPending) return;
 
@@ -612,8 +622,8 @@ const CalendarPage: React.FC = () => {
           <DnDCalendar
             localizer={localizer}
             events={events}
-            startAccessor={(event: CalendarEvent) => event.start}
-            endAccessor={(event: CalendarEvent) => event.end}
+            startAccessor="start"
+            endAccessor="end"
             style={{ height: 700 }}
             onSelectSlot={handleSelectSlot}
             onSelectEvent={handleSelectEvent}
@@ -631,7 +641,7 @@ const CalendarPage: React.FC = () => {
             showMultiDayTimes
             tooltipAccessor={tooltipAccessor}
             draggableAccessor={draggableAccessor}
-            dragFromOutsideItem={() => externalDragItem ?? {}}
+            dragFromOutsideItem={() => externalDragItem as unknown as CalendarEvent}
             onDropFromOutside={handleDropFromOutside}
             resizable
             onEventDrop={handleEventDrop}
