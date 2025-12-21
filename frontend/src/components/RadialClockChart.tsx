@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTimeHistory } from '../hooks/useTimeHistory';
-import { getActivityColor, activityColors } from '../lib/designTokens';
+import { getActivityColor, activityColors, timeEngineColors } from '../lib/designTokens';
 import { addDays, format, startOfDay } from 'date-fns';
 
 const MINUTES_IN_DAY = 24 * 60;
@@ -9,6 +9,8 @@ const VIEWBOX_SIZE = 220;
 const OUTER_RADIUS = 96;
 const INNER_RADIUS = 64;
 const BACKGROUND_STROKE = '#eef2f7';
+const SEGMENT_STROKE = timeEngineColors.stone;
+const SEGMENT_STROKE_WIDTH = 0.75;
 
 const HOUR_LABEL_TOP_OFFSET = 6;
 const HOUR_LABEL_SIDE_OFFSET = 10;
@@ -252,7 +254,7 @@ export default function RadialClockChart(props: { date: Date }) {
           {segments.map((seg) => {
             const startAngle = timeToAngleDeg(seg.startMin);
             const endAngle = timeToAngleDeg(seg.endMin);
-            const fill = seg.isUntracked ? activityColors._untracked : getActivityColor(seg.category);
+            const fill = seg.isUntracked ? activityColors.untracked : getActivityColor(seg.category);
             const d = ringSegmentPath(cx, cy, INNER_RADIUS, OUTER_RADIUS, startAngle, endAngle);
 
             return (
@@ -260,6 +262,8 @@ export default function RadialClockChart(props: { date: Date }) {
                 key={`${seg.startMin}-${seg.endMin}-${seg.category}-${seg.isUntracked ? 'u' : 't'}`}
                 d={d}
                 fill={fill}
+                stroke={SEGMENT_STROKE}
+                strokeWidth={SEGMENT_STROKE_WIDTH}
                 opacity={seg.isUntracked ? 0.7 : 1}
                 className={seg.isActive ? 'animate-pulse' : undefined}
               >
@@ -336,7 +340,7 @@ export default function RadialClockChart(props: { date: Date }) {
             <span
               className="inline-block h-10 w-10 rounded-sm border border-fog"
               style={{
-                backgroundColor: item.isUntracked ? activityColors._untracked : getActivityColor(item.category),
+                backgroundColor: item.isUntracked ? activityColors.untracked : getActivityColor(item.category),
               }}
               aria-hidden
             />
@@ -357,5 +361,4 @@ export default function RadialClockChart(props: { date: Date }) {
     </div>
   );
 }
-
 

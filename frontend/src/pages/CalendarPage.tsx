@@ -465,9 +465,8 @@ const CalendarPage: React.FC = () => {
     return calendarEvent.title;
   }, []);
 
-  const draggableAccessor = useCallback((event: any) => {
-    const calendarEvent = event as CalendarEvent;
-    return calendarEvent.type === 'task';
+  const draggableAccessor = useCallback((event: CalendarEvent) => {
+    return event.type === 'task';
   }, []);
 
   const handleDropFromOutside = useCallback(
@@ -612,9 +611,9 @@ const CalendarPage: React.FC = () => {
           )}
           <DnDCalendar
             localizer={localizer}
-            events={events as BigCalendarEvent[]}
-            startAccessor={(event: any) => event.start}
-            endAccessor={(event: any) => event.end}
+            events={events}
+            startAccessor={(event: CalendarEvent) => event.start}
+            endAccessor={(event: CalendarEvent) => event.end}
             style={{ height: 700 }}
             onSelectSlot={handleSelectSlot}
             onSelectEvent={handleSelectEvent}
@@ -633,11 +632,10 @@ const CalendarPage: React.FC = () => {
             tooltipAccessor={tooltipAccessor}
             draggableAccessor={draggableAccessor}
             dragFromOutsideItem={() => externalDragItem ?? {}}
-            // react-big-calendar external DnD typings omit the drop payload; cast to align with addon runtime shape
-            onDropFromOutside={handleDropFromOutside as any}
+            onDropFromOutside={handleDropFromOutside}
             resizable
-            onEventDrop={handleEventDrop as any}
-            onEventResize={handleEventResize as any}
+            onEventDrop={handleEventDrop}
+            onEventResize={handleEventResize}
           />
         </div>
       </div>

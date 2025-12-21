@@ -87,22 +87,104 @@ export const categoryColors: Record<Category, CategoryConfig> = {
   },
 };
 
-// Time Engine PRIMARY activity colors (string-keyed because activities are user/system-defined)
-// Fallbacks:
-// - `_default`: unknown activity
-// - `_untracked`: gaps between slices (derived in UI)
-export const activityColors: Record<string, string> = {
-  Sleep: '#6366f1',
-  Commute: '#f59e0b',
-  Chores: '#10b981',
-  Meal: '#ef4444',
-  Exercise: '#22c55e',
-  _default: '#9ca3af',
-  _untracked: '#e5e7eb',
-};
+// ---------------------------------------------------------------------------
+// Time Engine (Daily Activity Clock) colors
+// Activities are user-defined strings, so we:
+// - apply a small set of semantic keyword rules for common activities
+// - fall back to a deterministic palette (stable per activity label)
+//
+// Palette is constrained to CompassVisualDesignGuidelines.md tokens.
+// ---------------------------------------------------------------------------
+
+export const timeEngineColors = {
+  // Neutrals
+  snow: '#FCFCFD',
+  cloud: '#F6F7F9',
+  fog: '#EEF0F3',
+  stone: '#D7DBE0',
+  slate: '#8A94A6',
+  ink: '#0F172A',
+
+  // Pastel accents (categorical palette)
+  mint: '#C9F0DE',
+  sky: '#CFE9FF',
+  lavender: '#E1D9FF',
+  blush: '#FFDDE6',
+  sun: '#FFEFC6',
+
+  // Action colors (kept for possible future use; not used as categorical fills)
+  action: '#2A6FF2',
+  success: '#22C55E',
+  warn: '#F59E0B',
+  danger: '#EF4444',
+} as const;
+
+export const activityColors = {
+  // Derived gaps between slices (not a real activity category)
+  untracked: timeEngineColors.fog,
+} as const;
+
+function normalizeActivityLabel(label: string): string {
+  return label
+    .trim()
+    .toLowerCase()
+    .replace(/[\u2010-\u2015]/g, '-') // normalize various dashes
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function stableHash32(input: string): number {
+  // Simple, deterministic string hash (FNV-1a 32-bit)
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return hash >>> 0;
+}
+
+const categoricalPalette = [
+  timeEngineColors.sky,
+  timeEngineColors.lavender,
+  timeEngineColors.mint,
+  timeEngineColors.blush,
+  timeEngineColors.sun,
+] as const;
+
+const semanticRules: Array<{ test: RegExp; color: string }> = [
+  // Rest / recovery
+  { test: /\b(sleep|nap|rest|wind\s*down|relax|recovery)\b/i, color: timeEngineColors.lavender },
+
+  // Food
+  { test: /\b(meal|eat|eating|breakfast|lunch|dinner|cook|cooking)\b/i, color: timeEngineColors.sun },
+
+  // Exercise / movement (excluding commute-y words handled below)
+  { test: /\b(workout|exercise|gym|run|lift|lifting|yoga|sauna|hike)\b/i, color: timeEngineColors.mint },
+
+  // Travel / commute (keep this after exercise so "walk" doesn't steal "evening walk" away from movement)
+  { test: /\b(commute|drive|driving|train|bus|travel|flight)\b/i, color: timeEngineColors.sky },
+
+  // Focus / work
+  { test: /\b(coding|code|deep\s*work|project|planning|build|sprint|meeting)\b/i, color: timeEngineColors.sky },
+
+  // Social / play
+  { test: /\b(gaming|game|play|date\s*night|family|friends|discord|call)\b/i, color: timeEngineColors.blush },
+
+  // Admin / chores
+  { test: /\b(admin|chores?|errands?|cleanup|house)\b/i, color: timeEngineColors.stone },
+];
 
 export function getActivityColor(activity: string): string {
-  return activityColors[activity] || activityColors._default;
+  const normalized = normalizeActivityLabel(activity);
+  if (!normalized) return timeEngineColors.stone;
+
+  for (const rule of semanticRules) {
+    if (rule.test.test(normalized)) return rule.color;
+  }
+
+  const idx = stableHash32(normalized) % categoricalPalette.length;
+  return categoricalPalette[idx];
 }
 
 // Priority color mapping (maintain existing color associations)
