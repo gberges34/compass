@@ -10,6 +10,10 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3001),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   FRONTEND_URL: z.string().url().default('http://localhost:3000'),
+  // Optional additional allowed origins (comma-separated)
+  FRONTEND_URLS: z.string().optional(),
+  // Optional: allow any https://*.vercel.app origin (useful for preview deployments)
+  CORS_ALLOW_VERCEL_PREVIEWS: z.enum(['true', 'false']).default('false'),
 
   // Optional (for features)
   TODOIST_API_TOKEN: z.string().optional(),
