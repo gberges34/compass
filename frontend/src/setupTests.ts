@@ -8,8 +8,6 @@ import '@testing-library/jest-dom';
 if (!global.TextEncoder) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { TextEncoder, TextDecoder } = require('util');
-  // @ts-expect-error - assigning to global
   global.TextEncoder = TextEncoder;
-  // @ts-expect-error - assigning to global
   global.TextDecoder = TextDecoder;
 }
