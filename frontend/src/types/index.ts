@@ -180,6 +180,8 @@ export interface CreateReviewRequest {
 
 // UI State types
 
+import type { Event as BigCalendarEvent } from 'react-big-calendar';
+
 export interface TaskFilters {
   status?: TaskStatus;
   category?: Category;
@@ -190,7 +192,7 @@ export interface TaskFilters {
   timezone?: string;
 }
 
-export interface CalendarEvent {
+export interface CalendarEvent extends BigCalendarEvent {
   id: string;
   title: string;
   start: Date;

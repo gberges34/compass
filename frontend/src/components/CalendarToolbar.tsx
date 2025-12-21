@@ -1,10 +1,10 @@
 import React from 'react';
 import { Circle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { ToolbarProps, View } from 'react-big-calendar';
+import { ToolbarProps, View, Event } from 'react-big-calendar';
 import IconButton from './IconButton';
 import Tabs from './Tabs';
 
-const CalendarToolbar: React.FC<ToolbarProps> = ({ date, view, onNavigate, onView, label }) => {
+const CalendarToolbar = <TEvent extends Event = Event, TResource extends object = object>({ date, view, onNavigate, onView, label }: ToolbarProps<TEvent, TResource>) => {
   const navigate = (action: 'PREV' | 'NEXT' | 'TODAY') => {
     onNavigate(action);
   };
