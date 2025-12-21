@@ -160,7 +160,7 @@ const semanticRules: Array<{ test: RegExp; color: string }> = [
   { test: /\b(meal|eat|eating|breakfast|lunch|dinner|cook|cooking)\b/i, color: timeEngineColors.sun },
 
   // Exercise / movement (excluding commute-y words handled below)
-  { test: /\b(workout|exercise|gym|run|lift|lifting|yoga|sauna|hike)\b/i, color: timeEngineColors.mint },
+  { test: /\b(workout|exercise|gym|run|walk|walking|lift|lifting|yoga|sauna|hike)\b/i, color: timeEngineColors.mint },
 
   // Travel / commute (keep this after exercise so "walk" doesn't steal "evening walk" away from movement)
   { test: /\b(commute|drive|driving|train|bus|travel|flight)\b/i, color: timeEngineColors.sky },

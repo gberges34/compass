@@ -446,13 +446,16 @@ const CalendarPage: React.FC = () => {
     clearDragState();
   };
 
-  const externalDragItem = useMemo(() => {
+  const externalDragItem = useMemo<CalendarEvent | null>(() => {
     if (!draggedTask) return null;
     const now = new Date();
     return {
-      ...draggedTask,
+      id: draggedTask.id,
+      title: draggedTask.name,
       start: now,
       end: addMinutesToDate(now, draggedTask.duration),
+      task: draggedTask,
+      type: 'task',
     };
   }, [draggedTask]);
 
@@ -641,7 +644,15 @@ const CalendarPage: React.FC = () => {
             showMultiDayTimes
             tooltipAccessor={tooltipAccessor}
             draggableAccessor={draggableAccessor}
-            dragFromOutsideItem={() => externalDragItem as unknown as CalendarEvent}
+            dragFromOutsideItem={() =>
+              externalDragItem ?? {
+                id: 'external-drag-placeholder',
+                title: 'Task',
+                start: new Date(),
+                end: new Date(),
+                type: 'task',
+              }
+            }
             onDropFromOutside={handleDropFromOutside}
             resizable
             onEventDrop={handleEventDrop}
