@@ -28,6 +28,10 @@ import {
   isValidDate,
 } from '../lib/dateUtils';
 
+// Development-only logging
+const DEBUG = import.meta.env.DEV;
+const log = DEBUG ? console.log : () => {};
+
 // Configure date-fns localizer for react-big-calendar
 const locales = { 'en-US': enUS };
 const localizer = dateFnsLocalizer({

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Task, CalendarEvent, DailyPlan } from '../types';
+import type { Task, CalendarEvent, DailyPlan, DeepWorkBlock, TimeBlock } from '../types';
 import {
   getTodayDateString,
   combineISODateAndTime,
@@ -29,39 +29,34 @@ export function useCalendarEvents({
   scheduledTasks,
   todayPlan,
 }: UseCalendarEventsParams): UseCalendarEventsResult {
-  // Generate task events from scheduled tasks
+  // Generate task events from scheduled tasks using flatMap for single-pass efficiency
   const taskEvents = useMemo(() => {
     log('[useCalendarEvents] Generating events from tasks:', scheduledTasks.length);
 
-    return scheduledTasks
-      .filter((task: Task) => {
-        // Defensive: ensure scheduledStart exists and is valid
-        if (!task.scheduledStart) {
-          log('[useCalendarEvents] Task missing scheduledStart:', task.id);
-          return false;
-        }
+    return scheduledTasks.flatMap((task: Task) => {
+      // Defensive: ensure scheduledStart exists and is valid
+      if (!task.scheduledStart) {
+        log('[useCalendarEvents] Task missing scheduledStart:', task.id);
+        return [];
+      }
 
-        // new Date() never throws, it returns Invalid Date
-        const start = new Date(task.scheduledStart);
-        if (!isValidDate(start)) {
-          log('[useCalendarEvents] Invalid scheduledStart date:', task.scheduledStart);
-          return false;
-        }
-        return true;
-      })
-      .map((task: Task) => {
-        const start = new Date(task.scheduledStart!);
-        const end = addMinutesToDate(start, task.duration);
+      // new Date() never throws, it returns Invalid Date
+      const start = new Date(task.scheduledStart);
+      if (!isValidDate(start)) {
+        log('[useCalendarEvents] Invalid scheduledStart date:', task.scheduledStart);
+        return [];
+      }
 
-        return {
-          id: task.id,
-          title: task.name,
-          start,
-          end,
-          task,
-          type: 'task' as const,
-        };
-      });
+      const end = addMinutesToDate(start, task.duration);
+      return [{
+        id: task.id,
+        title: task.name,
+        start,
+        end,
+        task,
+        type: 'task' as const,
+      }];
+    });
   }, [scheduledTasks]);
 
   // Generate combined events from tasks and daily plan blocks
@@ -71,45 +66,31 @@ export function useCalendarEvents({
     if (todayPlan) {
       const today = getTodayDateString();
 
-      if (todayPlan.deepWorkBlock1) {
-        planEvents.push({
-          id: `dw1-${todayPlan.id}`,
-          title: `Deep Work: ${todayPlan.deepWorkBlock1.focus}`,
-          start: combineISODateAndTime(today, todayPlan.deepWorkBlock1.start),
-          end: combineISODateAndTime(today, todayPlan.deepWorkBlock1.end),
-          type: 'deepWork',
-        });
-      }
+      // Config-driven block generation for maintainability
+      const blockConfigs: {
+        key: keyof Pick<DailyPlan, 'deepWorkBlock1' | 'deepWorkBlock2' | 'adminBlock' | 'bufferBlock'>;
+        idPrefix: string;
+        type: 'deepWork' | 'admin' | 'buffer';
+        getTitle: (block: DeepWorkBlock | TimeBlock) => string;
+      }[] = [
+        { key: 'deepWorkBlock1', idPrefix: 'dw1', type: 'deepWork', getTitle: (b) => `Deep Work: ${(b as DeepWorkBlock).focus}` },
+        { key: 'deepWorkBlock2', idPrefix: 'dw2', type: 'deepWork', getTitle: (b) => `Deep Work: ${(b as DeepWorkBlock).focus}` },
+        { key: 'adminBlock', idPrefix: 'admin', type: 'admin', getTitle: () => 'Admin Time' },
+        { key: 'bufferBlock', idPrefix: 'buffer', type: 'buffer', getTitle: () => 'Buffer Time' },
+      ];
 
-      if (todayPlan.deepWorkBlock2) {
-        planEvents.push({
-          id: `dw2-${todayPlan.id}`,
-          title: `Deep Work: ${todayPlan.deepWorkBlock2.focus}`,
-          start: combineISODateAndTime(today, todayPlan.deepWorkBlock2.start),
-          end: combineISODateAndTime(today, todayPlan.deepWorkBlock2.end),
-          type: 'deepWork',
-        });
-      }
-
-      if (todayPlan.adminBlock) {
-        planEvents.push({
-          id: `admin-${todayPlan.id}`,
-          title: 'Admin Time',
-          start: combineISODateAndTime(today, todayPlan.adminBlock.start),
-          end: combineISODateAndTime(today, todayPlan.adminBlock.end),
-          type: 'admin',
-        });
-      }
-
-      if (todayPlan.bufferBlock) {
-        planEvents.push({
-          id: `buffer-${todayPlan.id}`,
-          title: 'Buffer Time',
-          start: combineISODateAndTime(today, todayPlan.bufferBlock.start),
-          end: combineISODateAndTime(today, todayPlan.bufferBlock.end),
-          type: 'buffer',
-        });
-      }
+      blockConfigs.forEach(({ key, idPrefix, type, getTitle }) => {
+        const block = todayPlan[key];
+        if (block) {
+          planEvents.push({
+            id: `${idPrefix}-${todayPlan.id}`,
+            title: getTitle(block),
+            start: combineISODateAndTime(today, block.start),
+            end: combineISODateAndTime(today, block.end),
+            type,
+          });
+        }
+      });
     }
 
     return [...taskEvents, ...planEvents];

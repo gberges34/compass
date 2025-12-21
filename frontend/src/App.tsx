@@ -17,6 +17,16 @@ import ClarifyPage from './pages/ClarifyPage';
 const CalendarPage = lazy(() => import('./pages/CalendarPage'));
 const ReviewsPage = lazy(() => import('./pages/ReviewsPage'));
 
+// Reusable loading fallback for Suspense boundaries
+const LoadingFallback = (
+  <div className="flex items-center justify-center py-64">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-48 w-48 border-b-4 border-action"></div>
+      <p className="mt-16 text-slate">Loading...</p>
+    </div>
+  </div>
+);
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -24,16 +34,7 @@ function App() {
         <LoginGate>
           <Router>
             <Layout>
-              <Suspense
-                fallback={
-                  <div className="flex items-center justify-center py-64">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-48 w-48 border-b-4 border-action"></div>
-                      <p className="mt-16 text-slate">Loading...</p>
-                    </div>
-                  </div>
-                }
-              >
+              <Suspense fallback={LoadingFallback}>
                 <Routes>
                   <Route path="/" element={<Navigate to="/today" replace />} />
                   <Route path="/today" element={<TodayPage />} />
