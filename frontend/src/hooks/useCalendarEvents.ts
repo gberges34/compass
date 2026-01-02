@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Task, CalendarEvent, DailyPlan, DeepWorkBlock, TimeBlock } from '../types';
+import type { Task, CalendarEvent, DailyPlan } from '../types';
 import {
   getTodayDateString,
   combineISODateAndTime,
@@ -66,30 +66,14 @@ export function useCalendarEvents({
     if (todayPlan) {
       const today = getTodayDateString();
 
-      // Config-driven block generation for maintainability
-      const blockConfigs: {
-        key: keyof Pick<DailyPlan, 'deepWorkBlock1' | 'deepWorkBlock2' | 'adminBlock' | 'bufferBlock'>;
-        idPrefix: string;
-        type: 'deepWork' | 'admin' | 'buffer';
-        getTitle: (block: DeepWorkBlock | TimeBlock) => string;
-      }[] = [
-        { key: 'deepWorkBlock1', idPrefix: 'dw1', type: 'deepWork', getTitle: (b) => `Deep Work: ${(b as DeepWorkBlock).focus}` },
-        { key: 'deepWorkBlock2', idPrefix: 'dw2', type: 'deepWork', getTitle: (b) => `Deep Work: ${(b as DeepWorkBlock).focus}` },
-        { key: 'adminBlock', idPrefix: 'admin', type: 'admin', getTitle: () => 'Admin Time' },
-        { key: 'bufferBlock', idPrefix: 'buffer', type: 'buffer', getTitle: () => 'Buffer Time' },
-      ];
-
-      blockConfigs.forEach(({ key, idPrefix, type, getTitle }) => {
-        const block = todayPlan[key];
-        if (block) {
-          planEvents.push({
-            id: `${idPrefix}-${todayPlan.id}`,
-            title: getTitle(block),
-            start: combineISODateAndTime(today, block.start),
-            end: combineISODateAndTime(today, block.end),
-            type,
-          });
-        }
+      todayPlan.plannedBlocks.forEach((block) => {
+        planEvents.push({
+          id: `plan-${block.id}`,
+          title: `Plan: ${block.label}`,
+          start: combineISODateAndTime(today, block.start),
+          end: combineISODateAndTime(today, block.end),
+          type: 'plannedBlock',
+        });
       });
     }
 
@@ -98,4 +82,3 @@ export function useCalendarEvents({
 
   return { events, taskEvents };
 }
-

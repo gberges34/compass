@@ -219,35 +219,45 @@ Allow Empty: YES
 Set Variable: Reward
 ```
 
-#### Step 11: Build Plan Dictionary
+#### Step 11: Build `plannedBlocks` List
+
+Compass now accepts generic planned blocks (no deep/admin/buffer fields). Build a **List of Dictionaries** like:
+
+```
+[
+  { "id": UUID1, "start": DW1Start, "end": DW1End, "label": DW1Focus },
+  { "id": UUID2, "start": DW2Start, "end": DW2End, "label": DW2Focus },        // optional
+  { "id": UUID3, "start": AdminStart, "end": AdminEnd, "label": "Admin" },     // optional
+  { "id": UUID4, "start": BufferStart, "end": BufferEnd, "label": "Buffer" }   // optional
+]
+```
+
+Use the Shortcuts action **Generate UUID** to create UUID1/UUID2/etc.
+
+Then set variable: `PlannedBlocks`
+
+#### Step 12: Build Plan Dictionary
 ```
 Action: Dictionary
 {
   "energyLevel": Energy,
-  "deepWorkBlock1": {
-    "start": DW1Start,
-    "end": DW1End,
-    "focus": DW1Focus
-  },
-  "deepWorkBlock2": DeepWork2,
-  "adminBlock": AdminBlock,
-  "bufferBlock": BufferBlock,
+  "plannedBlocks": PlannedBlocks,
   "topOutcomes": TopOutcomes,
   "reward": Reward
 }
 ```
 
-#### Step 12: Create Daily Plan
+#### Step 13: Create Daily Plan
 ```
 Action: Get Contents of URL
 URL: [YOUR_BACKEND_URL]/api/orient/east
 Method: POST
 Headers:
   Content-Type: application/json
-Body: Dictionary (from Step 11)
+Body: Dictionary (from Step 12)
 ```
 
-#### Step 13: Check for Errors
+#### Step 14: Check for Errors
 ```
 Action: If Contents of URL | contains | "error"
 Then:
@@ -257,14 +267,14 @@ Then:
   Action: Exit Shortcut
 ```
 
-#### Step 14: Parse Created Plan
+#### Step 15: Parse Created Plan
 ```
 Action: Get Dictionary from Contents of URL
 Action: Get Dictionary Value (key: "id")
 Set Variable: PlanID
 ```
 
-#### Step 15: Build Summary
+#### Step 16: Build Summary
 ```
 Action: Text
 Content:
