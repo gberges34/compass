@@ -27,6 +27,7 @@ Compass is an 8-phase productivity operating system that helps you capture, clar
 | **Orient East** | Orient | Morning planning | Once/day (AM) |
 | **Orient West** | Orient | Evening reflection | Once/day (PM) |
 | **Daily Review** | Reflect | Analytics & insights | Once/day (PM) |
+| **Health Sync** | Execute | Sync HealthKit data (Sleep, Workouts, Activity) | Once/day (AM) |
 
 ## 🚀 Quick Start
 
@@ -125,6 +126,11 @@ Build each shortcut using the guides:
    - Comprehensive analytics
    - Extract learnings and patterns
 
+7. **Health Sync** (see [Start Activity guide](./07-start-activity.md#healthkit-sleep-workouts-activity))
+   - Daily automation to sync HealthKit data
+   - Typically scheduled for 6 AM to sync yesterday's data
+   - Syncs Sleep sessions, Workouts, and Activity metrics
+
 ### Step 5: Test the Flow
 
 Test the complete workflow:
@@ -153,8 +159,13 @@ curl http://YOUR_BACKEND_URL/api/tasks?status=DONE
 
 ## 📅 Daily Workflow
 
-### Morning Routine (7-8 AM)
-1. **Orient East** - Plan your day
+### Morning Routine (6-8 AM)
+1. **Health Sync** (automated at 6 AM) - Sync yesterday's health data
+   - Sleep sessions → TimeSlices
+   - Workouts → TimeSlices
+   - Activity metrics → DailyHealthMetric
+
+2. **Orient East** - Plan your day
    - Set energy level
    - Schedule deep work blocks
    - Define top 3 outcomes
@@ -234,9 +245,10 @@ To add more:
 ### Custom Metrics
 
 Add custom metrics to Daily Review:
-- Sleep quality (manual input)
-- Exercise (from Apple Health)
-- Mood rating
+- Sleep quality (from Health Sync - automatic)
+- Exercise (from Health Sync - automatic)
+- Activity metrics (steps, calories, etc. - from Health Sync)
+- Mood rating (manual input)
 - Specific goal tracking
 
 ## 📊 Data & Privacy

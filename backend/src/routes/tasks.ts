@@ -11,6 +11,7 @@ import { NotFoundError, BadRequestError } from '../errors/AppError';
 import { env } from '../config/env';
 import { cacheControl, CachePolicies } from '../middleware/cacheControl';
 import * as TimeEngine from '../services/timeEngine';
+import { syncPrimaryStart, syncPrimaryStop } from '../services/togglProjection';
 import {
   priorityEnum,
   statusEnum,
@@ -466,6 +467,10 @@ router.post('/:id/activate', asyncHandler(async (req: Request, res: Response) =>
 
   const focusMode = focusModeMap[result.task.category] || 'Deep Work';
 
+  syncPrimaryStart(result.slice).catch((error) =>
+    console.error('Toggl projection failed (task activate)', error)
+  );
+
   log('[POST /tasks/:id/activate] Activated task:', result.task.id);
   res.json({
     task: result.task,
@@ -548,7 +553,10 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
   });
 
   // Stop any active PRIMARY slice (soft close - don't fail if no slice exists)
-  await TimeEngine.stopSliceIfExists({ dimension: 'PRIMARY' });
+  const stoppedPrimary = await TimeEngine.stopSliceIfExists({ dimension: 'PRIMARY' });
+  syncPrimaryStop(stoppedPrimary).catch((error) =>
+    console.error('Toggl projection failed (task complete)', error)
+  );
 
   log('[POST /tasks/:id/complete] Completed task:', id);
   res.json({

@@ -19,7 +19,7 @@ import {
 } from './taskCache';
 
 // Development-only logging
-const DEBUG = process.env.NODE_ENV === 'development';
+const DEBUG = import.meta.env.DEV;
 const log = DEBUG ? console.log : () => {};
 
 // Query Keys
@@ -70,6 +70,24 @@ const buildInfiniteKey = (filters?: TaskFilters) =>
   [...taskKeys.list(filters), 'infinite'] as InfiniteTasksQueryKey;
 
 const nextInfiniteKey = buildInfiniteKey({ status: 'NEXT' });
+
+// Helper to get all active task infinite query keys from the cache
+const getAllActiveTaskInfiniteKeys = (queryClient: QueryClient): InfiniteTasksQueryKey[] => {
+  const queries = queryClient.getQueriesData({ queryKey: taskKeys.lists() });
+  return queries
+    .map(([key]) => {
+      // Check if this is an infinite query key (ends with 'infinite')
+      const keyArray = key as unknown[];
+      if (Array.isArray(keyArray) && keyArray[keyArray.length - 1] === 'infinite') {
+        return keyArray as InfiniteTasksQueryKey;
+      }
+      return null;
+    })
+    .filter((key): key is InfiniteTasksQueryKey => key !== null);
+};
+
+// Fields that affect backend sorting - if these change, we should invalidate cache
+const SORT_AFFECTING_FIELDS: (keyof Task)[] = ['status', 'priority', 'scheduledStart', 'createdAt'];
 
 const describeKey = (key: InfiniteTasksQueryKey) => {
   try {
@@ -130,6 +148,8 @@ export function useTasks(filters?: TaskFilters, options?: TasksQueryOptions) {
       const response = await api.getTasks(filters);
       return response.items; // Return just the items array for backwards compatibility
     },
+    staleTime: 1000 * 60, // 1 minute for task lists (reduced from 5 minutes for better cross-device sync)
+    refetchOnWindowFocus: true, // Re-enable refetch on window focus for task lists
     ...options,
   });
 }
@@ -143,6 +163,8 @@ export function useTasksInfinite(filters?: TaskFilters, options?: InfiniteTasksQ
     queryFn: ({ pageParam = undefined }) => api.getTasks(filters, { cursor: pageParam, limit: 50 }),
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: undefined,
+    staleTime: 1000 * 60, // 1 minute for task lists (reduced from 5 minutes for better cross-device sync)
+    refetchOnWindowFocus: true, // Re-enable refetch on window focus for task lists
     ...options,
   });
 }
@@ -163,6 +185,8 @@ export function useTask(id: string) {
     queryKey: taskKeys.detail(id),
     queryFn: () => api.getTask(id),
     enabled: !!id,
+    staleTime: 1000 * 60, // 1 minute for task details (reduced from 5 minutes for better cross-device sync)
+    refetchOnWindowFocus: true, // Re-enable refetch on window focus for task details
   });
 }
 
@@ -194,9 +218,12 @@ export function useUpdateTask() {
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
 
+      // Get all active task infinite query keys
+      const activeKeys = getAllActiveTaskInfiniteKeys(queryClient);
+
       const cacheSnapshots = applyOptimisticTaskUpdates(
         queryClient,
-        [nextInfiniteKey],
+        activeKeys.length > 0 ? activeKeys : [nextInfiniteKey],
         (task) => task.id === id,
         (task) => ({ ...task, ...updates }),
         'useUpdateTask'
@@ -209,16 +236,32 @@ export function useUpdateTask() {
       console.error('[useUpdateTask] Error, rolled back:', err);
       toast.showError(err.userMessage || 'Failed to update task');
     },
-    onSuccess: (serverTask, variables) => {
+    onSuccess: (serverTask, variables, context) => {
       log('[useUpdateTask] Success, updating cache with server data');
       
-      // Update infinite query caches with server-authoritative data
-      updateInfiniteTasksCache({
-        queryClient,
-        queryKey: nextInfiniteKey,
-        predicate: (task) => task.id === variables.id,
-        updater: () => serverTask,
-      });
+      // Check if any sort-affecting fields were updated
+      const updatedSortFields = Object.keys(variables.updates).filter((key) =>
+        SORT_AFFECTING_FIELDS.includes(key as keyof Task)
+      );
+
+      if (updatedSortFields.length > 0) {
+        // If sort-affecting fields changed, invalidate cache to force re-sort
+        log(`[useUpdateTask] Sort-affecting fields changed (${updatedSortFields.join(', ')}), invalidating cache`);
+        queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      } else {
+        // Otherwise, update all active caches in-place
+        const activeKeys = getAllActiveTaskInfiniteKeys(queryClient);
+        const keysToUpdate = activeKeys.length > 0 ? activeKeys : [nextInfiniteKey];
+        
+        keysToUpdate.forEach((key) => {
+          updateInfiniteTasksCache({
+            queryClient,
+            queryKey: key,
+            predicate: (task) => task.id === variables.id,
+            updater: () => serverTask,
+          });
+        });
+      }
 
       // Update detail query cache with server-authoritative data
       queryClient.setQueryData(taskKeys.detail(variables.id), serverTask);
@@ -252,9 +295,12 @@ export function useScheduleTask() {
     onMutate: async ({ id, scheduledStart }) => {
       await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
 
+      // Get all active task infinite query keys
+      const activeKeys = getAllActiveTaskInfiniteKeys(queryClient);
+
       const cacheSnapshots = applyOptimisticTaskUpdates(
         queryClient,
-        [nextInfiniteKey],
+        activeKeys.length > 0 ? activeKeys : [nextInfiniteKey],
         (task) => task.id === id,
         (task) => ({
           ...task,
@@ -274,13 +320,9 @@ export function useScheduleTask() {
     onSuccess: (serverTask, variables) => {
       log('[useScheduleTask] Success, updating cache with server data:', serverTask);
       
-      // Update infinite query caches with server-authoritative data
-      updateInfiniteTasksCache({
-        queryClient,
-        queryKey: nextInfiniteKey,
-        predicate: (task) => task.id === variables.id,
-        updater: () => serverTask,
-      });
+      // scheduledStart affects sorting, so invalidate cache to force re-sort
+      log('[useScheduleTask] scheduledStart changed, invalidating cache for re-sort');
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
 
       // Update detail query cache with server-authoritative data
       queryClient.setQueryData(taskKeys.detail(variables.id), serverTask);
@@ -297,9 +339,12 @@ export function useUnscheduleTask() {
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: taskKeys.lists() });
 
+      // Get all active task infinite query keys
+      const activeKeys = getAllActiveTaskInfiniteKeys(queryClient);
+
       const cacheSnapshots = applyOptimisticTaskUpdates(
         queryClient,
-        [nextInfiniteKey],
+        activeKeys.length > 0 ? activeKeys : [nextInfiniteKey],
         (task) => task.id === id,
         (task) => ({
           ...task,
@@ -319,13 +364,9 @@ export function useUnscheduleTask() {
     onSuccess: (serverTask, taskId) => {
       log('[useUnscheduleTask] Success, updating cache with server data:', serverTask);
       
-      // Update infinite query caches with server-authoritative data
-      updateInfiniteTasksCache({
-        queryClient,
-        queryKey: nextInfiniteKey,
-        predicate: (task) => task.id === taskId,
-        updater: () => serverTask,
-      });
+      // scheduledStart affects sorting, so invalidate cache to force re-sort
+      log('[useUnscheduleTask] scheduledStart changed, invalidating cache for re-sort');
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
 
       // Update detail query cache with server-authoritative data
       queryClient.setQueryData(taskKeys.detail(taskId), serverTask);

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Calendar, dateFnsLocalizer, Event as BigCalendarEvent, View } from 'react-big-calendar';
-import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
+import withDragAndDrop, { EventInteractionArgs, DragFromOutsideItemArgs } from 'react-big-calendar/lib/addons/dragAndDrop';
 import CalendarToolbar from '../components/CalendarToolbar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { enUS } from 'date-fns/locale/en-US';
@@ -12,14 +12,13 @@ import { useFlatTasks } from '../hooks/useTasks';
 import { useTodayPlan } from '../hooks/useDailyPlans';
 import { useDocumentVisibility } from '../hooks/useDocumentVisibility';
 import { useScheduleTask, useUnscheduleTask, useUpdateTask } from '../hooks/useTasks';
+import { useCalendarEvents } from '../hooks/useCalendarEvents';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
 import { categoryColors } from '../lib/designTokens';
 import {
-  getTodayDateString,
-  combineISODateAndTime,
   formatDisplayDateTime,
   formatDisplayDate,
   formatDisplayTime,
@@ -30,7 +29,7 @@ import {
 } from '../lib/dateUtils';
 
 // Development-only logging
-const DEBUG = process.env.NODE_ENV === 'development';
+const DEBUG = import.meta.env.DEV;
 const log = DEBUG ? console.log : () => {};
 
 // Configure date-fns localizer for react-big-calendar
@@ -42,7 +41,7 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales,
 });
-const DnDCalendar = withDragAndDrop(Calendar);
+const DnDCalendar = withDragAndDrop<CalendarEvent>(Calendar);
 
 // Category color mapping - defined outside component to prevent recreations
 const getCategoryColor = (category: Category): string => {
@@ -140,60 +139,11 @@ const CalendarPage: React.FC = () => {
     [safeTasks]
   );
 
-  const taskEvents = useMemo(() => {
-    log('[Calendar] Generating events from tasks:', scheduledTasks.length);
-
-    return scheduledTasks
-      .filter((task: Task) => {
-        // Defensive: ensure scheduledStart exists and is valid
-        if (!task.scheduledStart) {
-          log('[Calendar] Task missing scheduledStart:', task.id);
-          return false;
-        }
-
-        // new Date() never throws, it returns Invalid Date
-        const start = new Date(task.scheduledStart);
-        if (!isValidDate(start)) {
-          log('[Calendar] Invalid scheduledStart date:', task.scheduledStart);
-          return false;
-        }
-        return true;
-      })
-      .map((task: Task) => {
-        const start = new Date(task.scheduledStart!);
-        const end = addMinutesToDate(start, task.duration);
-
-        return {
-          id: task.id,
-          title: task.name,
-          start,
-          end,
-          task,
-          type: 'task' as const,
-        };
-      });
-  }, [scheduledTasks]);
-
-  // Generate calendar events from query data
-  const events = useMemo(() => {
-    // Generate plan events if today's plan exists
-    const planEvents: CalendarEvent[] = [];
-    if (todayPlan) {
-      const today = getTodayDateString();
-
-      todayPlan.plannedBlocks.forEach((block) => {
-        planEvents.push({
-          id: `plan-${block.id}`,
-          title: `Plan: ${block.label}`,
-          start: combineISODateAndTime(today, block.start),
-          end: combineISODateAndTime(today, block.end),
-          type: 'plannedBlock',
-        });
-      });
-    }
-
-    return [...taskEvents, ...planEvents];
-  }, [taskEvents, todayPlan]);
+  // Use extracted hook for event generation
+  const { events, taskEvents } = useCalendarEvents({
+    scheduledTasks,
+    todayPlan,
+  });
 
   const handleSelectSlot = useCallback(
     ({ start, end }: { start: Date; end: Date }) => {
@@ -257,7 +207,11 @@ const CalendarPage: React.FC = () => {
     }
   };
 
-  const handleEventDrop = async ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
+  const handleEventDrop = async (args: EventInteractionArgs<CalendarEvent>) => {
+    const { event } = args;
+    // react-big-calendar types use stringOrDate; coerce to Date
+    const start = new Date(args.start);
+    const end = new Date(args.end);
     log('[handleEventDrop] Dropping event:', { event, start, end });
 
     // Only allow rescheduling task events, not time blocks
@@ -296,7 +250,11 @@ const CalendarPage: React.FC = () => {
     }
   };
 
-  const handleEventResize = async ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
+  const handleEventResize = async (args: EventInteractionArgs<CalendarEvent>) => {
+    const { event } = args;
+    // react-big-calendar types use stringOrDate; coerce to Date
+    const start = new Date(args.start);
+    const end = new Date(args.end);
     log('[handleEventResize] Resizing event:', { event, start, end });
 
     // Only allow resizing task events
@@ -402,13 +360,16 @@ const CalendarPage: React.FC = () => {
     clearDragState();
   };
 
-  const externalDragItem = useMemo(() => {
+  const externalDragItem = useMemo<CalendarEvent | null>(() => {
     if (!draggedTask) return null;
     const now = new Date();
     return {
-      ...draggedTask,
+      id: draggedTask.id,
+      title: draggedTask.name,
       start: now,
       end: addMinutesToDate(now, draggedTask.duration),
+      task: draggedTask,
+      type: 'task',
     };
   }, [draggedTask]);
 
@@ -429,13 +390,14 @@ const CalendarPage: React.FC = () => {
     return calendarEvent.title;
   }, []);
 
-  const draggableAccessor = useCallback((event: any) => {
-    const calendarEvent = event as CalendarEvent;
-    return calendarEvent.type === 'task';
+  const draggableAccessor = useCallback((event: CalendarEvent) => {
+    return event.type === 'task';
   }, []);
 
   const handleDropFromOutside = useCallback(
-    async ({ start }: { start: Date }) => {
+    async (args: DragFromOutsideItemArgs) => {
+      // react-big-calendar types use stringOrDate; coerce to Date
+      const start = new Date(args.start);
       if (!draggedTask) return;
       if (scheduleTaskMutation.isPending) return;
 
@@ -568,9 +530,9 @@ const CalendarPage: React.FC = () => {
           )}
           <DnDCalendar
             localizer={localizer}
-            events={events as BigCalendarEvent[]}
-            startAccessor={(event: any) => event.start}
-            endAccessor={(event: any) => event.end}
+            events={events}
+            startAccessor="start"
+            endAccessor="end"
             style={{ height: 700 }}
             onSelectSlot={handleSelectSlot}
             onSelectEvent={handleSelectEvent}
@@ -588,12 +550,19 @@ const CalendarPage: React.FC = () => {
             showMultiDayTimes
             tooltipAccessor={tooltipAccessor}
             draggableAccessor={draggableAccessor}
-            dragFromOutsideItem={() => externalDragItem ?? {}}
-            // react-big-calendar external DnD typings omit the drop payload; cast to align with addon runtime shape
-            onDropFromOutside={handleDropFromOutside as any}
+            dragFromOutsideItem={() =>
+              externalDragItem ?? {
+                id: 'external-drag-placeholder',
+                title: 'Task',
+                start: new Date(),
+                end: new Date(),
+                type: 'task',
+              }
+            }
+            onDropFromOutside={handleDropFromOutside}
             resizable
-            onEventDrop={handleEventDrop as any}
-            onEventResize={handleEventResize as any}
+            onEventDrop={handleEventDrop}
+            onEventResize={handleEventResize}
           />
         </div>
       </div>

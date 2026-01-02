@@ -10,6 +10,7 @@ import Badge from '../components/Badge';
 import Button from '../components/Button';
 import TimeEngineStateWidget from '../components/TimeEngineStateWidget';
 import StartActivityModal from '../components/StartActivityModal';
+import EmptyState from '../components/EmptyState';
 import { getEnergyStyle } from '../lib/designTokens';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
 import { getTodayDateString, formatLongDate } from '../lib/dateUtils';
@@ -111,7 +112,7 @@ const TodayPage: React.FC = () => {
           <h2 className="text-h2 text-ink">Time Tracking</h2>
           <Button
             variant="primary"
-            size="small"
+            size="medium"
             onClick={() => setShowStartActivityModal(true)}
           >
             + Start Activity
@@ -184,12 +185,16 @@ const TodayPage: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="text-center py-32">
-              <p className="text-slate mb-16">No plan set for today yet</p>
-              <Link to="/orient/east">
-                <Button variant="primary">Create Today's Plan</Button>
-              </Link>
-            </div>
+            <EmptyState
+              title="No plan set for today"
+              description="Create your morning plan to set energy, deep work blocks, and outcomes."
+              action={
+                <Link to="/orient/east">
+                  <Button variant="primary">Create Today&apos;s Plan</Button>
+                </Link>
+              }
+              className="py-8"
+            />
           )}
         </div>
       </Card>

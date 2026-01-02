@@ -157,11 +157,31 @@ model TimeSlice {
   source       TimeSource
   isLocked     Boolean       @default(false)
   linkedTaskId String?
+  togglEntryId String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
   @@index([start, end])
   @@index([dimension, end])
+}
+
+// Health Metrics - Daily aggregate data from HealthKit
+model DailyHealthMetric {
+  id             String   @id @default(uuid())
+  date           DateTime @unique
+
+  // Activity
+  steps          Int?
+  activeCalories Int?
+  exerciseMinutes Int?
+  standHours     Int?
+
+  // Sleep Quality (from HealthKit analysis)
+  sleepDuration  Int?     // minutes
+  sleepQuality   String?  // POOR, FAIR, GOOD, EXCELLENT
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 // ============================================================================

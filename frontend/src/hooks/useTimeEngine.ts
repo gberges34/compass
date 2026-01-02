@@ -4,7 +4,7 @@ import * as api from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
 
 // Development-only logging
-const DEBUG = process.env.NODE_ENV === 'development';
+const DEBUG = import.meta.env.DEV;
 const log = DEBUG ? console.log : () => {};
 
 // Query Keys

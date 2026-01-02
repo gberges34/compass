@@ -5,6 +5,8 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import Input from '../components/Input';
 import ConfirmationModal from '../components/ConfirmationModal';
+import Tabs from '../components/Tabs';
+import EmptyState from '../components/EmptyState';
 import { formatDisplayDate, formatDisplayTime, calculateDurationMinutes } from '../lib/dateUtils';
 import { parseISO, subDays, startOfDay, endOfDay, format } from 'date-fns';
 import type { TimeSlice } from '../lib/api';
@@ -222,38 +224,17 @@ const TimeHistoryPage: React.FC = () => {
 
         {/* Date Range Selector */}
         <div className="flex items-center gap-16 flex-wrap">
-          <div className="flex items-center gap-8">
-            <button
-              onClick={() => setDateRange('7d')}
-              className={`px-16 py-8 rounded-default font-medium transition-standard ${
-                dateRange === '7d'
-                  ? 'bg-action text-snow shadow-e02'
-                  : 'bg-snow text-ink border border-stone hover:bg-fog'
-              }`}
-            >
-              Last 7 Days
-            </button>
-            <button
-              onClick={() => setDateRange('30d')}
-              className={`px-16 py-8 rounded-default font-medium transition-standard ${
-                dateRange === '30d'
-                  ? 'bg-action text-snow shadow-e02'
-                  : 'bg-snow text-ink border border-stone hover:bg-fog'
-              }`}
-            >
-              Last 30 Days
-            </button>
-            <button
-              onClick={() => setDateRange('custom')}
-              className={`px-16 py-8 rounded-default font-medium transition-standard ${
-                dateRange === 'custom'
-                  ? 'bg-action text-snow shadow-e02'
-                  : 'bg-snow text-ink border border-stone hover:bg-fog'
-              }`}
-            >
-              Custom Range
-            </button>
-          </div>
+          <Tabs<'7d' | '30d' | 'custom'>
+            value={dateRange}
+            onChange={setDateRange}
+            variant="pills"
+            ariaLabel="Time history date range"
+            items={[
+              { id: '7d', label: 'Last 7 Days' },
+              { id: '30d', label: 'Last 30 Days' },
+              { id: 'custom', label: 'Custom Range' },
+            ]}
+          />
 
           {dateRange === 'custom' && (
             <div className="flex items-center gap-12">
@@ -322,11 +303,10 @@ const TimeHistoryPage: React.FC = () => {
 
       {/* Timeline View */}
       {slices.length === 0 ? (
-        <Card padding="large">
-          <div className="text-center">
-            <p className="text-slate mb-16">No time slices found for the selected period</p>
-          </div>
-        </Card>
+        <EmptyState
+          title="No time slices found"
+          description="Try a different date range, or start tracking an activity."
+        />
       ) : (
         <div className="space-y-24">
           {slicesByDay.map(({ displayKey, slices: daySlices }) => (

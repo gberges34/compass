@@ -18,7 +18,7 @@ Body (all required except linkedTaskId):
 {
   "category": "Sleep",                 // any non-empty string
   "dimension": "PRIMARY",              // PRIMARY | WORK_MODE | SOCIAL | SEGMENT
-  "source": "SHORTCUT",                // /Users/gberges/Library/CloudStorage/GoogleDrive-gberges34@gmail.com/My Drive/compass/Device CompartmentalizationSHORTCUT | TIMERY | MANUAL | API
+  "source": "SHORTCUT",                // SHORTCUT | TIMERY | MANUAL | API
   "linkedTaskId": "uuid-optional"      // optional UUID string
 }
 
@@ -32,8 +32,27 @@ Response: full TimeSlice row (id, start, end, category, dimension, source, linke
 
 For automations, you can:
 
-Send only dimension for “just stop whatever’s active in this dimension”.
-Or send dimension + category when you want safety (only stop if it’s “Commute”, etc.).
+Send only dimension for "just stop whatever's active in this dimension".
+Or send dimension + category when you want safety (only stop if it's "Commute", etc.).
+b) Stop slice – POST /api/engine/stop
+
+Validated by stopSliceSchema:
+
+Method: POST
+URL: BASE_URL/api/engine/stop
+Body:
+
+{
+  "dimension": "PRIMARY",              // PRIMARY | WORK_MODE | SOCIAL | SEGMENT (required)
+  "category": "Sleep"                  // optional – only stop if active slice matches this category
+}
+
+Behavior:
+- Finds the active slice (end === null) for the given dimension.
+- If category is provided, validates that the active slice's category matches; returns 404 if not.
+- Closes the slice by setting end = now.
+- Returns 404 if no active slice exists for the dimension.
+- Response: full TimeSlice row.
 c) Current state – GET /api/engine/state
 
 Built by getCurrentState() in backend/src/services/timeEngine.ts (line 79):
@@ -63,7 +82,60 @@ PATCH /api/engine/slices/:id and DELETE /api/engine/slices/:id
 GET /api/engine/summary with startDate, endDate
 → returns { "categoryBalance": { [category: string]: minutes } }.
 
-These are useful for “Daily/Weekly Time Review” shortcuts or analytics, but not required for basic start/stop flows.
+These are useful for "Daily/Weekly Time Review" shortcuts or analytics, but not required for basic start/stop flows.
+
+e) Health Sync – POST /api/engine/health/sync
+
+Unified endpoint for syncing all health data from HealthKit (Sleep sessions, Workouts, Activity metrics).
+
+Method: POST
+URL: BASE_URL/api/engine/health/sync
+Body:
+
+{
+  "date": "2025-12-19T00:00:00.000Z",  // The day being synced (usually yesterday)
+  "sleepSessions": [                    // Optional: array of sleep sessions
+    {
+      "start": "2025-12-18T23:00:00.000Z",
+      "end": "2025-12-19T07:00:00.000Z",
+      "quality": "GOOD"                 // Optional: POOR, FAIR, GOOD, EXCELLENT
+    }
+  ],
+  "workouts": [                         // Optional: array of workout sessions
+    {
+      "start": "2025-12-19T06:00:00.000Z",
+      "end": "2025-12-19T07:00:00.000Z",
+      "type": "Strength Training",      // Workout type name
+      "calories": 350                   // Optional: calories burned
+    }
+  ],
+  "activity": {                         // Optional: daily activity metrics
+    "steps": 8500,
+    "activeCalories": 450,
+    "exerciseMinutes": 45,
+    "standHours": 10
+  }
+}
+
+Validation:
+- At least one of sleepSessions, workouts, or activity must be provided
+- All datetime strings must be valid ISO 8601 format
+- sleepStart < sleepEnd for each session
+- workoutStart < workoutEnd for each workout
+
+Behavior:
+- Idempotent: Re-running for the same date replaces data cleanly
+- Deletes existing Sleep/Workout TimeSlices for the sync date (PRIMARY dimension, source: 'API')
+- Creates new Sleep TimeSlices (PRIMARY, source: 'API', isLocked: true)
+- Creates new Workout TimeSlices (PRIMARY, source: 'API', category: "Workout: {type}")
+- Upserts DailyHealthMetric record with activity data and aggregated sleep metrics
+- Does NOT call Toggl projection (health data stays Compass-only)
+- Uses a transaction to ensure atomicity
+- Response: { sleepSlicesCreated, workoutSlicesCreated, healthMetricUpdated }
+
+This endpoint is designed for iOS Shortcuts that run daily (e.g., scheduled automation at 6 AM) to sync yesterday's health data from HealthKit to Compass as the authoritative source of truth.
+
+Note: The old `/api/engine/health/sleep-sync` endpoint is deprecated but still available for backward compatibility.
 
 2) Recommended shortcut template/framework
 

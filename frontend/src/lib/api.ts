@@ -29,10 +29,10 @@ declare module 'axios' {
 }
 
 // Development-only logging
-const DEBUG = process.env.NODE_ENV === 'development';
+const DEBUG = import.meta.env.DEV;
 const log = DEBUG ? console.log : () => {};
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
@@ -66,8 +66,8 @@ api.interceptors.response.use(
       // Handle 401 Unauthorized globally
       if (status === 401) {
         localStorage.removeItem('apiSecret');
-        // Force reload to reset state and show login screen
-        window.location.href = '/';
+        // Dispatch custom event instead of hard reload to preserve form data
+        window.dispatchEvent(new CustomEvent('session-expired'));
         return Promise.reject(error);
       }
 

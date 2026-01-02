@@ -219,6 +219,85 @@ describe('TimeEngine', () => {
       });
     });
 
+    it('stops slice using provided endAt (clamped to now)', async () => {
+      const now = new Date('2025-01-01T10:00:00Z');
+      const endAt = new Date('2025-01-01T09:55:00Z');
+      jest.useFakeTimers().setSystemTime(now);
+
+      const activeSlice = {
+        id: 'active-id',
+        start: new Date('2025-01-01T09:00:00Z'),
+        end: null,
+        category: 'Gaming',
+        dimension: 'PRIMARY' as TimeDimension,
+        source: 'SHORTCUT' as TimeSource,
+        isLocked: false,
+        linkedTaskId: null,
+        createdAt: new Date('2025-01-01T09:00:00Z'),
+        updatedAt: new Date('2025-01-01T09:00:00Z'),
+      };
+
+      const stoppedSlice = {
+        ...activeSlice,
+        end: endAt,
+        updatedAt: now,
+      };
+
+      mockPrisma.timeSlice.findFirst.mockResolvedValue(activeSlice);
+      mockPrisma.timeSlice.update.mockResolvedValue(stoppedSlice);
+
+      const result = await TimeEngine.stopSlice({
+        dimension: 'PRIMARY',
+        endAt,
+      });
+
+      expect(result).toEqual(stoppedSlice);
+      expect(mockPrisma.timeSlice.update).toHaveBeenCalledWith({
+        where: { id: 'active-id' },
+        data: { end: endAt },
+      });
+    });
+
+    it('clamps endAt to slice start when endAt is before start', async () => {
+      const now = new Date('2025-01-01T10:00:00Z');
+      const endAt = new Date('2025-01-01T08:00:00Z');
+      jest.useFakeTimers().setSystemTime(now);
+
+      const activeSliceStart = new Date('2025-01-01T09:00:00Z');
+      const activeSlice = {
+        id: 'active-id',
+        start: activeSliceStart,
+        end: null,
+        category: 'Gaming',
+        dimension: 'PRIMARY' as TimeDimension,
+        source: 'SHORTCUT' as TimeSource,
+        isLocked: false,
+        linkedTaskId: null,
+        createdAt: activeSliceStart,
+        updatedAt: activeSliceStart,
+      };
+
+      const stoppedSlice = {
+        ...activeSlice,
+        end: activeSliceStart,
+        updatedAt: now,
+      };
+
+      mockPrisma.timeSlice.findFirst.mockResolvedValue(activeSlice);
+      mockPrisma.timeSlice.update.mockResolvedValue(stoppedSlice);
+
+      const result = await TimeEngine.stopSlice({
+        dimension: 'PRIMARY',
+        endAt,
+      });
+
+      expect(result).toEqual(stoppedSlice);
+      expect(mockPrisma.timeSlice.update).toHaveBeenCalledWith({
+        where: { id: 'active-id' },
+        data: { end: activeSliceStart },
+      });
+    });
+
     it('validates category if provided', async () => {
       const activeSlice = {
         id: 'active-id',
@@ -315,4 +394,3 @@ describe('TimeEngine', () => {
     });
   });
 });
-

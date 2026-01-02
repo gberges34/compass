@@ -7,7 +7,10 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
+import EmptyState from '../components/EmptyState';
 import { formatLongDate } from '../lib/dateUtils';
+import { getEnergyStyle } from '../lib/designTokens';
+import { getEnergyBadgeVariant } from '../lib/badgeUtils';
 
 const OrientWestPage: React.FC = () => {
   const navigate = useNavigate();
@@ -80,17 +83,16 @@ const OrientWestPage: React.FC = () => {
           <p className="text-slate mt-4">{today}</p>
         </Card>
 
-        <Card padding="large" className="bg-sun border-sun">
-          <h2 className="text-h2 text-amber-900 mb-8">No Plan Found</h2>
-          <p className="text-amber-800 mb-16">
-            You need to create a morning plan before you can reflect on it.
-          </p>
-          <Link to="/orient/east">
-            <Button variant="primary">
-              Create Morning Plan
-            </Button>
-          </Link>
-        </Card>
+        <EmptyState
+          title="No Plan Found"
+          description="You need to create a morning plan before you can reflect on it."
+          variant="warning"
+          action={
+            <Link to="/orient/east">
+              <Button variant="primary">Create Morning Plan</Button>
+            </Link>
+          }
+        />
       </div>
     );
   }
@@ -163,38 +165,26 @@ const OrientWestPage: React.FC = () => {
       </Card>
 
       {/* Morning Plan Review */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">This Morning's Plan</h2>
+      <Card padding="large">
+        <h2 className="text-h2 text-ink mb-16">This Morning&apos;s Plan</h2>
 
-        <div className="space-y-4">
-          {/* Energy Level */}
-          <div className="flex items-center space-x-3">
-            <span className="text-gray-600 font-medium">Planned Energy:</span>
-            <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                plan.energyLevel === 'HIGH'
-                  ? 'bg-green-100 text-green-800'
-                  : plan.energyLevel === 'MEDIUM'
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-red-100 text-red-800'
-              }`}
-            >
-              {plan.energyLevel === 'HIGH' && '� '}
-              {plan.energyLevel === 'MEDIUM' && '� '}
-              {plan.energyLevel === 'LOW' && '= '}
-              {plan.energyLevel}
-            </span>
+        <div className="space-y-16">
+          <div className="flex items-center gap-12">
+            <span className="text-slate font-medium">Planned Energy:</span>
+            <Badge variant={getEnergyBadgeVariant(plan.energyLevel)}>
+              {getEnergyStyle(plan.energyLevel).icon} {plan.energyLevel}
+            </Badge>
           </div>
 
           {/* Planned Blocks */}
           <div>
-            <h3 className="font-medium text-gray-900 mb-2">Planned Blocks</h3>
-            <div className="space-y-2">
+            <h3 className="text-h3 text-ink mb-8">Planned Blocks</h3>
+            <div className="space-y-8">
               {plan.plannedBlocks.map((block) => (
-                <div key={block.id} className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                <div key={block.id} className="bg-sky border border-sky rounded-default p-12">
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-blue-900">{block.label}</span>
-                    <span className="text-sm text-blue-700">
+                    <span className="text-small text-blue-700">
                       {block.start} - {block.end}
                     </span>
                   </div>
@@ -203,24 +193,22 @@ const OrientWestPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Top 3 Outcomes */}
           <div>
-            <h3 className="font-medium text-gray-900 mb-2">Top 3 Outcomes</h3>
-            <ul className="space-y-2">
+            <h3 className="text-h3 text-ink mb-8">Top 3 Outcomes</h3>
+            <ul className="space-y-4">
               {plan.topOutcomes.map((outcome, index) => (
                 <li key={index} className="flex items-start">
-                  <span className="text-blue-600 font-bold mr-2">{index + 1}.</span>
-                  <span className="text-gray-700">{outcome}</span>
+                  <span className="text-action font-bold mr-8">{index + 1}.</span>
+                  <span className="text-ink">{outcome}</span>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Reward */}
           {plan.reward && (
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
+            <div className="bg-sun border border-sun rounded-default p-12">
               <div className="flex items-center">
-                <span className="text-2xl mr-2">🎁</span>
+                <span className="text-2xl mr-8">🎁</span>
                 <div>
                   <span className="font-medium text-amber-900">Planned Reward: </span>
                   <span className="text-amber-800">{plan.reward}</span>
@@ -229,25 +217,25 @@ const OrientWestPage: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Reflection Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-24">
         {/* Actual Outcomes */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <Card padding="large">
+          <h2 className="text-h3 text-ink mb-16">
             How many outcomes did you complete? <span className="text-red-500">*</span>
           </h2>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-12">
             {[0, 1, 2, 3].map((num) => (
               <button
                 key={num}
                 type="button"
                 onClick={() => setActualOutcomes(num)}
-                className={`p-4 rounded-lg border-2 transition-all ${
+                className={`p-12 rounded-default border transition-standard ${
                   actualOutcomes === num
-                    ? 'border-blue-600 bg-blue-50 text-blue-900'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    ? 'border-action bg-sky text-ink shadow-e01'
+                    : 'border-stone bg-snow text-ink hover:bg-cloud'
                 }`}
               >
                 <div className="text-3xl font-bold">{num}</div>
@@ -263,84 +251,84 @@ const OrientWestPage: React.FC = () => {
               </button>
             ))}
           </div>
-        </div>
+        </Card>
 
         {/* Energy Match */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <Card padding="large">
+          <h2 className="text-h3 text-ink mb-16">
             How accurate was your energy prediction? <span className="text-red-500">*</span>
           </h2>
-          <div className="space-y-3">
-            <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-colors hover:border-gray-300">
+          <div className="space-y-12">
+            <label className="flex items-center p-12 border rounded-default cursor-pointer transition-standard hover:bg-cloud">
               <input
                 type="radio"
                 name="energyMatch"
                 value="PERFECT"
                 checked={energyMatch === 'PERFECT'}
                 onChange={(e) => setEnergyMatch(e.target.value as EnergyMatch)}
-                className="w-5 h-5 text-blue-600"
+                className="w-20 h-20 text-action"
               />
               <div className="ml-3">
-                <div className="font-medium text-gray-900">🎯 Perfect</div>
-                <div className="text-sm text-gray-500">Energy matched exactly as predicted</div>
+                <div className="font-medium text-ink">🎯 Perfect</div>
+                <div className="text-small text-slate">Energy matched exactly as predicted</div>
               </div>
             </label>
 
-            <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-colors hover:border-gray-300">
+            <label className="flex items-center p-12 border rounded-default cursor-pointer transition-standard hover:bg-cloud">
               <input
                 type="radio"
                 name="energyMatch"
                 value="MOSTLY_ALIGNED"
                 checked={energyMatch === 'MOSTLY_ALIGNED'}
                 onChange={(e) => setEnergyMatch(e.target.value as EnergyMatch)}
-                className="w-5 h-5 text-blue-600"
+                className="w-20 h-20 text-action"
               />
               <div className="ml-3">
-                <div className="font-medium text-gray-900"> Mostly Aligned</div>
-                <div className="text-sm text-gray-500">Close enough, minor differences</div>
+                <div className="font-medium text-ink">👍 Mostly Aligned</div>
+                <div className="text-small text-slate">Close enough, minor differences</div>
               </div>
             </label>
 
-            <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-colors hover:border-gray-300">
+            <label className="flex items-center p-12 border rounded-default cursor-pointer transition-standard hover:bg-cloud">
               <input
                 type="radio"
                 name="energyMatch"
                 value="SOME_MISMATCH"
                 checked={energyMatch === 'SOME_MISMATCH'}
                 onChange={(e) => setEnergyMatch(e.target.value as EnergyMatch)}
-                className="w-5 h-5 text-blue-600"
+                className="w-20 h-20 text-action"
               />
               <div className="ml-3">
-                <div className="font-medium text-gray-900">H Some Mismatch</div>
-                <div className="text-sm text-gray-500">Noticeable difference from prediction</div>
+                <div className="font-medium text-ink">⚠️ Some Mismatch</div>
+                <div className="text-small text-slate">Noticeable difference from prediction</div>
               </div>
             </label>
 
-            <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-colors hover:border-gray-300">
+            <label className="flex items-center p-12 border rounded-default cursor-pointer transition-standard hover:bg-cloud">
               <input
                 type="radio"
                 name="energyMatch"
                 value="POOR"
                 checked={energyMatch === 'POOR'}
                 onChange={(e) => setEnergyMatch(e.target.value as EnergyMatch)}
-                className="w-5 h-5 text-blue-600"
+                className="w-20 h-20 text-action"
               />
               <div className="ml-3">
-                <div className="font-medium text-gray-900"> Poor</div>
-                <div className="text-sm text-gray-500">Way off from what actually happened</div>
+                <div className="font-medium text-ink">❌ Poor</div>
+                <div className="text-small text-slate">Way off from what actually happened</div>
               </div>
             </label>
           </div>
-        </div>
+        </Card>
 
         {/* Reflection */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <Card padding="large">
+          <h2 className="text-h3 text-ink mb-16">
             What happened today? <span className="text-red-500">*</span>
           </h2>
-          <div className="mb-3 text-sm text-gray-600">
-            <p className="mb-2">Consider these prompts:</p>
-            <ul className="list-disc list-inside space-y-1 text-gray-500">
+          <div className="mb-12 text-small text-slate">
+            <p className="mb-8">Consider these prompts:</p>
+            <ul className="list-disc list-inside space-y-4 text-slate">
               <li>What went well today?</li>
               <li>What was challenging?</li>
               <li>What would you do differently?</li>
@@ -353,29 +341,20 @@ const OrientWestPage: React.FC = () => {
             onChange={(e) => setReflection(e.target.value)}
             placeholder="Write your reflection here... Be specific about wins, challenges, and learnings."
             rows={8}
-            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            className="w-full px-12 py-8 border border-stone rounded-default bg-snow text-body focus:outline-none focus:ring-2 focus:ring-action/20 focus:border-action resize-none"
             required
           />
-          <div className="mt-2 text-sm text-gray-500">
-            {reflection.length} characters
-          </div>
-        </div>
+          <div className="mt-8 text-small text-slate">{reflection.length} characters</div>
+        </Card>
 
         {/* Submit Button */}
-        <div className="flex justify-end space-x-4">
-          <Link
-            to="/today"
-            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium"
-          >
-            Cancel
+        <div className="flex justify-end gap-12">
+          <Link to="/today">
+            <Button variant="secondary">Cancel</Button>
           </Link>
-          <button
-            type="submit"
-            disabled={updateReflection.isPending}
-            className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
-          >
+          <Button type="submit" variant="primary" disabled={updateReflection.isPending}>
             {updateReflection.isPending ? 'Saving...' : 'Save Reflection'}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

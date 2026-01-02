@@ -7,7 +7,7 @@
     "dev": "bash scripts/dev.sh",
     "build:backend": "cd backend && npm ci && npx prisma generate && npm run build",
     "start:backend": "cd backend && npm run dev",
-    "start:frontend": "cd frontend && npm start",
+    "start:frontend": "cd frontend && npm run dev",
     "start": "cd backend && npm run start",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ..",
     "build": "cd backend && npm run build && cd ../frontend && npm run build && cd ..",

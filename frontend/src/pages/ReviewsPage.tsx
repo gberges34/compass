@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFlatReviews, useCreateDailyReview, useCreateWeeklyReview } from '../hooks/useReviews';
 import type { Review, ReviewType, CreateReviewRequest } from '../types';
 import {
@@ -19,13 +19,20 @@ import { useToast } from '../contexts/ToastContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import CreateReviewModal from '../components/CreateReviewModal';
+import SectionTitleWithInfo from '../components/SectionTitleWithInfo';
+import Tabs from '../components/Tabs';
 import { categoryColors } from '../lib/designTokens';
+import { reviewsHelpContent } from './reviews/reviewsHelpContent';
+import DaySelector from '../components/DaySelector';
+import RadialClockChart from '../components/RadialClockChart';
+import { startOfDay } from 'date-fns';
 
 const ReviewsPage: React.FC = () => {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<ReviewType>('DAILY');
   const [expandedReview, setExpandedReview] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedClockDate, setSelectedClockDate] = useState<Date>(startOfDay(new Date()));
   const [expandedSections, setExpandedSections] = useState<{
     [reviewId: string]: {
       wins?: boolean;
@@ -67,7 +74,7 @@ const ReviewsPage: React.FC = () => {
   };
 
   const getExecutionRateColor = (rate?: number): string => {
-    if (!rate) return 'bg-gray-500';
+    if (!rate) return 'bg-stone';
     if (rate >= 100) return 'bg-green-500';
     if (rate >= 80) return 'bg-blue-500';
     if (rate >= 60) return 'bg-yellow-500';
@@ -75,7 +82,7 @@ const ReviewsPage: React.FC = () => {
   };
 
   const getExecutionRateTextColor = (rate?: number): string => {
-    if (!rate) return 'text-gray-700';
+    if (!rate) return 'text-slate';
     if (rate >= 100) return 'text-green-700';
     if (rate >= 80) return 'text-blue-700';
     if (rate >= 60) return 'text-yellow-700';
@@ -122,17 +129,6 @@ const ReviewsPage: React.FC = () => {
     }));
   };
 
-  const getActivityBreakdownData = () => {
-    if (reviews.length === 0) return [];
-    const latestReview = reviews[0];
-    return Object.entries(latestReview.activityBreakdown || {})
-      .map(([activity, minutes]) => ({
-        name: activity,
-        value: Math.round((minutes / 60) * 10) / 10, // Convert to hours
-      }))
-      .sort((a, b) => b.value - a.value);
-  };
-
   const getDeepWorkTrendData = () => {
     return reviews
       .slice(0, 7)
@@ -144,6 +140,12 @@ const ReviewsPage: React.FC = () => {
   };
 
   const CATEGORY_COLORS = Object.values(categoryColors).map(config => config.hex);
+
+  useEffect(() => {
+    if (reviews.length === 0) return;
+    // Default weekly clock selection to the first day in the period
+    setSelectedClockDate(startOfDay(new Date(reviews[0].periodStart)));
+  }, [activeTab, reviews]);
 
   if (loading) {
     return (
@@ -186,29 +188,19 @@ const ReviewsPage: React.FC = () => {
 
       {/* Tabs */}
       <Card padding="none">
-        <div className="border-b border-fog">
-          <div className="flex">
-            <button
-              onClick={() => setActiveTab('DAILY')}
-              className={`px-24 py-12 font-medium border-b-2 transition-standard ${
-                activeTab === 'DAILY'
-                  ? 'border-action text-action'
-                  : 'border-transparent text-slate hover:text-ink'
-              }`}
-            >
-              Daily Reviews
-            </button>
-            <button
-              onClick={() => setActiveTab('WEEKLY')}
-              className={`px-24 py-12 font-medium border-b-2 transition-standard ${
-                activeTab === 'WEEKLY'
-                  ? 'border-action text-action'
-                  : 'border-transparent text-slate hover:text-ink'
-              }`}
-            >
-              Weekly Reviews
-            </button>
-          </div>
+        <div className="p-0">
+          <Tabs<ReviewType>
+            value={activeTab}
+            onChange={setActiveTab}
+            variant="underline"
+            ariaLabel="Review type"
+            items={[
+              { id: 'DAILY', label: 'Daily Reviews' },
+              { id: 'WEEKLY', label: 'Weekly Reviews' },
+            ]}
+            className="px-24"
+            buttonClassName="py-12 px-24"
+          />
         </div>
       </Card>
 
@@ -217,9 +209,11 @@ const ReviewsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-24">
           {/* Execution Rate Trend */}
           <Card padding="medium">
-            <h3 className="text-h3 text-ink mb-16">
-              Execution Rate Trend (Last 7)
-            </h3>
+            <SectionTitleWithInfo
+              title="Execution Rate Trend (Last 7)"
+              tooltipAriaLabel="About Execution Rate Trend"
+              tooltipContent={reviewsHelpContent['chart-execution']}
+            />
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={getExecutionRateChartData()}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -233,7 +227,11 @@ const ReviewsPage: React.FC = () => {
 
           {/* Category Balance */}
           <Card padding="medium">
-            <h3 className="text-h3 text-ink mb-16">Category Balance</h3>
+            <SectionTitleWithInfo
+              title="Category Balance"
+              tooltipAriaLabel="About Category Balance"
+              tooltipContent={reviewsHelpContent['chart-cat-balance']}
+            />
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
@@ -255,18 +253,24 @@ const ReviewsPage: React.FC = () => {
             </ResponsiveContainer>
           </Card>
 
-          {/* Primary Activities (Time Engine) */}
+          {/* Primary Activities (Time Engine) - Always shows TODAY's live slices */}
           <Card padding="medium">
-            <h3 className="text-h3 text-ink mb-16">Primary Activities</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={getActivityBreakdownData()} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" tick={{ fontSize: 12 }} />
-                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value: number) => `${value}h`} />
-                <Bar dataKey="value" fill="#10b981" />
-              </BarChart>
-            </ResponsiveContainer>
+            <SectionTitleWithInfo
+              title="Daily Activity Clock"
+              tooltipAriaLabel="About Primary Activities"
+              tooltipContent={reviewsHelpContent['chart-activities']}
+            />
+            {activeTab === 'WEEKLY' && (
+              <DaySelector
+                periodStart={new Date(reviews[0].periodStart)}
+                periodEnd={new Date(reviews[0].periodEnd)}
+                selectedDate={selectedClockDate}
+                onDateChange={setSelectedClockDate}
+              />
+            )}
+            <RadialClockChart
+              date={activeTab === 'DAILY' ? new Date() : selectedClockDate}
+            />
           </Card>
 
           {/* Deep Work Hours Trend */}
@@ -377,13 +381,13 @@ const ReviewsPage: React.FC = () => {
                     </h4>
                     <ul className="space-y-1">
                       {review.wins.slice(0, 2).map((win: string, idx: number) => (
-                        <li key={idx} className="text-sm text-gray-700 flex items-start">
+                        <li key={idx} className="text-small text-ink flex items-start">
                           <span className="text-green-500 mr-2">✓</span>
                           <span className="line-clamp-1">{win}</span>
                         </li>
                       ))}
                       {review.wins.length > 2 && (
-                        <li className="text-sm text-gray-500 italic">
+                        <li className="text-small text-slate italic">
                           +{review.wins.length - 2} more...
                         </li>
                       )}
@@ -397,13 +401,13 @@ const ReviewsPage: React.FC = () => {
                     </h4>
                     <ul className="space-y-1">
                       {review.misses.slice(0, 2).map((miss: string, idx: number) => (
-                        <li key={idx} className="text-sm text-gray-700 flex items-start">
+                        <li key={idx} className="text-small text-ink flex items-start">
                           <span className="text-red-500 mr-2">✗</span>
                           <span className="line-clamp-1">{miss}</span>
                         </li>
                       ))}
                       {review.misses.length > 2 && (
-                        <li className="text-sm text-gray-500 italic">
+                        <li className="text-small text-slate italic">
                           +{review.misses.length - 2} more...
                         </li>
                       )}
@@ -414,7 +418,7 @@ const ReviewsPage: React.FC = () => {
 
               {/* Expanded Content */}
               {expandedReview === review.id && (
-                <div className="border-t border-gray-200 p-6 bg-gray-50 space-y-4">
+                <div className="border-t border-fog p-24 bg-cloud space-y-16">
                   {/* Full Wins */}
                   <div>
                     <button
@@ -427,14 +431,14 @@ const ReviewsPage: React.FC = () => {
                       <h4 className="text-lg font-semibold text-green-700">
                         Wins ({review.wins.length})
                       </h4>
-                      <span className="text-gray-400">
+                      <span className="text-slate">
                         {expandedSections[review.id]?.wins ? '▼' : '▶'}
                       </span>
                     </button>
                     {expandedSections[review.id]?.wins && (
                       <ul className="space-y-2 ml-4">
                         {review.wins.map((win: string, idx: number) => (
-                          <li key={idx} className="text-gray-700 flex items-start">
+                          <li key={idx} className="text-ink flex items-start">
                             <span className="text-green-500 mr-2">✓</span>
                             <span>{win}</span>
                           </li>
@@ -455,14 +459,14 @@ const ReviewsPage: React.FC = () => {
                       <h4 className="text-lg font-semibold text-red-700">
                         Misses ({review.misses.length})
                       </h4>
-                      <span className="text-gray-400">
+                      <span className="text-slate">
                         {expandedSections[review.id]?.misses ? '▼' : '▶'}
                       </span>
                     </button>
                     {expandedSections[review.id]?.misses && (
                       <ul className="space-y-2 ml-4">
                         {review.misses.map((miss: string, idx: number) => (
-                          <li key={idx} className="text-gray-700 flex items-start">
+                          <li key={idx} className="text-ink flex items-start">
                             <span className="text-red-500 mr-2">✗</span>
                             <span>{miss}</span>
                           </li>
@@ -483,14 +487,14 @@ const ReviewsPage: React.FC = () => {
                       <h4 className="text-lg font-semibold text-blue-700">
                         Lessons ({review.lessons.length})
                       </h4>
-                      <span className="text-gray-400">
+                      <span className="text-slate">
                         {expandedSections[review.id]?.lessons ? '▼' : '▶'}
                       </span>
                     </button>
                     {expandedSections[review.id]?.lessons && (
                       <ul className="space-y-2 ml-4">
                         {review.lessons.map((lesson: string, idx: number) => (
-                          <li key={idx} className="text-gray-700 flex items-start">
+                          <li key={idx} className="text-ink flex items-start">
                             <span className="text-blue-500 mr-2">💡</span>
                             <span>{lesson}</span>
                           </li>
@@ -511,14 +515,14 @@ const ReviewsPage: React.FC = () => {
                       <h4 className="text-lg font-semibold text-purple-700">
                         Next Goals ({review.nextGoals.length})
                       </h4>
-                      <span className="text-gray-400">
+                      <span className="text-slate">
                         {expandedSections[review.id]?.nextGoals ? '▼' : '▶'}
                       </span>
                     </button>
                     {expandedSections[review.id]?.nextGoals && (
                       <ul className="space-y-2 ml-4">
                         {review.nextGoals.map((goal: string, idx: number) => (
-                          <li key={idx} className="text-gray-700 flex items-start">
+                          <li key={idx} className="text-ink flex items-start">
                             <span className="text-purple-500 mr-2">→</span>
                             <span>{goal}</span>
                           </li>
@@ -528,25 +532,25 @@ const ReviewsPage: React.FC = () => {
                   </div>
 
                   {/* Additional Metadata */}
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-300">
+                  <div className="grid grid-cols-2 gap-16 pt-16 border-t border-fog">
                     <div>
-                      <p className="text-sm text-gray-600">Total Tracked Time</p>
-                      <p className="text-lg font-semibold text-gray-900">
+                      <p className="text-small text-slate">Total Tracked Time</p>
+                      <p className="text-h3 font-semibold text-ink">
                         {review.totalTrackedTime.toFixed(1)} hours
                       </p>
                     </div>
                     {review.contextSwitches !== undefined && (
                       <div>
-                        <p className="text-sm text-gray-600">Context Switches</p>
-                        <p className="text-lg font-semibold text-gray-900">
+                        <p className="text-small text-slate">Context Switches</p>
+                        <p className="text-h3 font-semibold text-ink">
                           {review.contextSwitches}
                         </p>
                       </div>
                     )}
                     {review.energyAssessment && (
                       <div>
-                        <p className="text-sm text-gray-600">Energy Assessment</p>
-                        <p className="text-lg font-semibold text-gray-900">
+                        <p className="text-small text-slate">Energy Assessment</p>
+                        <p className="text-h3 font-semibold text-ink">
                           {review.energyAssessment}
                         </p>
                       </div>

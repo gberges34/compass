@@ -21,10 +21,43 @@ import { authMiddleware } from './middleware/auth';
 
 const app = express();
 
+const parseOriginList = (value?: string): string[] => {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+};
+
+const isAllowedVercelPreviewOrigin = (origin: string): boolean => {
+  try {
+    const url = new URL(origin);
+    if (url.protocol !== 'https:') return false;
+    return url.hostname.endsWith('.vercel.app');
+  } catch {
+    return false;
+  }
+};
+
 // Middleware
 app.use(cors({
-  origin: env.FRONTEND_URL,
-  credentials: true
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    const allowedOrigins = new Set([env.FRONTEND_URL, ...parseOriginList(env.FRONTEND_URLS)]);
+    if (allowedOrigins.has(origin)) {
+      return callback(null, true);
+    }
+
+    if (env.CORS_ALLOW_VERCEL_PREVIEWS === 'true' && isAllowedVercelPreviewOrigin(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
 }));
 app.use(express.json());
 

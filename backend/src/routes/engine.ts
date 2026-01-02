@@ -1,10 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { cacheControl, CachePolicies } from '../middleware/cacheControl';
-import { startSliceSchema, stopSliceSchema, querySlicesSchema, summarySlicesSchema, updateSliceSchema, sliceIdParamSchema } from '../schemas/timeEngine';
+import { startSliceSchema, stopSliceSchema, querySlicesSchema, summarySlicesSchema, updateSliceSchema, sliceIdParamSchema, healthSleepSyncSchema, healthSyncSchema } from '../schemas/timeEngine';
 import * as TimeEngine from '../services/timeEngine';
 import { prisma } from '../prisma';
 import { Prisma } from '@prisma/client';
+import { syncPrimaryStart, syncPrimaryStop, syncWorkModeTags } from '../services/togglProjection';
 
 const router = Router();
 
@@ -14,6 +15,20 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const validatedData = startSliceSchema.parse(req.body);
     const slice = await TimeEngine.startSlice(validatedData);
+
+    if (slice.dimension === 'PRIMARY') {
+      syncPrimaryStart(slice).catch((error) =>
+        console.error('Toggl projection failed (PRIMARY start)', error)
+      );
+    } else if (slice.dimension === 'WORK_MODE') {
+      const primarySlice = await prisma.timeSlice.findFirst({
+        where: { dimension: 'PRIMARY', end: null },
+      });
+      syncWorkModeTags(primarySlice, slice.category, 'add').catch((error) =>
+        console.error('Toggl projection failed (WORK_MODE add)', error)
+      );
+    }
+
     res.status(201).json(slice);
   })
 );
@@ -24,6 +39,20 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const validatedData = stopSliceSchema.parse(req.body);
     const slice = await TimeEngine.stopSlice(validatedData);
+
+    if (slice.dimension === 'PRIMARY') {
+      syncPrimaryStop(slice).catch((error) =>
+        console.error('Toggl projection failed (PRIMARY stop)', error)
+      );
+    } else if (slice.dimension === 'WORK_MODE') {
+      const primarySlice = await prisma.timeSlice.findFirst({
+        where: { dimension: 'PRIMARY', end: null },
+      });
+      syncWorkModeTags(primarySlice, slice.category, 'delete').catch((error) =>
+        console.error('Toggl projection failed (WORK_MODE delete)', error)
+      );
+    }
+
     res.json(slice);
   })
 );
@@ -134,6 +163,25 @@ router.get(
   })
 );
 
+// POST /api/engine/health/sleep-sync - Sync authoritative Sleep block from Health
+// @deprecated Use POST /api/engine/health/sync instead for unified health data sync
+router.post(
+  '/health/sleep-sync',
+  asyncHandler(async (req: Request, res: Response) => {
+    const payload = healthSleepSyncSchema.parse(req.body);
+    const slice = await TimeEngine.syncHealthSleep(payload);
+    res.status(201).json(slice);
+  })
+);
+
+// POST /api/engine/health/sync - Unified health data sync (Sleep, Workouts, Activity)
+router.post(
+  '/health/sync',
+  asyncHandler(async (req: Request, res: Response) => {
+    const payload = healthSyncSchema.parse(req.body);
+    const result = await TimeEngine.syncHealthData(payload);
+    res.status(201).json(result);
+  })
+);
+
 export default router;
-
-

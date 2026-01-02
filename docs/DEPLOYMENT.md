@@ -5,13 +5,11 @@
 **Frontend:** Vercel (Static Site)
 - Repository: https://github.com/gberges34/compass
 - Platform: Vercel
-- URL: https://compass-wt6j.vercel.app
 - Auto-deploys from: `main` branch
 
 **Backend:** Railway (Express API)
 - Repository: https://github.com/gberges34/compass
 - Platform: Railway
-- URL: https://compass-production-1795.up.railway.app
 - Auto-deploys from: `main` branch
 
 **Database:** Railway PostgreSQL

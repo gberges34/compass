@@ -174,4 +174,13 @@ Hardware integrations (Shower Speaker, Smart Plugs, etc.) do not communicate wit
 
 Legacy Timery syncing can be migrated to this engine.
 
-* **Ingestion Job:** A background job can poll Timery and insert `TimeSlice` records for historical accuracy, mapping Toggl Projects to Compass Categories.
+**Compass as source of truth (live):**
+
+* **Projection (PRIMARY only):** When a `PRIMARY` `TimeSlice` starts/stops, Compass can project it to Toggl as a single running time entry so Timery remains the visible timer surface.
+  * The `PRIMARY` activity is encoded as the Toggl **Project** (`project_id`).
+  * If the project does not exist, Compass may auto-create it (matching case-insensitively and whitespace-insensitively before creating).
+  * `WORK_MODE` can be mirrored as Toggl tags on the running entry.
+
+**Toggl/Timery as history (optional):**
+
+* **Ingestion Job:** A background job can poll Timery/Toggl and insert `TimeSlice` records for historical accuracy, mapping Toggl Projects to Compass Categories.
