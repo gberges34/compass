@@ -1,14 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTodayPlan, useCreateDailyPlan } from '../hooks/useDailyPlans';
-import type { Energy, PlannedBlock, CreateDailyPlanRequest } from '../types';
+import type { Category, Energy, PlannedBlock, CreateDailyPlanRequest } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import Select from '../components/Select';
 import { formatLongDate } from '../lib/dateUtils';
+import {
+  buildPlannedBlockLabel,
+  hhmmToMinutes,
+  parsePlannedBlockLabel,
+  PRIMARY_CATEGORIES,
+  type PrimaryCategorySelection,
+} from '../lib/planningBlocks';
 
 function createUUID(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -24,14 +32,10 @@ function createUUID(): string {
   });
 }
 
-function timeToMinutes(time: string): number | null {
-  const match = /^(\d{2}):(\d{2})$/.exec(time);
-  if (!match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
-  return hours * 60 + minutes;
-}
+type PlannedBlockDraft = Omit<PlannedBlock, 'label'> & {
+  primaryCategory: PrimaryCategorySelection;
+  details: string;
+};
 
 const OrientEastPage: React.FC = () => {
   const navigate = useNavigate();
@@ -42,8 +46,8 @@ const OrientEastPage: React.FC = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [energyLevel, setEnergyLevel] = useState<Energy>('MEDIUM');
-  const [plannedBlocks, setPlannedBlocks] = useState<PlannedBlock[]>([
-    { id: createUUID(), start: '09:00', end: '11:00', label: '' },
+  const [plannedBlocks, setPlannedBlocks] = useState<PlannedBlockDraft[]>([
+    { id: createUUID(), start: '09:00', end: '11:00', primaryCategory: 'OTHER', details: '' },
   ]);
   const [outcome1, setOutcome1] = useState('');
   const [outcome2, setOutcome2] = useState('');
@@ -58,16 +62,20 @@ const OrientEastPage: React.FC = () => {
     }
 
     for (const block of plannedBlocks) {
-      if (!block.start || !block.end || !block.label.trim()) {
-        return 'Each planned block requires start, end, and label';
+      if (!block.start || !block.end) {
+        return 'Each planned block requires start and end';
       }
-      const startMinutes = timeToMinutes(block.start);
-      const endMinutes = timeToMinutes(block.end);
+      const startMinutes = hhmmToMinutes(block.start);
+      const endMinutes = hhmmToMinutes(block.end);
       if (startMinutes === null || endMinutes === null) {
         return 'Planned block times must be valid (HH:mm)';
       }
       if (startMinutes >= endMinutes) {
         return 'Each planned block start must be before end';
+      }
+
+      if (block.primaryCategory === 'OTHER' && !block.details.trim()) {
+        return 'Blocks in Other require details';
       }
     }
 
@@ -77,8 +85,8 @@ const OrientEastPage: React.FC = () => {
 
     const normalizedBlocks = plannedBlocks
       .map((block) => ({
-        start: timeToMinutes(block.start)!,
-        end: timeToMinutes(block.end)!,
+        start: hhmmToMinutes(block.start)!,
+        end: hhmmToMinutes(block.end)!,
       }))
       .sort((a, b) => a.start - b.start);
 
@@ -94,7 +102,18 @@ const OrientEastPage: React.FC = () => {
   const startEditing = () => {
     if (existingPlan) {
       setEnergyLevel(existingPlan.energyLevel);
-      setPlannedBlocks(existingPlan.plannedBlocks.map((block) => ({ ...block })));
+      setPlannedBlocks(
+        existingPlan.plannedBlocks.map((block) => {
+          const parsed = parsePlannedBlockLabel(block.label);
+          return {
+            id: block.id,
+            start: block.start,
+            end: block.end,
+            primaryCategory: parsed.primary,
+            details: parsed.details,
+          };
+        })
+      );
       setOutcome1(existingPlan.topOutcomes[0] || '');
       setOutcome2(existingPlan.topOutcomes[1] || '');
       setOutcome3(existingPlan.topOutcomes[2] || '');
@@ -106,7 +125,7 @@ const OrientEastPage: React.FC = () => {
   const addPlannedBlock = () => {
     setPlannedBlocks((prev) => [
       ...prev,
-      { id: createUUID(), start: '14:00', end: '15:00', label: '' },
+      { id: createUUID(), start: '14:00', end: '15:00', primaryCategory: 'OTHER', details: '' },
     ]);
   };
 
@@ -114,7 +133,7 @@ const OrientEastPage: React.FC = () => {
     setPlannedBlocks((prev) => (prev.length > 1 ? prev.filter((b) => b.id !== id) : prev));
   };
 
-  const updatePlannedBlock = (id: string, updates: Partial<PlannedBlock>) => {
+  const updatePlannedBlock = (id: string, updates: Partial<PlannedBlockDraft>) => {
     setPlannedBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, ...updates } : block)));
   };
 
@@ -128,12 +147,17 @@ const OrientEastPage: React.FC = () => {
     }
 
     try {
-      const normalizedBlocks: PlannedBlock[] = plannedBlocks.map((block) => ({
-        id: block.id,
-        start: block.start,
-        end: block.end,
-        label: block.label.trim(),
-      }));
+      const normalizedBlocks: PlannedBlock[] = plannedBlocks.map((block) => {
+        const primary = block.primaryCategory;
+        const details = block.details.trim();
+
+        return {
+          id: block.id,
+          start: block.start,
+          end: block.end,
+          label: buildPlannedBlockLabel(primary, details),
+        };
+      });
 
       const request: CreateDailyPlanRequest = {
         energyLevel,
@@ -301,15 +325,34 @@ const OrientEastPage: React.FC = () => {
                       fullWidth
                     />
                   </div>
-                  <Input
-                    type="text"
-                    label="Label"
-                    value={block.label}
-                    onChange={(e) => updatePlannedBlock(block.id, { label: e.target.value })}
-                    placeholder="What is this block for?"
-                    required
-                    fullWidth
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+                    <Select
+                      label="Primary Category"
+                      value={block.primaryCategory}
+                      onChange={(e) =>
+                        updatePlannedBlock(block.id, { primaryCategory: e.target.value as PrimaryCategorySelection })
+                      }
+                      options={[
+                        ...PRIMARY_CATEGORIES.map((cat: Category) => ({ value: cat, label: cat })),
+                        { value: 'OTHER', label: 'Other' },
+                      ]}
+                      fullWidth
+                      required
+                    />
+                    <Input
+                      type="text"
+                      label={block.primaryCategory === 'OTHER' ? 'Details *' : 'Details'}
+                      value={block.details}
+                      onChange={(e) => updatePlannedBlock(block.id, { details: e.target.value })}
+                      placeholder={
+                        block.primaryCategory === 'OTHER'
+                          ? 'Describe this block...'
+                          : 'Extra context (optional)'
+                      }
+                      required={block.primaryCategory === 'OTHER'}
+                      fullWidth
+                    />
+                  </div>
                 </div>
               </div>
             ))}

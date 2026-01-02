@@ -166,7 +166,7 @@ const semanticRules: Array<{ test: RegExp; color: string }> = [
   { test: /\b(commute|drive|driving|train|bus|travel|flight)\b/i, color: timeEngineColors.sky },
 
   // Focus / work
-  { test: /\b(coding|code|deep\s*work|project|planning|build|sprint|meeting)\b/i, color: timeEngineColors.sky },
+  { test: /\b(coding|code|project|planning|build|sprint|meeting)\b/i, color: timeEngineColors.sky },
 
   // Social / play
   { test: /\b(gaming|game|play|date\s*night|family|friends|discord|call)\b/i, color: timeEngineColors.blush },

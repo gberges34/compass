@@ -24,8 +24,8 @@ const ACTIVITY_CATEGORIES = [
   'Personal Care',
   'Errands',
   // WORK_MODE Activities
-  'Deep Work',
-  'Shallow Work',
+  'Focus',
+  'Light Work',
   // SOCIAL Activities (can overlap with PRIMARY)
   'Discord Call',
   // SEGMENT Activities
@@ -149,4 +149,3 @@ const StartActivityModal: React.FC<StartActivityModalProps> = ({ onClose }) => {
 };
 
 export default StartActivityModal;
-
