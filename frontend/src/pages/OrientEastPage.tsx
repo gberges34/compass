@@ -61,11 +61,13 @@ const OrientEastPage: React.FC = () => {
       if (!block.start || !block.end || !block.label.trim()) {
         return 'Each planned block requires start, end, and label';
       }
-      if (block.start >= block.end) {
-        return 'Each planned block start must be before end';
-      }
-      if (timeToMinutes(block.start) === null || timeToMinutes(block.end) === null) {
+      const startMinutes = timeToMinutes(block.start);
+      const endMinutes = timeToMinutes(block.end);
+      if (startMinutes === null || endMinutes === null) {
         return 'Planned block times must be valid (HH:mm)';
+      }
+      if (startMinutes >= endMinutes) {
+        return 'Each planned block start must be before end';
       }
     }
 
@@ -92,7 +94,7 @@ const OrientEastPage: React.FC = () => {
   const startEditing = () => {
     if (existingPlan) {
       setEnergyLevel(existingPlan.energyLevel);
-      setPlannedBlocks(existingPlan.plannedBlocks);
+      setPlannedBlocks(existingPlan.plannedBlocks.map((block) => ({ ...block })));
       setOutcome1(existingPlan.topOutcomes[0] || '');
       setOutcome2(existingPlan.topOutcomes[1] || '');
       setOutcome3(existingPlan.topOutcomes[2] || '');

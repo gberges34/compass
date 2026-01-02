@@ -66,7 +66,8 @@ export function useCalendarEvents({
     if (todayPlan) {
       const today = getTodayDateString();
 
-      todayPlan.plannedBlocks.forEach((block) => {
+      const blocks = (todayPlan as DailyPlan & { plannedBlocks?: any }).plannedBlocks ?? [];
+      blocks.forEach((block) => {
         planEvents.push({
           id: `plan-${block.id}`,
           title: `Plan: ${block.label}`,

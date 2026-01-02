@@ -9,15 +9,22 @@ import { cacheControl, CachePolicies } from '../middleware/cacheControl';
 
 const router = Router();
 
-// Validation schemas
+const hhmmRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
 const plannedBlockSchema = z
   .object({
     id: z.string().uuid(),
-    start: z.string(),
-    end: z.string(),
+    start: z.string().regex(hhmmRegex, { message: 'Start time must be HH:mm' }),
+    end: z.string().regex(hhmmRegex, { message: 'End time must be HH:mm' }),
     label: z.string().min(1),
   })
-  .refine((block) => block.start < block.end, {
+  .refine((block) => {
+    const toMinutes = (time: string) => {
+      const [h, m] = time.split(':').map(Number);
+      return h * 60 + m;
+    };
+    return toMinutes(block.start) < toMinutes(block.end);
+  }, {
     message: 'Planned block start must be before end',
   });
 
@@ -44,20 +51,21 @@ router.post('/east', asyncHandler(async (req: Request, res: Response) => {
     select: { id: true },
   });
 
+  const planData = {
+    energyLevel: validatedData.energyLevel,
+    plannedBlocks: validatedData.plannedBlocks,
+    topOutcomes: validatedData.topOutcomes,
+    reward: validatedData.reward,
+  };
+
   const dailyPlan = await prisma.dailyPlan.upsert({
     where: { date: today },
     create: {
       date: today,
-      energyLevel: validatedData.energyLevel,
-      plannedBlocks: validatedData.plannedBlocks,
-      topOutcomes: validatedData.topOutcomes,
-      reward: validatedData.reward,
+      ...planData,
     },
     update: {
-      energyLevel: validatedData.energyLevel,
-      plannedBlocks: validatedData.plannedBlocks,
-      topOutcomes: validatedData.topOutcomes,
-      reward: validatedData.reward,
+      ...planData,
     },
   });
 

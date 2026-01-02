@@ -45,4 +45,35 @@ describe('Orient API', () => {
     expect(second.body.topOutcomes).toEqual(orientPayload.topOutcomes);
     expect(second.body.plannedBlocks).toEqual(orientPayload.plannedBlocks);
   });
+
+  it('rejects empty plannedBlocks', async () => {
+    const res = await request(app).post('/api/orient/east').send({
+      ...orientPayload,
+      plannedBlocks: [],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('plannedBlocks');
+  });
+
+  it('rejects blocks where start >= end', async () => {
+    const res = await request(app).post('/api/orient/east').send({
+      ...orientPayload,
+      plannedBlocks: [
+        { id: '33333333-3333-3333-3333-333333333333', start: '10:00', end: '10:00', label: 'Invalid' },
+      ],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('Planned block start must be before end');
+  });
+
+  it('rejects blocks missing label', async () => {
+    const res = await request(app).post('/api/orient/east').send({
+      ...orientPayload,
+      plannedBlocks: [
+        { id: '44444444-4444-4444-4444-444444444444', start: '09:00', end: '10:00', label: '' },
+      ],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('label');
+  });
 });
