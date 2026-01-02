@@ -57,18 +57,25 @@ export interface PostDoLog {
   completionDate: string;
 }
 
-export interface PlannedBlock {
-  id: string;
+export interface DeepWorkBlock {
   start: string;
   end: string;
-  label: string;
+  focus: string;
+}
+
+export interface TimeBlock {
+  start: string;
+  end: string;
 }
 
 export interface DailyPlan {
   id: string;
   date: string;
   energyLevel: Energy;
-  plannedBlocks: PlannedBlock[];
+  deepWorkBlock1: DeepWorkBlock;
+  deepWorkBlock2?: DeepWorkBlock;
+  adminBlock?: TimeBlock;
+  bufferBlock?: TimeBlock;
   topOutcomes: string[];
   reward?: string;
   reflection?: string;
@@ -149,7 +156,10 @@ export interface CompleteTaskResponse {
 
 export interface CreateDailyPlanRequest {
   energyLevel: Energy;
-  plannedBlocks: PlannedBlock[];
+  deepWorkBlock1: DeepWorkBlock;
+  deepWorkBlock2?: DeepWorkBlock;
+  adminBlock?: TimeBlock;
+  bufferBlock?: TimeBlock;
   topOutcomes: string[];
   reward?: string;
 }
@@ -188,5 +198,5 @@ export interface CalendarEvent extends BigCalendarEvent {
   start: Date;
   end: Date;
   task?: Task;
-  type: 'task' | 'plannedBlock';
+  type: 'task' | 'deepWork' | 'admin' | 'buffer';
 }
