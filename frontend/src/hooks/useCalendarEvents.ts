@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Task, CalendarEvent, DailyPlan } from '../types';
+import type { PlannedBlock, Task, CalendarEvent, DailyPlan } from '../types';
 import {
   getTodayDateString,
   combineISODateAndTime,
@@ -66,7 +66,10 @@ export function useCalendarEvents({
     if (todayPlan) {
       const today = getTodayDateString();
 
-      const blocks = (todayPlan as DailyPlan & { plannedBlocks?: any }).plannedBlocks ?? [];
+      const blocks: PlannedBlock[] = Array.isArray((todayPlan as unknown as { plannedBlocks?: unknown }).plannedBlocks)
+        ? ((todayPlan as unknown as { plannedBlocks: PlannedBlock[] }).plannedBlocks)
+        : [];
+
       blocks.forEach((block) => {
         planEvents.push({
           id: `plan-${block.id}`,
