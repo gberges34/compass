@@ -186,28 +186,20 @@ const OrientWestPage: React.FC = () => {
             </span>
           </div>
 
-          {/* Deep Work Blocks */}
+          {/* Planned Blocks */}
           <div>
-            <h3 className="font-medium text-gray-900 mb-2">Deep Work Blocks</h3>
+            <h3 className="font-medium text-gray-900 mb-2">Planned Blocks</h3>
             <div className="space-y-2">
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-blue-900">{plan.deepWorkBlock1.focus}</span>
-                  <span className="text-sm text-blue-700">
-                    {plan.deepWorkBlock1.start} - {plan.deepWorkBlock1.end}
-                  </span>
-                </div>
-              </div>
-              {plan.deepWorkBlock2 && (
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+              {plan.plannedBlocks.map((block) => (
+                <div key={block.id} className="bg-blue-50 border border-blue-200 rounded-md p-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-blue-900">{plan.deepWorkBlock2.focus}</span>
+                    <span className="font-medium text-blue-900">{block.label}</span>
                     <span className="text-sm text-blue-700">
-                      {plan.deepWorkBlock2.start} - {plan.deepWorkBlock2.end}
+                      {block.start} - {block.end}
                     </span>
                   </div>
                 </div>
-              )}
+              ))}
             </div>
           </div>
 

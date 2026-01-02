@@ -3,7 +3,7 @@ import { Calendar, dateFnsLocalizer, Event as BigCalendarEvent, View } from 'rea
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import CalendarToolbar from '../components/CalendarToolbar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
-import enUS from 'date-fns/locale/en-US';
+import { enUS } from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import type { Task, CalendarEvent, Category } from '../types';
@@ -181,45 +181,15 @@ const CalendarPage: React.FC = () => {
     if (todayPlan) {
       const today = getTodayDateString();
 
-      if (todayPlan.deepWorkBlock1) {
+      todayPlan.plannedBlocks.forEach((block) => {
         planEvents.push({
-          id: `dw1-${todayPlan.id}`,
-          title: `Deep Work: ${todayPlan.deepWorkBlock1.focus}`,
-          start: combineISODateAndTime(today, todayPlan.deepWorkBlock1.start),
-          end: combineISODateAndTime(today, todayPlan.deepWorkBlock1.end),
-          type: 'deepWork',
+          id: `plan-${block.id}`,
+          title: `Plan: ${block.label}`,
+          start: combineISODateAndTime(today, block.start),
+          end: combineISODateAndTime(today, block.end),
+          type: 'plannedBlock',
         });
-      }
-
-      if (todayPlan.deepWorkBlock2) {
-        planEvents.push({
-          id: `dw2-${todayPlan.id}`,
-          title: `Deep Work: ${todayPlan.deepWorkBlock2.focus}`,
-          start: combineISODateAndTime(today, todayPlan.deepWorkBlock2.start),
-          end: combineISODateAndTime(today, todayPlan.deepWorkBlock2.end),
-          type: 'deepWork',
-        });
-      }
-
-      if (todayPlan.adminBlock) {
-        planEvents.push({
-          id: `admin-${todayPlan.id}`,
-          title: 'Admin Time',
-          start: combineISODateAndTime(today, todayPlan.adminBlock.start),
-          end: combineISODateAndTime(today, todayPlan.adminBlock.end),
-          type: 'admin',
-        });
-      }
-
-      if (todayPlan.bufferBlock) {
-        planEvents.push({
-          id: `buffer-${todayPlan.id}`,
-          title: 'Buffer Time',
-          start: combineISODateAndTime(today, todayPlan.bufferBlock.start),
-          end: combineISODateAndTime(today, todayPlan.bufferBlock.end),
-          type: 'buffer',
-        });
-      }
+      });
     }
 
     return [...taskEvents, ...planEvents];
@@ -384,15 +354,9 @@ const CalendarPage: React.FC = () => {
       if (calendarEvent.type === 'task' && calendarEvent.task) {
         backgroundColor = getCategoryColor(calendarEvent.task.category);
         borderColor = backgroundColor;
-      } else if (calendarEvent.type === 'deepWork') {
-        backgroundColor = '#3b82f6';
-        borderColor = '#2563eb';
-      } else if (calendarEvent.type === 'admin') {
-        backgroundColor = '#8b5cf6';
-        borderColor = '#7c3aed';
-      } else if (calendarEvent.type === 'buffer') {
-        backgroundColor = '#6b7280';
-        borderColor = '#4b5563';
+      } else if (calendarEvent.type === 'plannedBlock') {
+        backgroundColor = '#0ea5e9';
+        borderColor = '#0284c7';
       }
 
       // Add visual feedback for draggable events
@@ -569,15 +533,7 @@ const CalendarPage: React.FC = () => {
             <div className="space-y-8 text-small">
               <div className="flex items-center">
                 <div className="w-16 h-16 rounded-default bg-sky mr-8"></div>
-                <span className="text-ink">Deep Work</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-16 h-16 rounded-default bg-lavender mr-8"></div>
-                <span className="text-ink">Admin Time</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-16 h-16 rounded-default bg-fog mr-8"></div>
-                <span className="text-ink">Buffer Time</span>
+                <span className="text-ink">Planned Blocks</span>
               </div>
               <div className="pt-8 border-t border-fog">
                 <p className="text-slate font-medium mb-8 text-small">Task Categories:</p>

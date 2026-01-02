@@ -1,15 +1,37 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTodayPlan, useCreateDailyPlan } from '../hooks/useDailyPlans';
-import type { Energy, DeepWorkBlock, TimeBlock, CreateDailyPlanRequest } from '../types';
+import type { Energy, PlannedBlock, CreateDailyPlanRequest } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import ToggleSwitch from '../components/ToggleSwitch';
 import { formatLongDate } from '../lib/dateUtils';
+
+function createUUID(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older environments; UUIDv4 shape (not cryptographically strong).
+  // eslint-disable-next-line no-bitwise
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = Math.floor(Math.random() * 16);
+    // eslint-disable-next-line no-bitwise
+    const value = char === 'x' ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}
+
+function timeToMinutes(time: string): number | null {
+  const match = /^(\d{2}):(\d{2})$/.exec(time);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+  return hours * 60 + minutes;
+}
 
 const OrientEastPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,26 +47,10 @@ const OrientEastPage: React.FC = () => {
   // Form state
   const [energyLevel, setEnergyLevel] = useState<Energy>('MEDIUM');
 
-  // Deep Work Block 1 (required)
-  const [dwb1Start, setDwb1Start] = useState('09:00');
-  const [dwb1End, setDwb1End] = useState('11:00');
-  const [dwb1Focus, setDwb1Focus] = useState('');
-
-  // Deep Work Block 2 (optional)
-  const [enableDwb2, setEnableDwb2] = useState(false);
-  const [dwb2Start, setDwb2Start] = useState('14:00');
-  const [dwb2End, setDwb2End] = useState('16:00');
-  const [dwb2Focus, setDwb2Focus] = useState('');
-
-  // Admin Block (optional)
-  const [enableAdmin, setEnableAdmin] = useState(false);
-  const [adminStart, setAdminStart] = useState('16:00');
-  const [adminEnd, setAdminEnd] = useState('17:00');
-
-  // Buffer Block (optional)
-  const [enableBuffer, setEnableBuffer] = useState(false);
-  const [bufferStart, setBufferStart] = useState('17:00');
-  const [bufferEnd, setBufferEnd] = useState('18:00');
+  // Planned Blocks (at least 1 required)
+  const [plannedBlocks, setPlannedBlocks] = useState<PlannedBlock[]>([
+    { id: createUUID(), start: '09:00', end: '11:00', label: '' },
+  ]);
 
   // Top 3 Outcomes (required)
   const [outcome1, setOutcome1] = useState('');
@@ -61,27 +67,67 @@ const OrientEastPage: React.FC = () => {
   // No isMounted checks needed - React Query prevents memory leaks
 
   const validateForm = (): string | null => {
-    if (!dwb1Start || !dwb1End || !dwb1Focus.trim()) {
-      return 'Deep Work Block #1 is required (start, end, and focus)';
+    if (plannedBlocks.length < 1) {
+      return 'At least one planned block is required';
     }
 
-    if (enableDwb2 && (!dwb2Start || !dwb2End || !dwb2Focus.trim())) {
-      return 'Deep Work Block #2: Please fill all fields or disable it';
-    }
-
-    if (enableAdmin && (!adminStart || !adminEnd)) {
-      return 'Admin Block: Please fill all fields or disable it';
-    }
-
-    if (enableBuffer && (!bufferStart || !bufferEnd)) {
-      return 'Buffer Block: Please fill all fields or disable it';
+    for (const block of plannedBlocks) {
+      if (!block.start || !block.end || !block.label.trim()) {
+        return 'Each planned block requires start, end, and label';
+      }
+      if (block.start >= block.end) {
+        return 'Each planned block start must be before end';
+      }
+      if (timeToMinutes(block.start) === null || timeToMinutes(block.end) === null) {
+        return 'Planned block times must be valid (HH:mm)';
+      }
     }
 
     if (!outcome1.trim() || !outcome2.trim() || !outcome3.trim()) {
       return 'All three outcomes are required';
     }
 
+    const normalizedBlocks = plannedBlocks
+      .map((block) => ({
+        start: timeToMinutes(block.start)!,
+        end: timeToMinutes(block.end)!,
+      }))
+      .sort((a, b) => a.start - b.start);
+
+    for (let i = 1; i < normalizedBlocks.length; i++) {
+      if (normalizedBlocks[i].start < normalizedBlocks[i - 1].end) {
+        return 'Planned blocks cannot overlap';
+      }
+    }
+
     return null;
+  };
+
+  const startEditing = () => {
+    if (existingPlan) {
+      setEnergyLevel(existingPlan.energyLevel);
+      setPlannedBlocks(existingPlan.plannedBlocks);
+      setOutcome1(existingPlan.topOutcomes[0] || '');
+      setOutcome2(existingPlan.topOutcomes[1] || '');
+      setOutcome3(existingPlan.topOutcomes[2] || '');
+      setReward(existingPlan.reward || '');
+    }
+    setIsEditing(true);
+  };
+
+  const addPlannedBlock = () => {
+    setPlannedBlocks((prev) => [
+      ...prev,
+      { id: createUUID(), start: '14:00', end: '15:00', label: '' },
+    ]);
+  };
+
+  const removePlannedBlock = (id: string) => {
+    setPlannedBlocks((prev) => (prev.length > 1 ? prev.filter((b) => b.id !== id) : prev));
+  };
+
+  const updatePlannedBlock = (id: string, updates: Partial<PlannedBlock>) => {
+    setPlannedBlocks((prev) => prev.map((block) => (block.id === id ? { ...block, ...updates } : block)));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,46 +140,22 @@ const OrientEastPage: React.FC = () => {
     }
 
     try {
-      const deepWorkBlock1: DeepWorkBlock = {
-        start: dwb1Start,
-        end: dwb1End,
-        focus: dwb1Focus.trim(),
-      };
-
-      const deepWorkBlock2: DeepWorkBlock | undefined = enableDwb2
-        ? {
-            start: dwb2Start,
-            end: dwb2End,
-            focus: dwb2Focus.trim(),
-          }
-        : undefined;
-
-      const adminBlock: TimeBlock | undefined = enableAdmin
-        ? {
-            start: adminStart,
-            end: adminEnd,
-          }
-        : undefined;
-
-      const bufferBlock: TimeBlock | undefined = enableBuffer
-        ? {
-            start: bufferStart,
-            end: bufferEnd,
-          }
-        : undefined;
+      const normalizedBlocks: PlannedBlock[] = plannedBlocks.map((block) => ({
+        id: block.id,
+        start: block.start,
+        end: block.end,
+        label: block.label.trim(),
+      }));
 
       const request: CreateDailyPlanRequest = {
         energyLevel,
-        deepWorkBlock1,
-        deepWorkBlock2,
-        adminBlock,
-        bufferBlock,
+        plannedBlocks: normalizedBlocks,
         topOutcomes: [outcome1.trim(), outcome2.trim(), outcome3.trim()],
         reward: reward.trim() || undefined,
       };
 
       await createPlan.mutateAsync(request);
-      toast.showSuccess('Daily plan created successfully!');
+      toast.showSuccess(isEditing ? 'Daily plan updated successfully!' : 'Daily plan created successfully!');
 
       // No setTimeout hack needed!
       // Cache is already updated by mutation
@@ -168,7 +190,7 @@ const OrientEastPage: React.FC = () => {
         <Card padding="large">
           <div className="flex items-center justify-between mb-16">
             <h2 className="text-h2 text-ink">Today's Plan Already Set</h2>
-            <Button variant="primary" onClick={() => setIsEditing(true)}>
+            <Button variant="primary" onClick={startEditing}>
               Edit Plan
             </Button>
           </div>
@@ -185,32 +207,20 @@ const OrientEastPage: React.FC = () => {
               </Badge>
             </div>
 
-            {/* Deep Work Blocks */}
+            {/* Planned Blocks */}
             <div>
-              <h3 className="text-h3 text-ink mb-8">Deep Work Blocks</h3>
+              <h3 className="text-h3 text-ink mb-8">Planned Blocks</h3>
               <div className="space-y-8">
-                <div className="bg-sky border border-sky rounded-default p-12">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-blue-900">
-                      {existingPlan.deepWorkBlock1.focus}
-                    </span>
-                    <span className="text-small text-blue-700">
-                      {existingPlan.deepWorkBlock1.start} - {existingPlan.deepWorkBlock1.end}
-                    </span>
-                  </div>
-                </div>
-                {existingPlan.deepWorkBlock2 && (
-                  <div className="bg-sky border border-sky rounded-default p-12">
+                {existingPlan.plannedBlocks.map((block) => (
+                  <div key={block.id} className="bg-sky border border-sky rounded-default p-12">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-blue-900">
-                        {existingPlan.deepWorkBlock2.focus}
-                      </span>
+                      <span className="font-medium text-blue-900">{block.label}</span>
                       <span className="text-small text-blue-700">
-                        {existingPlan.deepWorkBlock2.start} - {existingPlan.deepWorkBlock2.end}
+                        {block.start} - {block.end}
                       </span>
                     </div>
                   </div>
-                )}
+                ))}
               </div>
             </div>
 
@@ -273,144 +283,65 @@ const OrientEastPage: React.FC = () => {
           </select>
         </Card>
 
-        {/* Deep Work Block #1 (Required) */}
+        {/* Planned Blocks (Required) */}
         <Card padding="large">
-          <h2 className="text-h2 text-ink mb-16">
-            Deep Work Block #1 <span className="text-danger">*</span>
-          </h2>
+          <div className="flex items-start justify-between mb-16">
+            <h2 className="text-h2 text-ink">
+              Planned Blocks <span className="text-danger">*</span>
+            </h2>
+            <Button type="button" variant="secondary" size="small" onClick={addPlannedBlock}>
+              + Add Block
+            </Button>
+          </div>
+
           <div className="space-y-16">
-            <div className="grid grid-cols-2 gap-16">
-              <Input
-                type="time"
-                label="Start Time"
-                value={dwb1Start}
-                onChange={(e) => setDwb1Start(e.target.value)}
-                required
-                fullWidth
-              />
-              <Input
-                type="time"
-                label="End Time"
-                value={dwb1End}
-                onChange={(e) => setDwb1End(e.target.value)}
-                required
-                fullWidth
-              />
-            </div>
-            <Input
-              type="text"
-              label="Focus"
-              value={dwb1Focus}
-              onChange={(e) => setDwb1Focus(e.target.value)}
-              placeholder="What will you work on during this block?"
-              required
-              fullWidth
-            />
-          </div>
-        </Card>
+            {plannedBlocks.map((block, index) => (
+              <div key={block.id} className="border border-fog rounded-card p-16 bg-snow">
+                <div className="flex items-center justify-between mb-12">
+                  <h3 className="text-h3 text-ink">Block #{index + 1}</h3>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    onClick={() => removePlannedBlock(block.id)}
+                    disabled={plannedBlocks.length === 1}
+                  >
+                    Remove
+                  </Button>
+                </div>
 
-        {/* Deep Work Block #2 (Optional) */}
-        <Card padding="large">
-          <div className="flex items-start justify-between mb-16">
-            <h2 className="text-h2 text-ink">Deep Work Block #2</h2>
-            <ToggleSwitch
-              checked={enableDwb2}
-              onChange={setEnableDwb2}
-              ariaLabel="Enable Deep Work Block 2"
-            />
-          </div>
-          {enableDwb2 && (
-            <div className="space-y-16">
-              <div className="grid grid-cols-2 gap-16">
-                <Input
-                  type="time"
-                  label="Start Time"
-                  value={dwb2Start}
-                  onChange={(e) => setDwb2Start(e.target.value)}
-                  fullWidth
-                />
-                <Input
-                  type="time"
-                  label="End Time"
-                  value={dwb2End}
-                  onChange={(e) => setDwb2End(e.target.value)}
-                  fullWidth
-                />
+                <div className="space-y-16">
+                  <div className="grid grid-cols-2 gap-16">
+                    <Input
+                      type="time"
+                      label="Start Time"
+                      value={block.start}
+                      onChange={(e) => updatePlannedBlock(block.id, { start: e.target.value })}
+                      required
+                      fullWidth
+                    />
+                    <Input
+                      type="time"
+                      label="End Time"
+                      value={block.end}
+                      onChange={(e) => updatePlannedBlock(block.id, { end: e.target.value })}
+                      required
+                      fullWidth
+                    />
+                  </div>
+                  <Input
+                    type="text"
+                    label="Label"
+                    value={block.label}
+                    onChange={(e) => updatePlannedBlock(block.id, { label: e.target.value })}
+                    placeholder="What is this block for?"
+                    required
+                    fullWidth
+                  />
+                </div>
               </div>
-              <Input
-                type="text"
-                label="Focus"
-                value={dwb2Focus}
-                onChange={(e) => setDwb2Focus(e.target.value)}
-                placeholder="What will you work on during this block?"
-                fullWidth
-              />
-            </div>
-          )}
-        </Card>
-
-        {/* Admin Block (Optional) */}
-        <Card padding="large">
-          <div className="flex items-start justify-between mb-16">
-            <h2 className="text-h2 text-ink">Admin Block</h2>
-            <ToggleSwitch
-              checked={enableAdmin}
-              onChange={setEnableAdmin}
-              ariaLabel="Enable Admin Block"
-            />
+            ))}
           </div>
-          {enableAdmin && (
-            <div className="space-y-16">
-              <div className="grid grid-cols-2 gap-16">
-                <Input
-                  type="time"
-                  label="Start Time"
-                  value={adminStart}
-                  onChange={(e) => setAdminStart(e.target.value)}
-                  fullWidth
-                />
-                <Input
-                  type="time"
-                  label="End Time"
-                  value={adminEnd}
-                  onChange={(e) => setAdminEnd(e.target.value)}
-                  fullWidth
-                />
-              </div>
-            </div>
-          )}
-        </Card>
-
-        {/* Buffer Block (Optional) */}
-        <Card padding="large">
-          <div className="flex items-start justify-between mb-16">
-            <h2 className="text-h2 text-ink">Buffer Block</h2>
-            <ToggleSwitch
-              checked={enableBuffer}
-              onChange={setEnableBuffer}
-              ariaLabel="Enable Buffer Block"
-            />
-          </div>
-          {enableBuffer && (
-            <div className="space-y-16">
-              <div className="grid grid-cols-2 gap-16">
-                <Input
-                  type="time"
-                  label="Start Time"
-                  value={bufferStart}
-                  onChange={(e) => setBufferStart(e.target.value)}
-                  fullWidth
-                />
-                <Input
-                  type="time"
-                  label="End Time"
-                  value={bufferEnd}
-                  onChange={(e) => setBufferEnd(e.target.value)}
-                  fullWidth
-                />
-              </div>
-            </div>
-          )}
         </Card>
 
         {/* Top 3 Outcomes (Required) */}
@@ -468,7 +399,11 @@ const OrientEastPage: React.FC = () => {
             variant="primary"
             disabled={createPlan.isPending}
           >
-            {createPlan.isPending ? 'Creating Plan...' : 'Create Daily Plan'}
+            {createPlan.isPending
+              ? 'Saving Plan...'
+              : isEditing
+              ? 'Update Daily Plan'
+              : 'Create Daily Plan'}
           </Button>
         </div>
       </form>
