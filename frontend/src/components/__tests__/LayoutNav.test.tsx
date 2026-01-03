@@ -57,12 +57,15 @@ describe('Layout nav dropdowns', () => {
     const tasksButton = screen.getByRole('button', { name: /^tasks$/i });
     fireEvent.click(tasksButton);
 
-    await waitFor(() => expect(tasksButton).toHaveAttribute('aria-expanded', 'true'));
-    const clarifyLink = await screen.findByRole('link', { name: /clarify/i });
-    expect(clarifyLink).toBeInTheDocument();
-    const tasksLink = screen.getByRole('link', { name: /^tasks$/i });
-    expect(tasksLink).toBeInTheDocument();
-    expect(tasksLink.compareDocumentPosition(clarifyLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+	    await waitFor(() => expect(tasksButton).toHaveAttribute('aria-expanded', 'true'));
+	    const clarifyLink = await screen.findByRole('link', { name: /clarify/i });
+	    expect(clarifyLink).toBeInTheDocument();
+	    const categoriesLink = screen.getByRole('link', { name: /categories/i });
+	    expect(categoriesLink).toBeInTheDocument();
+	    const tasksLink = screen.getByRole('link', { name: /^tasks$/i });
+	    expect(tasksLink).toBeInTheDocument();
+	    expect(tasksLink.compareDocumentPosition(clarifyLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+	    expect(clarifyLink.compareDocumentPosition(categoriesLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     act(() => {
       clarifyLink.focus();

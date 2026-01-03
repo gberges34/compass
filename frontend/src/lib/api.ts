@@ -7,6 +7,7 @@ import type {
   DailyPlan,
   Review,
   PostDoLog,
+  CategoryEntity,
   ProcessCapturedTaskRequest,
   ActivateTaskResponse,
   CompleteTaskRequest,
@@ -161,6 +162,44 @@ export const updateTask = async (id: string, updates: Partial<Task>): Promise<Ta
 
 export const deleteTask = async (id: string): Promise<void> => {
   await api.delete(`/tasks/${id}`);
+};
+
+// Categories API
+
+export type CreateCategoryInput = {
+  name: string;
+  color: string;
+  icon: string;
+  togglProjectId?: string | null;
+};
+
+export type UpdateCategoryInput = Partial<{
+  name: string;
+  color: string;
+  icon: string;
+  togglProjectId: string | null;
+  isArchived: boolean;
+  sortOrder: number;
+}>;
+
+export const getCategories = async (): Promise<CategoryEntity[]> => {
+  const response = await api.get<CategoryEntity[]>('/categories');
+  return response.data;
+};
+
+export const createCategory = async (input: CreateCategoryInput): Promise<CategoryEntity> => {
+  const response = await api.post<CategoryEntity>('/categories', input);
+  return response.data;
+};
+
+export const updateCategory = async (id: string, updates: UpdateCategoryInput): Promise<CategoryEntity> => {
+  const response = await api.patch<CategoryEntity>(`/categories/${id}`, updates);
+  return response.data;
+};
+
+export const deleteCategory = async (id: string): Promise<CategoryEntity> => {
+  const response = await api.delete<CategoryEntity>(`/categories/${id}`);
+  return response.data;
 };
 
 // Renamed from enrichTask to processCapturedTask

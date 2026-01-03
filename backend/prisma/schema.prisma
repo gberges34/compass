@@ -18,7 +18,7 @@ model Task {
   name             String
   status           TaskStatus
   priority         Priority
-  category         Category
+  category         TaskCategory
   context          Context
   energyRequired   Energy
   duration         Int // minutes
@@ -39,6 +39,21 @@ model Task {
   @@index([status, scheduledStart])
   @@index([status, priority, scheduledStart]) // Optimize main task list query
   @@index([status, priority, scheduledStart, createdAt]) // Optimize default sort with createdAt tiebreaker (BACKEND-PERF-001)
+}
+
+model Category {
+  id             String   @id @default(uuid())
+  name           String
+  nameKey        String   @unique
+  color          String
+  icon           String
+  togglProjectId String?
+  isSystem       Boolean  @default(false)
+  isLocked       Boolean  @default(false)
+  isArchived     Boolean  @default(false)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 // Orient Database (Daily Plans)
@@ -203,7 +218,7 @@ enum Priority {
   MAYBE // 4
 }
 
-enum Category {
+enum TaskCategory {
   SCHOOL
   MUSIC
   FITNESS

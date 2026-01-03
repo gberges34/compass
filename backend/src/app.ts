@@ -13,6 +13,7 @@ import orientRouter from './routes/orient';
 import reviewsRouter from './routes/reviews';
 import postdoRouter from './routes/postdo';
 import engineRouter from './routes/engine';
+import categoriesRouter from './routes/categories';
 import { getCurrentTimestamp } from './utils/dateHelpers';
 import { errorHandler } from './middleware/errorHandler';
 import { runHealthChecks } from './services/health';
@@ -140,6 +141,7 @@ app.use('/api/orient', orientRouter);
 app.use('/api/reviews', reviewsRouter);
 app.use('/api/postdo', postdoRouter);
 app.use('/api/engine', engineRouter);
+app.use('/api/categories', categoriesRouter);
 
 // Error handling middleware (MUST be last)
 app.use(errorHandler);

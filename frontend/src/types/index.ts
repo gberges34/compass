@@ -12,6 +12,21 @@ export type TimeOfDay = 'EARLY_MORNING' | 'MORNING' | 'MIDDAY' | 'AFTERNOON' | '
 export type EnergyMatch = 'PERFECT' | 'MOSTLY_ALIGNED' | 'SOME_MISMATCH' | 'POOR';
 export type ReviewType = 'DAILY' | 'WEEKLY';
 
+export interface CategoryEntity {
+  id: string;
+  name: string;
+  nameKey: string;
+  color: string;
+  icon: string;
+  togglProjectId: string | null;
+  isSystem: boolean;
+  isLocked: boolean;
+  isArchived: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Task {
   id: string;
   name: string;

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { env } from '../config/env';
-import { Category } from '@prisma/client';
+import { TaskCategory } from '@prisma/client';
 import type { PostDoLog } from '@prisma/client';
 import { withRetry } from '../utils/retry';
 import { InternalError } from '../errors/AppError';
@@ -19,7 +19,7 @@ const togglAPI = axios.create({
 
 // Toggl Project Name → Compass Category mapping.
 // Keep this in sync with docs/timery-projects.md so Compass knows how to bucket Timery data.
-const TOGGL_PROJECT_CATEGORY_MAP: Record<string, Category> = {
+const TOGGL_PROJECT_CATEGORY_MAP: Record<string, TaskCategory> = {
   'School': 'SCHOOL',
   'Music': 'MUSIC',
   'Fitness': 'FITNESS',
@@ -62,12 +62,12 @@ type TogglContext = {
   projectNameKeyToId: Map<string, number>;
 };
 
-const CATEGORY_TO_TOGGL_PROJECT_NAME: Partial<Record<Category, string>> =
+const CATEGORY_TO_TOGGL_PROJECT_NAME: Partial<Record<TaskCategory, string>> =
   Object.fromEntries(
     Object.entries(TOGGL_PROJECT_CATEGORY_MAP).map(([projectName, category]) => [category, projectName])
   );
 
-const prismaCategorySet = new Set<string>(Object.values(Category));
+const prismaCategorySet = new Set<string>(Object.values(TaskCategory));
 
 let cachedContext: { value: TogglContext; fetchedAt: number } | null = null;
 const TOGGL_CONTEXT_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -131,7 +131,7 @@ export async function resolveProjectIdForCategory(category: string): Promise<num
   const ctx = await getTogglContext();
 
   const desiredProjectName = prismaCategorySet.has(category)
-    ? CATEGORY_TO_TOGGL_PROJECT_NAME[category as Category] || toTitleCase(category)
+    ? CATEGORY_TO_TOGGL_PROJECT_NAME[category as TaskCategory] || toTitleCase(category)
     : toTitleCase(category);
   if (!desiredProjectName) return null;
 
