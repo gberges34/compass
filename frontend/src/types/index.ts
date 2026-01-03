@@ -70,7 +70,6 @@ export interface DailyPlan {
   energyLevel: Energy;
   plannedBlocks: PlannedBlock[];
   topOutcomes: string[];
-  reward?: string;
   reflection?: string;
   actualOutcomes?: number;
   energyMatch?: EnergyMatch;
@@ -151,7 +150,6 @@ export interface CreateDailyPlanRequest {
   energyLevel: Energy;
   plannedBlocks: PlannedBlock[];
   topOutcomes: string[];
-  reward?: string;
 }
 
 export interface UpdateDailyPlanRequest {
