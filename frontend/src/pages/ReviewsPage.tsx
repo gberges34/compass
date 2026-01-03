@@ -35,12 +35,16 @@ import {
   PRIMARY_CATEGORIES,
 } from '../lib/planningBlocks';
 
+const PAGE_SIZE = 30;
+const INITIAL_VISIBLE_REVIEWS = 3;
+
 const ReviewsPage: React.FC = () => {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<ReviewType>('DAILY');
   const [expandedReview, setExpandedReview] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedClockDate, setSelectedClockDate] = useState<Date>(startOfDay(new Date()));
+  const [visibleReviewCount, setVisibleReviewCount] = useState(INITIAL_VISIBLE_REVIEWS);
   const [expandedSections, setExpandedSections] = useState<{
     [reviewId: string]: {
       wins?: boolean;
@@ -51,7 +55,14 @@ const ReviewsPage: React.FC = () => {
   }>({});
 
   // Replace all manual state with React Query hook
-  const { reviews = [], isLoading: loading, isError } = useFlatReviews(activeTab);
+  const {
+    reviews = [],
+    isLoading: loading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useFlatReviews(activeTab);
 
   const createDailyReview = useCreateDailyReview();
   const createWeeklyReview = useCreateWeeklyReview();
@@ -68,6 +79,32 @@ const ReviewsPage: React.FC = () => {
     } catch (error) {
       toast.showError(error instanceof Error ? error.message : 'Failed to create review');
       throw error; // Re-throw so modal can handle it
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (isFetchingNextPage) return;
+    if (visibleReviewCount < PAGE_SIZE) {
+      setVisibleReviewCount(Math.min(PAGE_SIZE, reviews.length));
+      return;
+    }
+
+    const target = visibleReviewCount + PAGE_SIZE;
+    if (reviews.length >= target) {
+      setVisibleReviewCount(target);
+      return;
+    }
+
+    if (!hasNextPage) {
+      setVisibleReviewCount(reviews.length);
+      return;
+    }
+
+    try {
+      await fetchNextPage();
+      setVisibleReviewCount(target);
+    } catch (error) {
+      toast.showError(error instanceof Error ? error.message : 'Failed to load more reviews');
     }
   };
 
@@ -144,6 +181,11 @@ const ReviewsPage: React.FC = () => {
     // Default weekly clock selection to the first day in the period
     setSelectedClockDate(startOfDay(new Date(reviews[0].periodStart)));
   }, [activeTab, reviews]);
+
+  useEffect(() => {
+    setVisibleReviewCount(INITIAL_VISIBLE_REVIEWS);
+    setExpandedReview(null);
+  }, [activeTab]);
 
   const chartReviews = useMemo(() => reviews.slice(0, 7).reverse(), [reviews]);
   const plannedActualPeriods = useMemo(() => {
@@ -565,27 +607,28 @@ const ReviewsPage: React.FC = () => {
             </div>
           </Card>
         ) : (
-          reviews.map((review) => (
-            <Card
-              key={review.id}
-              padding="none"
-              className="overflow-hidden hover:shadow-e02 transition-shadow duration-micro"
-            >
-              {/* Review Header */}
-              <div
-                className="p-24 cursor-pointer"
-                onClick={() =>
-                  setExpandedReview(expandedReview === review.id ? null : review.id)
-                }
+          <>
+            {reviews.slice(0, visibleReviewCount).map((review) => (
+              <Card
+                key={review.id}
+                padding="none"
+                className="overflow-hidden hover:shadow-e02 transition-shadow duration-micro"
               >
-                <div className="flex items-center justify-between mb-16">
-                  <h3 className="text-h3 text-ink">
-                    {formatPeriod(review)}
-                  </h3>
-                  <span className="text-slate">
-                    {expandedReview === review.id ? '▼' : '▶'}
-                  </span>
-                </div>
+                {/* Review Header */}
+                <div
+                  className="p-24 cursor-pointer"
+                  onClick={() =>
+                    setExpandedReview(expandedReview === review.id ? null : review.id)
+                  }
+                >
+                  <div className="flex items-center justify-between mb-16">
+                    <h3 className="text-h3 text-ink">
+                      {formatPeriod(review)}
+                    </h3>
+                    <span className="text-slate">
+                      {expandedReview === review.id ? '▼' : '▶'}
+                    </span>
+                  </div>
 
                 {/* Execution Rate */}
                 <div className="mb-16">
@@ -820,8 +863,16 @@ const ReviewsPage: React.FC = () => {
                   </div>
                 </div>
               )}
-            </Card>
-          ))
+              </Card>
+            ))}
+            {(visibleReviewCount < reviews.length || !!hasNextPage) && (
+              <div className="flex justify-center pt-8">
+                <Button variant="secondary" disabled={isFetchingNextPage} onClick={handleLoadMore}>
+                  {isFetchingNextPage ? 'Loading more...' : 'Load more'}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

@@ -62,6 +62,7 @@ describe('Layout nav dropdowns', () => {
     expect(clarifyLink).toBeInTheDocument();
     const tasksLink = screen.getByRole('link', { name: /^tasks$/i });
     expect(tasksLink).toBeInTheDocument();
+    expect(tasksLink.compareDocumentPosition(clarifyLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     act(() => {
       clarifyLink.focus();

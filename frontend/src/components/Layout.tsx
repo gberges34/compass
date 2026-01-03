@@ -148,8 +148,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       id: 'tasks-menu',
       label: 'Tasks',
       children: [
-        { id: 'clarify-link', label: 'Clarify', to: '/clarify' },
         { id: 'tasks-link', label: 'Tasks', to: '/tasks' },
+        { id: 'clarify-link', label: 'Clarify', to: '/clarify' },
       ],
     },
     {
