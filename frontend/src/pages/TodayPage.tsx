@@ -13,6 +13,7 @@ import TimeEngineStateWidget from '../components/TimeEngineStateWidget';
 import StartActivityModal from '../components/StartActivityModal';
 import EmptyState from '../components/EmptyState';
 import CompleteTaskModal from '../components/CompleteTaskModal';
+import { useToast } from '../contexts/ToastContext';
 import { getEnergyStyle } from '../lib/designTokens';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
 import { getTodayDateString, formatLongDate } from '../lib/dateUtils';
@@ -20,6 +21,7 @@ import { addDays, startOfDay } from 'date-fns';
 
 const TodayPage: React.FC = () => {
   const today = formatLongDate();
+  const toast = useToast();
   const [showStartActivityModal, setShowStartActivityModal] = useState(false);
   const [taskToComplete, setTaskToComplete] = useState<Task | null>(null);
 
@@ -66,6 +68,8 @@ const TodayPage: React.FC = () => {
       id: taskToComplete.id,
       request: completionData,
     });
+    toast.showSuccess('Task completed successfully!');
+    setTaskToComplete(null);
   };
 
   // Calculate stats
