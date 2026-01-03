@@ -1,173 +1,168 @@
-# Compass - Personal Productivity System
+# Compass 🧭
 
-A full-stack productivity application built with React, TypeScript, Express, and Prisma.
+**A Personal Productivity System for High-Agency Work**
 
-## Features
+Compass is a full-stack TypeScript application designed to manage tasks, energy, and attention. It integrates daily planning (Orienting), execution (Task Management), and reflection (Reviews) into a unified workflow. Built with a React 19 frontend and an Express/Prisma backend, it emphasizes deep work tracking and intentionality over simple checking off boxes.
 
-- **Task Management** - Organize tasks with priorities, categories, energy levels, and contexts
-- **Daily Planning** - Orient East (morning planning) and Orient West (evening reflection)
-- **Calendar Integration** - Schedule tasks and view your day at a glance
-- **Reviews** - Daily and weekly reviews to track progress
-- **Task Clarification** - AI-powered task enrichment with Todoist integration
-- **Analytics** - Track completed tasks and deep work hours
+## 🌟 Key Features
 
-## Tech Stack
+* **Task Management**: Create and organize tasks with attributes like **Energy Required** (High/Medium/Low), **Priority** (Must/Should/Could), and **Context** (Home/Office/Computer).
+* **Daily Orientation**:
+* **Orient East (Morning)**: Set intentions, plan blocks, and define top outcomes.
+* **Orient West (Evening)**: Reflect on the day, log actual outcomes, and rate energy alignment.
 
-### Frontend
-- React 19.2.0
-- TypeScript
-- React Router DOM 7.9.5
-- TailwindCSS v3
-- React Big Calendar
-- Axios
 
-### Backend
-- Express.js
-- TypeScript
-- Prisma ORM
-- PostgreSQL (Railway)
-- Zod validation
+* **Time Engine**: Track time usage with dimensions for Work Mode, Social, and Segments. Includes integration hooks for Toggl and Timery.
+* **Review System**: Structured Daily and Weekly reviews (`3-3-3` method: Wins, Misses, Lessons) with calculated metrics for deep work hours and execution rate.
+* **Integrations**:
+* **Todoist**: Import pending tasks for clarification.
+* **HealthKit**: (Data model support) Track sleep, steps, and active calories alongside productivity.
 
-## Getting Started
 
-### Quick Start (Recommended)
+* **Post-Do Analysis**: Log actual effort, efficiency, and key insights after completing tasks to improve future estimation.
 
+## 🛠 Tech Stack
+
+### Frontend (`/frontend`)
+
+* **Framework**: React 19.2.0 + Vite
+* **Language**: TypeScript 5.9
+* **Styling**: TailwindCSS v3
+* **Routing**: React Router DOM 7.9
+* **State/Data**: React Query (@tanstack/react-query)
+* **Calendar**: React Big Calendar
+
+### Backend (`/backend`)
+
+* **Runtime**: Node.js (v18+ required)
+* **Framework**: Express.js
+* **Database**: PostgreSQL
+* **ORM**: Prisma 7.1
+* **Validation**: Zod
+* **External APIs**: Axios (for Todoist/Toggl), Discord.js (for notifications)
+
+## 📂 Project Structure
+
+The repository is organized as a monorepo-style codebase:
+
+```text
+compass/
+├── backend/                # Express API & Prisma ORM
+│   ├── prisma/            # Database schema & migrations
+│   └── src/
+│       ├── routes/        # API endpoints (tasks, orient, reviews)
+│       ├── services/      # Business logic
+│       └── middleware/    # Auth, Caching, Error handling
+├── frontend/               # React Vite application
+│   └── src/
+│       ├── components/    # Reusable UI components
+│       ├── pages/         # Route views
+│       └── hooks/         # Custom React hooks
+├── scripts/                # Automation scripts (setup, dev, verify)
+├── shared/                 # Shared TypeScript types/DTOs
+└── shortcuts/              # Apple Shortcuts & automation scripts
+
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+* **Node.js**: v18 or higher (Verified by `scripts/setup.sh`)
+* **PostgreSQL**: Local installation or a cloud URL (e.g., Railway)
+* **npm**: v9+
+
+### Installation
+
+1. **Clone the repository**:
 ```bash
-# 1. Clone and setup
-git clone <your-repo-url>
+git clone <repository-url>
 cd compass
+
+```
+
+
+2. **Run the automated setup**:
+This script installs dependencies for both frontend and backend, generates the Prisma client, and checks your environment.
+```bash
 npm run setup
 
-# 2. Configure backend/.env with your database credentials
+```
 
-# 3. Initialize database
+
+3. **Configure Environment Variables**:
+* **Backend**: Copy `backend/.env.example` to `backend/.env` and update `DATABASE_URL` and `API_SECRET`.
+* **Frontend**: Copy `frontend/.env.example` to `frontend/.env` (defaults to `http://localhost:3001` for API).
+
+
+```bash
+# Example Backend .env setup
+cd backend
+cp .env.example .env
+# Edit .env with your PostgreSQL connection string
+
+```
+
+
+4. **Initialize Database**:
+Run migrations to create the schema in your PostgreSQL instance.
+```bash
 npm run db:migrate
 
-# 4. Start development
-npm run dev
 ```
 
-**🎉 That's it!** Frontend at http://localhost:3000, Backend at http://localhost:3001
 
-For detailed instructions, see [Quick Start Guide](docs/QUICK_START.md).
 
-### npm Scripts
+### Running Locally
 
-Development:
-- `npm run dev` - Start both servers with health checks
-- `npm run start:backend` - Backend only
-- `npm run start:frontend` - Frontend only
+Start both the frontend and backend servers in development mode:
 
-Database:
-- `npm run db:migrate` - Run migrations
-- `npm run db:generate` - Generate Prisma client
-- `npm run db:studio` - Open Prisma Studio
-- `npm run db:reset` - Reset database
-
-Utilities:
-- `npm run setup` - Initial setup
-- `npm run verify` - Environment health check
-- `npm run build` - Production build
-
-## Production Deployment
-
-**Live URLs:**
-- Frontend: https://compass-wt6j.vercel.app
-- Backend API: https://compass-production-1795.up.railway.app
-- Documentation: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
-
-Both frontend and backend automatically deploy from the `main` branch.
-
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment information, including:
-- Architecture overview
-- Environment configuration
-- Database migrations
-- Monitoring and health checks
-- Rollback procedures
-- Troubleshooting guide
-
-### Troubleshooting
-
-Run environment diagnostics:
 ```bash
-npm run verify
-```
-
-For common issues and solutions, see [Quick Start Guide](docs/QUICK_START.md#troubleshooting).
-
-## Codex AI Pull-Request Reviews
-
-Every pull request automatically triggers `.github/workflows/ai-review.yml`, which gathers the diff, summarizes intent, and posts Codex feedback as a PR comment. To ensure the workflow runs on your next PR:
-
-- Add a **repository secret** named `CODEX_API_KEY` that contains your Codex/OpenAI token.
-- (Optional) Add a **repository variable** `CODEX_MODEL` if you want to override the default `gpt-4.1-mini` model, and `CODEX_MAX_DIFF` to customize how many diff characters are sent to Codex.
-- Confirm that the workflow file remains on the default branch so it is picked up for new pull requests.
-- If you need to dry-run locally, execute `node scripts/codex-review.js --output /tmp/review.md` after setting the environment variables from the workflow step (see the yaml for reference).
-
-Once those values are in place, the workflow will comment on any newly opened, synchronized, or reopened pull request.
-
-## Project Structure
+npm run dev
 
 ```
-compass/
-├── backend/
-│   ├── src/
-│   │   ├── routes/        # API route handlers
-│   │   ├── prisma.ts      # Prisma client
-│   │   └── index.ts       # Express app setup
-│   └── prisma/
-│       └── schema.prisma  # Database schema
-└── frontend/
-    └── src/
-        ├── components/    # React components
-        ├── pages/         # Page components
-        ├── contexts/      # React contexts (Toast)
-        ├── lib/           # API client
-        └── types/         # TypeScript types
-```
 
-## Database Schema
+* **Frontend**: http://localhost:3000
+* **Backend**: http://localhost:3001
+* **Health Check**: `npm run verify` (Runs environment diagnostics)
 
-The application uses Prisma with PostgreSQL. Main models:
-- **Task** - Task management with status, priority, category, energy, context
-- **DailyPlan** - Daily planning with deep work blocks and outcomes
-- **Review** - Daily and weekly reviews
-- **PostDoLog** - Task completion tracking
-- **TempCapturedTask** - Tasks from Todoist pending clarification
+## 🔧 Configuration
 
-## API Endpoints
+### Environment Variables
 
-### Tasks
-- `GET /api/tasks` - Get all tasks (with filters)
-- `POST /api/tasks` - Create a task
-- `PUT /api/tasks/:id` - Update a task
-- `DELETE /api/tasks/:id` - Delete a task
-- `POST /api/tasks/:id/activate` - Activate a task
-- `POST /api/tasks/:id/complete` - Complete a task
-- `PATCH /api/tasks/:id/schedule` - Schedule a task
+| Variable | Description | Location |
+| --- | --- | --- |
+| `DATABASE_URL` | PostgreSQL connection string (Required) | Backend |
+| `API_SECRET` | Secret key for API authentication (Required) | Backend |
+| `TOGGL_API_TOKEN` | Token for time tracking integration (Optional) | Backend |
+| `VITE_API_URL` | URL of the backend API (Default: localhost:3001) | Frontend |
+| `CORS_ALLOW_VERCEL_PREVIEWS` | Set to "true" to allow Vercel preview URLs | Backend |
 
-### Orient (Daily Planning)
-- `GET /api/orient/today` - Get today's plan
-- `POST /api/orient/east` - Create morning plan
-- `PATCH /api/orient/west/:id` - Add evening reflection
+## 📜 Scripts
 
-### Reviews
-- `GET /api/reviews` - Get reviews (daily/weekly)
-- `POST /api/reviews/daily` - Create daily review
-- `POST /api/reviews/weekly` - Create weekly review
+* `npm run setup`: Full project installation and initialization.
+* `npm run dev`: Starts backend and frontend concurrently with health checks.
+* `npm run db:migrate`: Runs Prisma migrations (`backend`).
+* `npm run db:studio`: Opens Prisma Studio GUI to inspect data (`backend`).
+* `npm run verify`: Runs `scripts/verify-environment.sh` to check Node version, DB connection, and env vars.
 
-### Todoist Integration
-- `GET /api/todoist/pending` - Get pending tasks from Todoist
-- `POST /api/todoist/import` - Import tasks from Todoist
+## 🚢 Deployment
 
-### Health & Observability
-- `GET /api/health` - Returns overall status plus dependency breakdown (database, Todoist bridge, HealthKit stub, Toggl stub). Responds with HTTP 200 when all required deps are `up`, otherwise 503 with the failing dependency list in the payload for fast triage.
+The project is configured for split deployment:
 
-## Contributing
+* **Frontend**: Deployed to **Vercel** (detects Vite settings automatically).
+* **Backend**: Deployed to **Railway** (PostgreSQL database hosted here as well).
 
-This is a personal productivity system, but suggestions and improvements are welcome!
+Refer to `docs/DEPLOYMENT.md` (if available) or the `vercel.json` and `backend/.railway.toml` files for specific configuration details.
 
-## License
+## 🤝 Contributing
 
-MIT
-# Vercel deployment trigger
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/amazing-feature`).
+3. Commit your changes (conventional commits preferred).
+4. **Verification**: Run `npm run verify` and `npm test` before pushing.
+5. Open a Pull Request.
+
+## 📄 License
+
+This project is licensed under the MIT License.
