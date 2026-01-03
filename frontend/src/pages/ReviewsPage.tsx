@@ -26,7 +26,7 @@ import { categoryColors } from '../lib/designTokens';
 import { reviewsHelpContent } from './reviews/reviewsHelpContent';
 import DaySelector from '../components/DaySelector';
 import RadialClockChart from '../components/RadialClockChart';
-import { eachDayOfInterval, format, startOfDay } from 'date-fns';
+import { eachDayOfInterval, format, isValid, startOfDay } from 'date-fns';
 import * as api from '../lib/api';
 import {
   hhmmToMinutes,
@@ -147,16 +147,28 @@ const ReviewsPage: React.FC = () => {
 
   const chartReviews = useMemo(() => reviews.slice(0, 7).reverse(), [reviews]);
   const plannedActualPeriods = useMemo(() => {
-    return chartReviews.map((review) => {
-      const start = new Date(review.periodStart);
-      const end = new Date(review.periodEnd);
-      return {
-        id: review.id,
-        label: format(end, 'MMM d'),
-        start,
-        end,
-      };
-    });
+    return chartReviews
+      .map((review) => {
+        const start = new Date(review.periodStart);
+        const end = new Date(review.periodEnd);
+
+        if (!isValid(start) || !isValid(end)) {
+          console.error('[ReviewsPage] Invalid review period dates', {
+            reviewId: review.id,
+            periodStart: review.periodStart,
+            periodEnd: review.periodEnd,
+          });
+          return null;
+        }
+
+        return {
+          id: review.id,
+          label: format(end, 'MMM d'),
+          start,
+          end,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
   }, [chartReviews]);
 
   const plannedActualRange = useMemo(() => {
@@ -166,11 +178,29 @@ const ReviewsPage: React.FC = () => {
     return { start, end };
   }, [plannedActualPeriods]);
 
+  const plannedActualRangeIso = useMemo(() => {
+    if (!plannedActualRange) return null;
+    try {
+      return {
+        startIso: plannedActualRange.start.toISOString(),
+        endIso: plannedActualRange.end.toISOString(),
+      };
+    } catch (error) {
+      console.error('[ReviewsPage] Invalid plannedActualRange ISO conversion', plannedActualRange, error);
+      return null;
+    }
+  }, [plannedActualRange]);
+
   const planDateStrings = useMemo(() => {
     if (!plannedActualRange) return [];
     const start = startOfDay(plannedActualRange.start);
     const end = startOfDay(plannedActualRange.end);
-    return eachDayOfInterval({ start, end }).map((d) => format(d, 'yyyy-MM-dd'));
+    try {
+      return eachDayOfInterval({ start, end }).map((d) => format(d, 'yyyy-MM-dd'));
+    } catch (error) {
+      console.error('[ReviewsPage] Invalid interval for planDateStrings', { start, end }, error);
+      return [];
+    }
   }, [plannedActualRange]);
 
   const { data: plansByDate = {}, isLoading: plansLoading } = useQuery({
@@ -205,15 +235,15 @@ const ReviewsPage: React.FC = () => {
       'planned-actual',
       'slices',
       activeTab,
-      plannedActualRange?.start.toISOString(),
-      plannedActualRange?.end.toISOString(),
+      plannedActualRangeIso?.startIso,
+      plannedActualRangeIso?.endIso,
     ],
-    enabled: !!plannedActualRange,
+    enabled: !!plannedActualRangeIso,
     staleTime: 30000,
     queryFn: () =>
       api.getTimeSlices({
-        startDate: plannedActualRange!.start.toISOString(),
-        endDate: plannedActualRange!.end.toISOString(),
+        startDate: plannedActualRangeIso!.startIso,
+        endDate: plannedActualRangeIso!.endIso,
         dimension: 'PRIMARY',
       }),
   });
@@ -243,7 +273,13 @@ const ReviewsPage: React.FC = () => {
       const totals: Record<string, number> = {};
       const start = startOfDay(periodStart);
       const end = startOfDay(periodEnd);
-      const days = eachDayOfInterval({ start, end });
+      let days: Date[] = [];
+      try {
+        days = eachDayOfInterval({ start, end });
+      } catch (error) {
+        console.error('[ReviewsPage] Invalid period interval for planned minutes', { start, end }, error);
+        return totals;
+      }
 
       for (const day of days) {
         const dateStr = format(day, 'yyyy-MM-dd');
