@@ -5,10 +5,10 @@ import { prisma } from '../../src/prisma';
 
 const orientPayload = {
   energyLevel: 'HIGH',
-  deepWorkBlock1: { start: '08:00', end: '10:00', focus: 'Deep Work' },
-  deepWorkBlock2: { start: '13:00', end: '15:00', focus: 'Writing' },
-  adminBlock: { start: '15:00', end: '15:30' },
-  bufferBlock: { start: '15:30', end: '16:00' },
+  plannedBlocks: [
+    { id: '11111111-1111-1111-1111-111111111111', start: '08:00', end: '10:00', label: 'Build' },
+    { id: '22222222-2222-2222-2222-222222222222', start: '13:00', end: '15:00', label: 'Write' },
+  ],
   topOutcomes: ['Ship feature'],
   reward: 'Coffee',
 };
@@ -20,15 +20,60 @@ describe('Orient API', () => {
     });
   });
 
-  it('surfaces ConflictError via middleware when plan already exists', async () => {
+  it('creates today plan with plannedBlocks', async () => {
+    const res = await request(app).post('/api/orient/east').send(orientPayload);
+    expect(res.status).toBe(201);
+    expect(res.body.plannedBlocks).toEqual(orientPayload.plannedBlocks);
+    expect(res.body.energyLevel).toBe(orientPayload.energyLevel);
+    expect(res.body.topOutcomes).toEqual(orientPayload.topOutcomes);
+    expect(res.body.reward).toBe(orientPayload.reward);
+  });
+
+  it('upserts today plan when plan already exists', async () => {
     const first = await request(app).post('/api/orient/east').send(orientPayload);
     expect(first.status).toBe(201);
 
-    const second = await request(app).post('/api/orient/east').send(orientPayload);
-    expect(second.status).toBe(409);
-    expect(second.body.code).toBe('CONFLICT');
-    expect(second.body.error).toContain('Daily plan already exists');
-    expect(second.body.details?.plan?.id).toBe(first.body.id);
-    expect(second.body.details?.plan?.topOutcomes).toEqual(orientPayload.topOutcomes);
+    const secondPayload = {
+      ...orientPayload,
+      reward: 'Tea',
+    };
+
+    const second = await request(app).post('/api/orient/east').send(secondPayload);
+    expect(second.status).toBe(200);
+    expect(second.body.id).toBe(first.body.id);
+    expect(second.body.reward).toBe('Tea');
+    expect(second.body.topOutcomes).toEqual(orientPayload.topOutcomes);
+    expect(second.body.plannedBlocks).toEqual(orientPayload.plannedBlocks);
+  });
+
+  it('rejects empty plannedBlocks', async () => {
+    const res = await request(app).post('/api/orient/east').send({
+      ...orientPayload,
+      plannedBlocks: [],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('plannedBlocks');
+  });
+
+  it('rejects blocks where start >= end', async () => {
+    const res = await request(app).post('/api/orient/east').send({
+      ...orientPayload,
+      plannedBlocks: [
+        { id: '33333333-3333-3333-3333-333333333333', start: '10:00', end: '10:00', label: 'Invalid' },
+      ],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('Planned block start must be before end');
+  });
+
+  it('rejects blocks missing label', async () => {
+    const res = await request(app).post('/api/orient/east').send({
+      ...orientPayload,
+      plannedBlocks: [
+        { id: '44444444-4444-4444-4444-444444444444', start: '09:00', end: '10:00', label: '' },
+      ],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('label');
   });
 });

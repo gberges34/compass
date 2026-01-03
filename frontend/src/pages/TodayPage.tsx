@@ -4,6 +4,7 @@ import type { Task } from '../types';
 import { useFlatTasks } from '../hooks/useTasks';
 import { useTodayPlan } from '../hooks/useDailyPlans';
 import { usePostDoLogs } from '../hooks/usePostDoLogs';
+import { useTimeHistory } from '../hooks/useTimeHistory';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
@@ -14,6 +15,7 @@ import EmptyState from '../components/EmptyState';
 import { getEnergyStyle } from '../lib/designTokens';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
 import { getTodayDateString, formatLongDate } from '../lib/dateUtils';
+import { addDays, startOfDay } from 'date-fns';
 
 const TodayPage: React.FC = () => {
   const today = formatLongDate();
@@ -28,6 +30,14 @@ const TodayPage: React.FC = () => {
   const { data: todayLogs = [], isLoading: logsLoading } = usePostDoLogs({
     startDate: todayDate,
     endDate: todayDate,
+  });
+
+  const dayStart = useMemo(() => startOfDay(new Date()), []);
+  const dayEnd = useMemo(() => addDays(dayStart, 1), [dayStart]);
+  const { slices: todaySlices = [], loading: slicesLoading } = useTimeHistory({
+    startDate: dayStart,
+    endDate: dayEnd,
+    dimension: 'PRIMARY',
   });
 
   // No isMounted checks needed - React Query handles cleanup
@@ -49,12 +59,20 @@ const TodayPage: React.FC = () => {
 
   // Calculate stats
   const tasksCompletedToday = todayLogs.length;
-  const deepWorkHoursToday = todayLogs.reduce(
-    (total, log) => total + log.actualDuration / 60,
-    0
-  );
+  const trackedHoursToday = useMemo(() => {
+    const trackedMinutes = todaySlices.reduce((sum, slice) => {
+      const sliceStart = new Date(slice.start);
+      const sliceEnd = slice.end ? new Date(slice.end) : new Date();
+      const clampedStart = sliceStart < dayStart ? dayStart : sliceStart;
+      const clampedEnd = sliceEnd > dayEnd ? dayEnd : sliceEnd;
+      const minutes = Math.floor((clampedEnd.getTime() - clampedStart.getTime()) / 60000);
+      return sum + Math.max(0, minutes);
+    }, 0);
 
-  if (loading) {
+    return Math.round((trackedMinutes / 60) * 10) / 10;
+  }, [dayEnd, dayStart, todaySlices]);
+
+  if (loading || slicesLoading) {
     return (
       <div className="space-y-6">
         {/* Header Skeleton */}
@@ -98,8 +116,8 @@ const TodayPage: React.FC = () => {
         <div className="gradient-dawn rounded-card shadow-e02 p-24">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-small font-medium text-blue-700">Deep Work Hours</p>
-              <p className="text-display text-ink mt-8">{deepWorkHoursToday.toFixed(1)}</p>
+              <p className="text-small font-medium text-blue-700">Tracked Hours</p>
+              <p className="text-display text-ink mt-8">{trackedHoursToday.toFixed(1)}</p>
             </div>
             <div className="text-5xl opacity-20">⏱</div>
           </div>
@@ -141,32 +159,20 @@ const TodayPage: React.FC = () => {
                 </Badge>
               </div>
 
-              {/* Deep Work Blocks */}
+              {/* Planned Blocks */}
               <div>
-                <h3 className="text-h3 text-ink mb-8">Deep Work Blocks</h3>
+                <h3 className="text-h3 text-ink mb-8">Planned Blocks</h3>
                 <div className="space-y-8">
-                  <div className="bg-sky border border-sky rounded-default p-12">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-blue-900">
-                        {plan.deepWorkBlock1.focus}
-                      </span>
-                      <span className="text-small text-blue-700">
-                        {plan.deepWorkBlock1.start} - {plan.deepWorkBlock1.end}
-                      </span>
-                    </div>
-                  </div>
-                  {plan.deepWorkBlock2 && (
-                    <div className="bg-sky border border-sky rounded-default p-12">
+                  {plan.plannedBlocks.map((block) => (
+                    <div key={block.id} className="bg-sky border border-sky rounded-default p-12">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-blue-900">
-                          {plan.deepWorkBlock2.focus}
-                        </span>
+                        <span className="font-medium text-blue-900">{block.label}</span>
                         <span className="text-small text-blue-700">
-                          {plan.deepWorkBlock2.start} - {plan.deepWorkBlock2.end}
+                          {block.start} - {block.end}
                         </span>
                       </div>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
 
@@ -199,7 +205,7 @@ const TodayPage: React.FC = () => {
           ) : (
             <EmptyState
               title="No plan set for today"
-              description="Create your morning plan to set energy, deep work blocks, and outcomes."
+              description="Create your morning plan to set energy, planned blocks, and outcomes."
               action={
                 <Link to="/orient/east">
                   <Button variant="primary">Create Today&apos;s Plan</Button>

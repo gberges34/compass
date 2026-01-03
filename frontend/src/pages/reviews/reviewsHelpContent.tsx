@@ -1,6 +1,10 @@
 import React from 'react';
 
-export type ReviewsHelpId = 'chart-execution' | 'chart-cat-balance' | 'chart-activities';
+export type ReviewsHelpId =
+  | 'chart-execution'
+  | 'chart-cat-balance'
+  | 'chart-activities'
+  | 'chart-planned-vs-actual';
 
 export const reviewsHelpContent: Record<ReviewsHelpId, React.ReactNode> = {
   'chart-execution': (
@@ -31,6 +35,19 @@ export const reviewsHelpContent: Record<ReviewsHelpId, React.ReactNode> = {
       <dd>Time Engine PRIMARY time slices.</dd>
       <dt className="font-semibold whitespace-nowrap">How it’s derived:</dt>
       <dd>Slices are positioned by start/end time; gaps between slices are shown as Untracked.</dd>
+    </dl>
+  ),
+  'chart-planned-vs-actual': (
+    <dl className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-4">
+      <dt className="font-semibold whitespace-nowrap">What it is:</dt>
+      <dd>Side-by-side breakdown of planned time vs tracked time by primary category.</dd>
+      <dt className="font-semibold whitespace-nowrap">Where it comes from:</dt>
+      <dd>Planned Blocks (Orient East) + Time Engine PRIMARY slices.</dd>
+      <dt className="font-semibold whitespace-nowrap">How it’s derived:</dt>
+      <dd>
+        Planned totals come from block durations; Actual totals come from PRIMARY slice minutes.
+        Unknown categories roll up into Other.
+      </dd>
     </dl>
   ),
 };

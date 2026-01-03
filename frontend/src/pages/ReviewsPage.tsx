@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useFlatReviews, useCreateDailyReview, useCreateWeeklyReview } from '../hooks/useReviews';
-import type { Review, ReviewType, CreateReviewRequest } from '../types';
+import type { Category, DailyPlan, Review, ReviewType, CreateReviewRequest } from '../types';
 import {
   LineChart,
   Line,
@@ -25,7 +26,14 @@ import { categoryColors } from '../lib/designTokens';
 import { reviewsHelpContent } from './reviews/reviewsHelpContent';
 import DaySelector from '../components/DaySelector';
 import RadialClockChart from '../components/RadialClockChart';
-import { startOfDay } from 'date-fns';
+import { eachDayOfInterval, format, isValid, startOfDay } from 'date-fns';
+import * as api from '../lib/api';
+import {
+  hhmmToMinutes,
+  isPrimaryCategory,
+  parsePlannedBlockLabel,
+  PRIMARY_CATEGORIES,
+} from '../lib/planningBlocks';
 
 const ReviewsPage: React.FC = () => {
   const toast = useToast();
@@ -129,16 +137,6 @@ const ReviewsPage: React.FC = () => {
     }));
   };
 
-  const getDeepWorkTrendData = () => {
-    return reviews
-      .slice(0, 7)
-      .reverse()
-      .map((review) => ({
-        date: new Date(review.periodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        hours: review.deepWorkHours,
-      }));
-  };
-
   const CATEGORY_COLORS = Object.values(categoryColors).map(config => config.hex);
 
   useEffect(() => {
@@ -146,6 +144,242 @@ const ReviewsPage: React.FC = () => {
     // Default weekly clock selection to the first day in the period
     setSelectedClockDate(startOfDay(new Date(reviews[0].periodStart)));
   }, [activeTab, reviews]);
+
+  const chartReviews = useMemo(() => reviews.slice(0, 7).reverse(), [reviews]);
+  const plannedActualPeriods = useMemo(() => {
+    return chartReviews
+      .map((review) => {
+        const start = new Date(review.periodStart);
+        const end = new Date(review.periodEnd);
+
+        if (!isValid(start) || !isValid(end)) {
+          console.error('[ReviewsPage] Invalid review period dates', {
+            reviewId: review.id,
+            periodStart: review.periodStart,
+            periodEnd: review.periodEnd,
+          });
+          return null;
+        }
+
+        return {
+          id: review.id,
+          label: format(end, 'MMM d'),
+          start,
+          end,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+  }, [chartReviews]);
+
+  const plannedActualRange = useMemo(() => {
+    if (plannedActualPeriods.length === 0) return null;
+    const start = plannedActualPeriods.reduce((min, p) => (p.start < min ? p.start : min), plannedActualPeriods[0].start);
+    const end = plannedActualPeriods.reduce((max, p) => (p.end > max ? p.end : max), plannedActualPeriods[0].end);
+    return { start, end };
+  }, [plannedActualPeriods]);
+
+  const plannedActualRangeIso = useMemo(() => {
+    if (!plannedActualRange) return null;
+    try {
+      return {
+        startIso: plannedActualRange.start.toISOString(),
+        endIso: plannedActualRange.end.toISOString(),
+      };
+    } catch (error) {
+      console.error('[ReviewsPage] Invalid plannedActualRange ISO conversion', plannedActualRange, error);
+      return null;
+    }
+  }, [plannedActualRange]);
+
+  const planDateStrings = useMemo(() => {
+    if (!plannedActualRange) return [];
+    const start = startOfDay(plannedActualRange.start);
+    const end = startOfDay(plannedActualRange.end);
+    try {
+      return eachDayOfInterval({ start, end }).map((d) => format(d, 'yyyy-MM-dd'));
+    } catch (error) {
+      console.error('[ReviewsPage] Invalid interval for planDateStrings', { start, end }, error);
+      return [];
+    }
+  }, [plannedActualRange]);
+
+  const { data: plansByDate = {}, isLoading: plansLoading } = useQuery({
+    queryKey: ['reviews', 'planned-actual', 'plans', planDateStrings],
+    enabled: planDateStrings.length > 0,
+    staleTime: 1000 * 60 * 10,
+    queryFn: async () => {
+      const entries = await Promise.all(
+        planDateStrings.map(async (dateStr) => {
+          try {
+            const plan = await api.getPlanByDate(dateStr);
+            return [dateStr, plan] as const;
+          } catch (error: any) {
+            if (error?.response?.status === 404) {
+              return [dateStr, null] as const;
+            }
+            throw error;
+          }
+        })
+      );
+
+      return entries.reduce((acc, [dateStr, plan]) => {
+        acc[dateStr] = plan;
+        return acc;
+      }, {} as Record<string, DailyPlan | null>);
+    },
+  });
+
+  const { data: primarySlices = [], isLoading: slicesLoading } = useQuery({
+    queryKey: [
+      'reviews',
+      'planned-actual',
+      'slices',
+      activeTab,
+      plannedActualRangeIso?.startIso,
+      plannedActualRangeIso?.endIso,
+    ],
+    enabled: !!plannedActualRangeIso,
+    staleTime: 30000,
+    queryFn: () =>
+      api.getTimeSlices({
+        startDate: plannedActualRangeIso!.startIso,
+        endDate: plannedActualRangeIso!.endIso,
+        dimension: 'PRIMARY',
+      }),
+  });
+
+  const plannedActualChartData = useMemo(() => {
+    if (!plannedActualRange) return [];
+
+    const chartCategories: Array<Category | 'OTHER'> = [...PRIMARY_CATEGORIES, 'OTHER'];
+
+    const addMinutes = (
+      map: Record<string, number>,
+      category: Category | 'OTHER',
+      minutes: number
+    ) => {
+      const key = category;
+      map[key] = (map[key] || 0) + minutes;
+    };
+
+    const minutesOverlap = (sliceStart: Date, sliceEnd: Date, start: Date, end: Date) => {
+      const clampedStart = sliceStart < start ? start : sliceStart;
+      const clampedEnd = sliceEnd > end ? end : sliceEnd;
+      const minutes = Math.floor((clampedEnd.getTime() - clampedStart.getTime()) / 60000);
+      return Math.max(0, minutes);
+    };
+
+    const plannedMinutesForPeriod = (periodStart: Date, periodEnd: Date) => {
+      const totals: Record<string, number> = {};
+      const start = startOfDay(periodStart);
+      const end = startOfDay(periodEnd);
+      let days: Date[] = [];
+      try {
+        days = eachDayOfInterval({ start, end });
+      } catch (error) {
+        console.error('[ReviewsPage] Invalid period interval for planned minutes', { start, end }, error);
+        return totals;
+      }
+
+      for (const day of days) {
+        const dateStr = format(day, 'yyyy-MM-dd');
+        const plan = plansByDate[dateStr];
+        if (!plan) continue;
+
+        for (const block of plan.plannedBlocks) {
+          const startMin = hhmmToMinutes(block.start);
+          const endMin = hhmmToMinutes(block.end);
+          if (startMin === null || endMin === null) continue;
+
+          const minutes = Math.max(0, endMin - startMin);
+          const parsed = parsePlannedBlockLabel(block.label);
+          const category = parsed.primary === 'OTHER' ? 'OTHER' : parsed.primary;
+          addMinutes(totals, category, minutes);
+        }
+      }
+
+      return totals;
+    };
+
+    const actualMinutesForPeriod = (periodStart: Date, periodEnd: Date) => {
+      const totals: Record<string, number> = {};
+
+      for (const slice of primarySlices) {
+        const start = new Date(slice.start);
+        const end = slice.end ? new Date(slice.end) : new Date();
+        const minutes = minutesOverlap(start, end, periodStart, periodEnd);
+        if (minutes === 0) continue;
+
+        const category: Category | 'OTHER' = isPrimaryCategory(slice.category) ? slice.category : 'OTHER';
+        addMinutes(totals, category, minutes);
+      }
+
+      return totals;
+    };
+
+    return plannedActualPeriods.map((period) => {
+      const plannedTotals = plannedMinutesForPeriod(period.start, period.end);
+      const actualTotals = actualMinutesForPeriod(period.start, period.end);
+
+      const row: Record<string, any> = { date: period.label };
+      for (const category of chartCategories) {
+        row[`planned_${category}`] = plannedTotals[category] || 0;
+        row[`actual_${category}`] = actualTotals[category] || 0;
+      }
+
+      return row;
+    });
+  }, [plannedActualPeriods, plannedActualRange, plansByDate, primarySlices]);
+
+  const plannedActualTooltip = (props: any) => {
+    const { active, label, payload } = props;
+    if (!active || !payload || payload.length === 0) return null;
+
+    const plannedByCategory = new Map<string, number>();
+    const actualByCategory = new Map<string, number>();
+
+    for (const entry of payload) {
+      const key: string = entry.dataKey;
+      const value: number = Number(entry.value) || 0;
+      if (key.startsWith('planned_')) plannedByCategory.set(key.slice('planned_'.length), value);
+      if (key.startsWith('actual_')) actualByCategory.set(key.slice('actual_'.length), value);
+    }
+
+    const categories = [...PRIMARY_CATEGORIES, 'OTHER'];
+    const plannedTotal = categories.reduce((sum, c) => sum + (plannedByCategory.get(c) || 0), 0);
+    const actualTotal = categories.reduce((sum, c) => sum + (actualByCategory.get(c) || 0), 0);
+
+    const lineItems = categories
+      .map((c) => ({
+        category: c,
+        planned: plannedByCategory.get(c) || 0,
+        actual: actualByCategory.get(c) || 0,
+      }))
+      .filter((x) => x.planned > 0 || x.actual > 0);
+
+    return (
+      <div className="bg-snow border border-stone rounded-default p-12 shadow-e02">
+        <p className="text-small font-medium text-ink mb-8">{label}</p>
+        <div className="space-y-4">
+          <p className="text-micro text-slate">
+            Planned: {Math.round(plannedTotal)}m • Actual: {Math.round(actualTotal)}m • Δ{' '}
+            {Math.round(actualTotal - plannedTotal)}m
+          </p>
+          <div className="space-y-2">
+            {lineItems.map((item) => (
+              <div key={item.category} className="flex items-center justify-between gap-12 text-micro">
+                <span className="text-ink">{item.category}</span>
+                <span className="text-slate">
+                  P {Math.round(item.planned)}m • A {Math.round(item.actual)}m • Δ{' '}
+                  {Math.round(item.actual - item.planned)}m
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -273,20 +507,45 @@ const ReviewsPage: React.FC = () => {
             />
           </Card>
 
-          {/* Deep Work Hours Trend */}
+          {/* Planned vs Actual (Primary Categories) */}
           <Card padding="medium">
-            <h3 className="text-h3 text-ink mb-16">
-              Deep Work Hours (Last 7)
-            </h3>
+            <SectionTitleWithInfo
+              title="Planned vs Actual (Last 7)"
+              tooltipAriaLabel="About Planned vs Actual"
+              tooltipContent={reviewsHelpContent['chart-planned-vs-actual']}
+            />
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={getDeepWorkTrendData()}>
+              <BarChart data={plannedActualChartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Bar dataKey="hours" fill="#8b5cf6" />
+                <Tooltip content={plannedActualTooltip} />
+                {[...PRIMARY_CATEGORIES, 'OTHER'].map((category) => {
+                  const fill =
+                    category === 'OTHER' ? '#94a3b8' : categoryColors[category as Category].hex;
+                  return (
+                    <React.Fragment key={category}>
+                      <Bar
+                        dataKey={`planned_${category}`}
+                        stackId="planned"
+                        fill={fill}
+                        fillOpacity={0.35}
+                        isAnimationActive={false}
+                      />
+                      <Bar
+                        dataKey={`actual_${category}`}
+                        stackId="actual"
+                        fill={fill}
+                        isAnimationActive={false}
+                      />
+                    </React.Fragment>
+                  );
+                })}
               </BarChart>
             </ResponsiveContainer>
+            {(plansLoading || slicesLoading) && (
+              <p className="text-micro text-slate mt-8">Loading planned vs actual…</p>
+            )}
           </Card>
         </div>
       )}
@@ -359,9 +618,12 @@ const ReviewsPage: React.FC = () => {
                     <p className="text-display text-blue-900">{review.tasksCompleted}</p>
                   </div>
                   <div className="bg-lavender rounded-default p-12">
-                    <p className="text-micro text-purple-600 font-medium">Deep Work Hours</p>
+                    <p className="text-micro text-purple-600 font-medium">Tracked Hours</p>
                     <p className="text-display text-purple-900">
-                      {review.deepWorkHours.toFixed(1)}
+                      {(
+                        Object.values(review.activityBreakdown || {}).reduce((sum, mins) => sum + mins, 0) /
+                        60
+                      ).toFixed(1)}
                     </p>
                   </div>
                   <div className="bg-mint rounded-default p-12">

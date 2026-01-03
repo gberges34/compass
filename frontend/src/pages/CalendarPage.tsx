@@ -312,15 +312,9 @@ const CalendarPage: React.FC = () => {
       if (calendarEvent.type === 'task' && calendarEvent.task) {
         backgroundColor = getCategoryColor(calendarEvent.task.category);
         borderColor = backgroundColor;
-      } else if (calendarEvent.type === 'deepWork') {
-        backgroundColor = '#3b82f6';
-        borderColor = '#2563eb';
-      } else if (calendarEvent.type === 'admin') {
-        backgroundColor = '#8b5cf6';
-        borderColor = '#7c3aed';
-      } else if (calendarEvent.type === 'buffer') {
-        backgroundColor = '#6b7280';
-        borderColor = '#4b5563';
+      } else if (calendarEvent.type === 'plannedBlock') {
+        backgroundColor = '#0ea5e9';
+        borderColor = '#0284c7';
       }
 
       // Add visual feedback for draggable events
@@ -501,15 +495,7 @@ const CalendarPage: React.FC = () => {
             <div className="space-y-8 text-small">
               <div className="flex items-center">
                 <div className="w-16 h-16 rounded-default bg-sky mr-8"></div>
-                <span className="text-ink">Deep Work</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-16 h-16 rounded-default bg-lavender mr-8"></div>
-                <span className="text-ink">Admin Time</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-16 h-16 rounded-default bg-fog mr-8"></div>
-                <span className="text-ink">Buffer Time</span>
+                <span className="text-ink">Planned Blocks</span>
               </div>
               <div className="pt-8 border-t border-fog">
                 <p className="text-slate font-medium mb-8 text-small">Task Categories:</p>

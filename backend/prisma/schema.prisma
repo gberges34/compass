@@ -48,10 +48,7 @@ model DailyPlan {
 
   // Orient East (Morning)
   energyLevel    Energy
-  deepWorkBlock1 Json // {start, end, focus}
-  deepWorkBlock2 Json?
-  adminBlock     Json?
-  bufferBlock    Json?
+  plannedBlocks  Json @default("[]") // [{ id, start, end, label }]
   topOutcomes    String[] // Max 3
   reward         String?
 
