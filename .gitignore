@@ -63,3 +63,6 @@ log/
 
 # Claude Code sensitive settings
 .claude/settings.local.json
+
+# Git worktrees (local)
+.worktrees/
