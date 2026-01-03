@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { Task } from '../types';
-import { useFlatTasks } from '../hooks/useTasks';
+import type { CompleteTaskRequest, Task } from '../types';
+import { useCompleteTask, useFlatTasks } from '../hooks/useTasks';
 import { useTodayPlan } from '../hooks/useDailyPlans';
 import { usePostDoLogs } from '../hooks/usePostDoLogs';
 import { useTimeHistory } from '../hooks/useTimeHistory';
@@ -12,6 +12,8 @@ import Button from '../components/Button';
 import TimeEngineStateWidget from '../components/TimeEngineStateWidget';
 import StartActivityModal from '../components/StartActivityModal';
 import EmptyState from '../components/EmptyState';
+import CompleteTaskModal from '../components/CompleteTaskModal';
+import { useToast } from '../contexts/ToastContext';
 import { getEnergyStyle } from '../lib/designTokens';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
 import { getTodayDateString, formatLongDate } from '../lib/dateUtils';
@@ -19,12 +21,15 @@ import { addDays, startOfDay } from 'date-fns';
 
 const TodayPage: React.FC = () => {
   const today = formatLongDate();
+  const toast = useToast();
   const [showStartActivityModal, setShowStartActivityModal] = useState(false);
+  const [taskToComplete, setTaskToComplete] = useState<Task | null>(null);
 
   // Replace ALL manual state with React Query hooks - parallel fetching
   const { data: plan = null, isLoading: planLoading } = useTodayPlan();
   const { tasks: activeTasks = [], isLoading: activeLoading } = useFlatTasks({ status: 'ACTIVE' });
   const { tasks: allNextTasks = [], isLoading: nextLoading } = useFlatTasks({ status: 'NEXT' });
+  const completeTaskMutation = useCompleteTask();
 
   const todayDate = getTodayDateString();
   const { data: todayLogs = [], isLoading: logsLoading } = usePostDoLogs({
@@ -56,6 +61,16 @@ const TodayPage: React.FC = () => {
   }, [allNextTasks]);
 
   const loading = planLoading || activeLoading || nextLoading || logsLoading;
+
+  const handleCompleteTask = async (completionData: CompleteTaskRequest) => {
+    if (!taskToComplete) return;
+    await completeTaskMutation.mutateAsync({
+      id: taskToComplete.id,
+      request: completionData,
+    });
+    toast.showSuccess('Task completed successfully!');
+    setTaskToComplete(null);
+  };
 
   // Calculate stats
   const tasksCompletedToday = todayLogs.length;
@@ -230,6 +245,27 @@ const TodayPage: React.FC = () => {
                         <span className="text-micro text-slate">{task.category}</span>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setTaskToComplete(task)}
+                      disabled={completeTaskMutation.isPending}
+                      className="ml-16 rounded-default p-8 text-green-800 hover:text-green-900 hover:bg-green-100 transition-standard disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-label={`Complete "${task.name}"`}
+                    >
+                      <svg
+                        className="w-20 h-20"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -283,6 +319,15 @@ const TodayPage: React.FC = () => {
       {/* Start Activity Modal */}
       {showStartActivityModal && (
         <StartActivityModal onClose={() => setShowStartActivityModal(false)} />
+      )}
+
+      {/* Complete Task Modal */}
+      {taskToComplete && (
+        <CompleteTaskModal
+          task={taskToComplete}
+          onClose={() => setTaskToComplete(null)}
+          onComplete={handleCompleteTask}
+        />
       )}
     </div>
   );

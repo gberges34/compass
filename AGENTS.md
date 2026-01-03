@@ -30,3 +30,6 @@
 - Reference issues or task IDs in commits/PRs and attach UI screenshots or sample API payloads for behavioral changes.
 - PR descriptions should state motivation, summarize key changes, and list test evidence (`npm test`, `npm run health`, manual QA if relevant).
 - Keep diffs atomic; if both layers change, describe the shared DTO/Zod/Prisma contracts so reviewers can trace the impact.
+
+## Rules
+- Always use Context7 MCP (use library: gberges34/compass) when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask. 
