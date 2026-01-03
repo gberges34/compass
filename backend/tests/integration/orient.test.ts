@@ -31,9 +31,15 @@ describe('Orient API', () => {
     const first = await request(app).post('/api/orient/east').send(orientPayload);
     expect(first.status).toBe(201);
 
-    const second = await request(app).post('/api/orient/east').send(orientPayload);
+    const secondPayload = {
+      ...orientPayload,
+      energyLevel: 'MEDIUM',
+    };
+
+    const second = await request(app).post('/api/orient/east').send(secondPayload);
     expect(second.status).toBe(200);
     expect(second.body.id).toBe(first.body.id);
+    expect(second.body.energyLevel).toBe('MEDIUM');
     expect(second.body.topOutcomes).toEqual(orientPayload.topOutcomes);
     expect(second.body.plannedBlocks).toEqual(orientPayload.plannedBlocks);
   });
