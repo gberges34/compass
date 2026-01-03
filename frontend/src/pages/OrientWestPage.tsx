@@ -204,17 +204,6 @@ const OrientWestPage: React.FC = () => {
             </ul>
           </div>
 
-          {plan.reward && (
-            <div className="bg-sun border border-sun rounded-default p-12">
-              <div className="flex items-center">
-                <span className="text-2xl mr-8">🎁</span>
-                <div>
-                  <span className="font-medium text-amber-900">Planned Reward: </span>
-                  <span className="text-amber-800">{plan.reward}</span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </Card>
 

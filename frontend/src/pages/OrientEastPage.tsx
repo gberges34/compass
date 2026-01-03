@@ -52,7 +52,6 @@ const OrientEastPage: React.FC = () => {
   const [outcome1, setOutcome1] = useState('');
   const [outcome2, setOutcome2] = useState('');
   const [outcome3, setOutcome3] = useState('');
-  const [reward, setReward] = useState('');
 
   const today = formatLongDate();
 
@@ -117,7 +116,6 @@ const OrientEastPage: React.FC = () => {
       setOutcome1(existingPlan.topOutcomes[0] || '');
       setOutcome2(existingPlan.topOutcomes[1] || '');
       setOutcome3(existingPlan.topOutcomes[2] || '');
-      setReward(existingPlan.reward || '');
     }
     setIsEditing(true);
   };
@@ -163,7 +161,6 @@ const OrientEastPage: React.FC = () => {
         energyLevel,
         plannedBlocks: normalizedBlocks,
         topOutcomes: [outcome1.trim(), outcome2.trim(), outcome3.trim()],
-        reward: reward.trim() || undefined,
       };
 
       await createPlan.mutateAsync(request);
@@ -239,17 +236,6 @@ const OrientEastPage: React.FC = () => {
               </ul>
             </div>
 
-            {existingPlan.reward && (
-              <div className="bg-sun border border-sun rounded-default p-12">
-                <div className="flex items-center">
-                  <span className="text-2xl mr-8">🎁</span>
-                  <div>
-                    <span className="font-medium text-amber-900">Reward: </span>
-                    <span className="text-amber-800">{existingPlan.reward}</span>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </Card>
       </div>
@@ -392,17 +378,6 @@ const OrientEastPage: React.FC = () => {
               fullWidth
             />
           </div>
-        </Card>
-
-        <Card padding="large">
-          <h2 className="text-h2 text-ink mb-16">Reward</h2>
-          <Input
-            type="text"
-            value={reward}
-            onChange={(e) => setReward(e.target.value)}
-            placeholder="How will you celebrate completing today's plan?"
-            fullWidth
-          />
         </Card>
 
         <div className="flex justify-end">

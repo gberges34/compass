@@ -10,7 +10,6 @@ const orientPayload = {
     { id: '22222222-2222-2222-2222-222222222222', start: '13:00', end: '15:00', label: 'Write' },
   ],
   topOutcomes: ['Ship feature'],
-  reward: 'Coffee',
 };
 
 describe('Orient API', () => {
@@ -26,7 +25,6 @@ describe('Orient API', () => {
     expect(res.body.plannedBlocks).toEqual(orientPayload.plannedBlocks);
     expect(res.body.energyLevel).toBe(orientPayload.energyLevel);
     expect(res.body.topOutcomes).toEqual(orientPayload.topOutcomes);
-    expect(res.body.reward).toBe(orientPayload.reward);
   });
 
   it('upserts today plan when plan already exists', async () => {
@@ -35,13 +33,13 @@ describe('Orient API', () => {
 
     const secondPayload = {
       ...orientPayload,
-      reward: 'Tea',
+      energyLevel: 'MEDIUM',
     };
 
     const second = await request(app).post('/api/orient/east').send(secondPayload);
     expect(second.status).toBe(200);
     expect(second.body.id).toBe(first.body.id);
-    expect(second.body.reward).toBe('Tea');
+    expect(second.body.energyLevel).toBe('MEDIUM');
     expect(second.body.topOutcomes).toEqual(orientPayload.topOutcomes);
     expect(second.body.plannedBlocks).toEqual(orientPayload.plannedBlocks);
   });

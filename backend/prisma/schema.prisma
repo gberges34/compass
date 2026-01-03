@@ -50,7 +50,6 @@ model DailyPlan {
   energyLevel    Energy
   plannedBlocks  Json @default("[]") // [{ id, start, end, label }]
   topOutcomes    String[] // Max 3
-  reward         String?
 
   // Orient West (Evening)
   reflection     String?
@@ -85,7 +84,6 @@ model PostDoLog {
 
   timeryEntryId String?
   evidenceLink  String?
-  rewardTaken   Boolean @default(false)
 
   completionDate DateTime @default(now())
 

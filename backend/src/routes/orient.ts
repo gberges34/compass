@@ -32,7 +32,6 @@ const orientEastSchema = z.object({
   energyLevel: energyEnum,
   plannedBlocks: z.array(plannedBlockSchema).min(1),
   topOutcomes: z.array(z.string()).max(3),
-  reward: z.string().optional(),
 });
 
 const orientWestSchema = z.object({
@@ -55,7 +54,6 @@ router.post('/east', asyncHandler(async (req: Request, res: Response) => {
     energyLevel: validatedData.energyLevel,
     plannedBlocks: validatedData.plannedBlocks,
     topOutcomes: validatedData.topOutcomes,
-    reward: validatedData.reward,
   };
 
   const dailyPlan = await prisma.dailyPlan.upsert({
