@@ -63,6 +63,32 @@
 | **Blush** | `#FFDDE6` | Gentle emphasis |
 | **Sun** | `#FFEFC6` | Warm hints |
 
+### Extended Accent Palette (Categories)
+These additional accents are used for user-managed category colors. Keep accents high-key and pair with **Ink** text.
+
+| Token | Hex |
+|---|---|
+| **Rose** | `#F4AFAF` |
+| **Peach** | `#F4D1C2` |
+| **Apricot** | `#F7DDB6` |
+| **Butter** | `#F4F0CD` |
+| **Lime** | `#E6F4AF` |
+| **Pistachio** | `#DBF4C2` |
+| **Leaf** | `#C3F7B6` |
+| **Spearmint** | `#CDF4D0` |
+| **Jade** | `#AFF4CA` |
+| **Aqua** | `#C2F4E5` |
+| **Glacier** | `#B6F7F7` |
+| **Ice** | `#CDE8F4` |
+| **Azure** | `#AFCAF4` |
+| **Periwinkle** | `#C2C7F4` |
+| **Iris** | `#C3B6F7` |
+| **Lilac** | `#E0CDF4` |
+| **Orchid** | `#E6AFF4` |
+| **Mauve** | `#F4C2EF` |
+| **Pink** | `#F7B6DD` |
+| **Petal** | `#F4CDD8` |
+
 ### Action Colors (AA on Snow/Cloud)
 | Token | Hex | Usage |
 |---|---|---|
@@ -239,4 +265,3 @@
 - Motion = 160–300 ms, ease‑out; spring entrances; respect reduced motion.
 - Web theming = negative space, Dawn backplates, soft mockups; social tiles constrained.
 - App icon = squircle, Dawn/Aurora, Snow needle at ~80% safe‑area; no text.
-

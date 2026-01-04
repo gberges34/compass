@@ -115,7 +115,7 @@ const completeTaskSchema = z.object({
 export const listTasksQuerySchema = z.object({
   status: z.nativeEnum($Enums.TaskStatus).optional(),
   priority: z.nativeEnum($Enums.Priority).optional(),
-  category: z.nativeEnum($Enums.Category).optional(),
+  category: z.nativeEnum($Enums.TaskCategory).optional(),
   scheduledFilter: z.string().optional(),
   timezone: z.string().optional(),
 }).merge(paginationSchema);

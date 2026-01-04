@@ -10,6 +10,7 @@ import LoginGate from './components/LoginGate';
 import Layout from './components/Layout';
 import TodayPage from './pages/TodayPage';
 import TasksPage from './pages/TasksPage';
+import CategoriesPage from './pages/CategoriesPage';
 import OrientEastPage from './pages/OrientEastPage';
 import OrientWestPage from './pages/OrientWestPage';
 import TimeHistoryPage from './pages/TimeHistoryPage';
@@ -44,6 +45,7 @@ function App() {
                         <Route path="/" element={<Navigate to="/today" replace />} />
                         <Route path="/today" element={<TodayPage />} />
                         <Route path="/tasks" element={<TasksPage />} />
+                        <Route path="/tasks/categories" element={<CategoriesPage />} />
                         <Route path="/calendar" element={<CalendarPage />} />
                         <Route path="/clarify" element={<ClarifyPage />} />
                         <Route path="/orient/east" element={<OrientEastPage />} />

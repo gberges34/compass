@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Calendar } from 'lucide-react';
 import { prefetchTasks } from '../hooks/useTasks';
+import { prefetchCategories } from '../hooks/useCategories';
 import { prefetchTodayPlan } from '../hooks/useDailyPlans';
 import { prefetchReviews } from '../hooks/useReviews';
 import { prefetchTimeHistory } from '../hooks/useTimeHistory';
@@ -108,6 +109,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       // Tasks page: prefetch NEXT tasks
       prefetchTasks(queryClient, { status: 'NEXT' });
     },
+    '/tasks/categories': () => {
+      prefetchCategories(queryClient, { includeArchived: true });
+    },
     '/calendar': () => {
       // Calendar page: prefetch NEXT tasks + today's plan
       prefetchTasks(queryClient, { status: 'NEXT' });
@@ -150,6 +154,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       children: [
         { id: 'tasks-link', label: 'Tasks', to: '/tasks' },
         { id: 'clarify-link', label: 'Clarify', to: '/clarify' },
+        { id: 'categories-link', label: 'Categories', to: '/tasks/categories' },
       ],
     },
     {
