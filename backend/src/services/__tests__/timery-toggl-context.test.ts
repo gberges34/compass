@@ -20,6 +20,16 @@ jest.mock('../../config/env', () => ({
   },
 }));
 
+jest.mock('../../prisma', () => ({
+  prisma: {
+    category: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+    },
+  },
+}));
+
+import { prisma } from '../../prisma';
 import { clearTogglContextCache, getTogglContext, resolveProjectIdForCategory } from '../timery';
 
 describe('getTogglContext', () => {
@@ -29,16 +39,14 @@ describe('getTogglContext', () => {
     clearTogglContextCache();
   });
 
-  it('returns default workspace id and project name->id map', async () => {
+  it('returns default workspace id', async () => {
     mockGet.mockImplementation((path: string) => {
       if (path === '/me') return Promise.resolve({ data: { default_workspace_id: 999 } });
-      if (path === '/me/projects') return Promise.resolve({ data: [{ id: 1, name: 'School' }] });
       return Promise.resolve({ data: null });
     });
 
     const ctx = await getTogglContext();
     expect(ctx.workspaceId).toBe(999);
-    expect(ctx.projectNameToId.get('School')).toBe(1);
   });
 });
 
@@ -46,83 +54,30 @@ describe('resolveProjectIdForCategory', () => {
   beforeEach(() => {
     mockGet.mockReset();
     mockPost.mockReset();
+    (prisma.category.findUnique as jest.Mock).mockReset();
     clearTogglContextCache();
   });
 
-  it('maps Compass Category to Toggl project id', async () => {
-    mockGet.mockImplementation((path: string) => {
-      if (path === '/me') return Promise.resolve({ data: { default_workspace_id: 999 } });
-      if (path === '/me/projects') return Promise.resolve({ data: [{ id: 1, name: 'School' }] });
-      return Promise.resolve({ data: null });
+  it('resolves project id via categoryId mapping', async () => {
+    (prisma.category.findUnique as jest.Mock).mockResolvedValue({ togglProjectId: '123' });
+
+    const projectId = await resolveProjectIdForCategory({
+      categoryId: '11111111-1111-1111-1111-111111111111',
     });
-
-    const projectId = await resolveProjectIdForCategory('SCHOOL');
-    expect(projectId).toBe(1);
-  });
-
-  it('maps enum categories even if Toggl project casing differs', async () => {
-    mockGet.mockImplementation((path: string) => {
-      if (path === '/me') return Promise.resolve({ data: { default_workspace_id: 999 } });
-      if (path === '/me/projects') return Promise.resolve({ data: [{ id: 1, name: 'school' }] });
-      return Promise.resolve({ data: null });
-    });
-
-    const projectId = await resolveProjectIdForCategory('SCHOOL');
-    expect(projectId).toBe(1);
-    expect(mockPost).not.toHaveBeenCalled();
-  });
-
-  it('matches existing projects case-insensitively and whitespace-insensitively', async () => {
-    mockGet.mockImplementation((path: string) => {
-      if (path === '/me') return Promise.resolve({ data: { default_workspace_id: 999 } });
-      if (path === '/me/projects') {
-        return Promise.resolve({
-          data: [{ id: 22, name: '  deep   work  ' }],
-        });
-      }
-      return Promise.resolve({ data: null });
-    });
-
-    const projectId = await resolveProjectIdForCategory('Deep Work');
-    expect(projectId).toBe(22);
-  });
-
-  it('auto-creates a Toggl project for missing PRIMARY activities (normalized Title Case)', async () => {
-    mockGet.mockImplementation((path: string) => {
-      if (path === '/me') return Promise.resolve({ data: { default_workspace_id: 999 } });
-      if (path === '/me/projects') return Promise.resolve({ data: [] });
-      return Promise.resolve({ data: null });
-    });
-    mockPost.mockResolvedValue({ data: { id: 123, name: 'Sleep' } });
-
-    const projectId = await resolveProjectIdForCategory('sleep');
-
-    expect(mockPost).toHaveBeenCalledWith('/workspaces/999/projects', { name: 'Sleep' });
     expect(projectId).toBe(123);
   });
 
-  it('refreshes context and resolves if project creation fails (race-safe)', async () => {
-    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  it('resolves project id via categoryName mapping (nameKey lookup)', async () => {
+    (prisma.category.findUnique as jest.Mock).mockResolvedValue({ togglProjectId: '456' });
 
-    let projectsCallCount = 0;
+    const projectId = await resolveProjectIdForCategory({ categoryName: '  Deep   Work  ' });
+    expect(projectId).toBe(456);
+  });
 
-    mockGet.mockImplementation((path: string) => {
-      if (path === '/me') return Promise.resolve({ data: { default_workspace_id: 999 } });
-      if (path === '/me/projects') {
-        projectsCallCount += 1;
-        return Promise.resolve({
-          data: projectsCallCount === 1 ? [] : [{ id: 555, name: 'Sleep' }],
-        });
-      }
-      return Promise.resolve({ data: null });
-    });
-    mockPost.mockRejectedValue(new Error('project exists'));
+  it('returns null when category is unmapped', async () => {
+    (prisma.category.findUnique as jest.Mock).mockResolvedValue(null);
 
-    const projectId = await resolveProjectIdForCategory('sleep');
-    expect(projectId).toBe(555);
-
-    warnSpy.mockRestore();
-    errorSpy.mockRestore();
+    const projectId = await resolveProjectIdForCategory({ categoryName: 'sleep' });
+    expect(projectId).toBe(null);
   });
 });

@@ -22,7 +22,7 @@ import Button from '../components/Button';
 import CreateReviewModal from '../components/CreateReviewModal';
 import SectionTitleWithInfo from '../components/SectionTitleWithInfo';
 import Tabs from '../components/Tabs';
-import { categoryColors } from '../lib/designTokens';
+import { CATEGORY_ACCENT_TOKENS, categoryColors, getCategoryAccentTokenConfig } from '../lib/designTokens';
 import { reviewsHelpContent } from './reviews/reviewsHelpContent';
 import DaySelector from '../components/DaySelector';
 import RadialClockChart from '../components/RadialClockChart';
@@ -174,7 +174,7 @@ const ReviewsPage: React.FC = () => {
     }));
   };
 
-  const CATEGORY_COLORS = Object.values(categoryColors).map(config => config.hex);
+  const CATEGORY_COLORS = CATEGORY_ACCENT_TOKENS.map((token) => getCategoryAccentTokenConfig(token).hex);
 
   useEffect(() => {
     if (reviews.length === 0) return;

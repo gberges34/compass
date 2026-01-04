@@ -18,7 +18,8 @@ model Task {
   name             String
   status           TaskStatus
   priority         Priority
-  category         TaskCategory
+  categoryId       String
+  category         Category   @relation(fields: [categoryId], references: [id])
   context          Context
   energyRequired   Energy
   duration         Int // minutes
@@ -33,7 +34,7 @@ model Task {
 
   @@index([status, priority])
   @@index([scheduledStart])
-  @@index([category])
+  @@index([categoryId])
   @@index([createdAt])
   @@index([dueDate])
   @@index([status, scheduledStart])
@@ -54,6 +55,8 @@ model Category {
   sortOrder      Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  tasks          Task[]
 
   @@index([isArchived])
   @@index([isArchived, sortOrder])
@@ -219,19 +222,6 @@ enum Priority {
   SHOULD // 2
   COULD // 3
   MAYBE // 4
-}
-
-enum TaskCategory {
-  SCHOOL
-  MUSIC
-  FITNESS
-  GAMING
-  NUTRITION
-  HYGIENE
-  PET
-  SOCIAL
-  PERSONAL
-  ADMIN
 }
 
 enum Context {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Task, TaskStatus, Category, Energy, Priority } from '../types';
+import type { Task, TaskStatus, Energy, Priority } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import {
   useFlatTasks,
@@ -18,21 +18,23 @@ import Button from '../components/Button';
 import Select from '../components/Select';
 import Tabs from '../components/Tabs';
 import EmptyState from '../components/EmptyState';
-import { getCategoryStyle } from '../lib/designTokens';
+import { getCategoryAccentTokenConfig } from '../lib/designTokens';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
+import { useCategories } from '../hooks/useCategories';
 
 const TasksPage: React.FC = () => {
   const toast = useToast();
   const [selectedTab, setSelectedTab] = useState<TaskStatus>('NEXT');
 
   // Filters
-  const [categoryFilter, setCategoryFilter] = useState<Category | ''>('');
+  const [categoryFilterId, setCategoryFilterId] = useState<string>('');
   const [energyFilter, setEnergyFilter] = useState<Energy | ''>('');
   const [priorityFilter, setPriorityFilter] = useState<Priority | ''>('');
+  const { data: categories = [] } = useCategories();
 
   // Build filters object
   const filters: any = { status: selectedTab };
-  if (categoryFilter) filters.category = categoryFilter;
+  if (categoryFilterId) filters.categoryId = categoryFilterId;
   if (energyFilter) filters.energyRequired = energyFilter;
   if (priorityFilter) filters.priority = priorityFilter;
 
@@ -141,22 +143,14 @@ const TasksPage: React.FC = () => {
         {/* Filters */}
         <div className="mt-16 flex flex-wrap gap-12">
           <Select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value as Category | '')}
+            value={categoryFilterId}
+            onChange={(e) => setCategoryFilterId(e.target.value)}
             className="w-auto"
             placeholder="All Categories"
-            options={[
-              { value: 'SCHOOL', label: 'School' },
-              { value: 'MUSIC', label: 'Music' },
-              { value: 'FITNESS', label: 'Fitness' },
-              { value: 'GAMING', label: 'Gaming' },
-              { value: 'NUTRITION', label: 'Nutrition' },
-              { value: 'HYGIENE', label: 'Hygiene' },
-              { value: 'PET', label: 'Pet' },
-              { value: 'SOCIAL', label: 'Social' },
-              { value: 'PERSONAL', label: 'Personal' },
-              { value: 'ADMIN', label: 'Admin' },
-            ]}
+            options={categories.map((category) => ({
+              value: category.id,
+              label: `${category.icon} ${category.name}`,
+            }))}
           />
 
           <Select
@@ -198,7 +192,7 @@ const TasksPage: React.FC = () => {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
-          {tasks.map((task: Task) => (
+	          {tasks.map((task: Task) => (
             <Card
               key={task.id}
               padding="medium"
@@ -211,14 +205,23 @@ const TasksPage: React.FC = () => {
                 {task.name}
               </h3>
 
-              <div className="flex flex-wrap gap-8 mb-12">
-                <Badge variant={getCategoryStyle(task.category).bg === 'bg-sky' ? 'sky' : getCategoryStyle(task.category).bg === 'bg-lavender' ? 'lavender' : getCategoryStyle(task.category).bg === 'bg-mint' ? 'mint' : getCategoryStyle(task.category).bg === 'bg-blush' ? 'blush' : getCategoryStyle(task.category).bg === 'bg-sun' ? 'sun' : 'neutral'} size="small">
-                  {task.category}
-                </Badge>
-                <Badge variant={getEnergyBadgeVariant(task.energyRequired)} size="small">
-                  {task.energyRequired}
-                </Badge>
-              </div>
+	              <div className="flex flex-wrap gap-8 mb-12">
+	                {(() => {
+	                  const accent = getCategoryAccentTokenConfig(task.category.color);
+	                  return (
+	                    <Badge
+	                      variant="neutral"
+	                      size="small"
+	                      className={`${accent.bg} ${accent.border} ${accent.text}`}
+	                    >
+	                      {task.category.icon} {task.category.name}
+	                    </Badge>
+	                  );
+	                })()}
+	                <Badge variant={getEnergyBadgeVariant(task.energyRequired)} size="small">
+	                  {task.energyRequired}
+	                </Badge>
+	              </div>
 
               <div className="flex items-center justify-between text-small text-slate mb-12">
                 <div className="flex items-center space-x-12">
@@ -276,15 +279,23 @@ const TasksPage: React.FC = () => {
                 </button>
               </div>
 
-              <div className="space-y-16">
-                <div className="flex flex-wrap gap-8">
-                  <Badge variant={getCategoryStyle(selectedTask.category).bg === 'bg-sky' ? 'sky' : getCategoryStyle(selectedTask.category).bg === 'bg-lavender' ? 'lavender' : getCategoryStyle(selectedTask.category).bg === 'bg-mint' ? 'mint' : getCategoryStyle(selectedTask.category).bg === 'bg-blush' ? 'blush' : getCategoryStyle(selectedTask.category).bg === 'bg-sun' ? 'sun' : 'neutral'}>
-                    {selectedTask.category}
-                  </Badge>
-                  <Badge variant={getEnergyBadgeVariant(selectedTask.energyRequired)}>
-                    {selectedTask.energyRequired} Energy
-                  </Badge>
-                  <Badge variant={getPriorityBadgeVariant(selectedTask.priority)}>
+	              <div className="space-y-16">
+	                <div className="flex flex-wrap gap-8">
+	                  {(() => {
+	                    const accent = getCategoryAccentTokenConfig(selectedTask.category.color);
+	                    return (
+	                      <Badge
+	                        variant="neutral"
+	                        className={`${accent.bg} ${accent.border} ${accent.text}`}
+	                      >
+	                        {selectedTask.category.icon} {selectedTask.category.name}
+	                      </Badge>
+	                    );
+	                  })()}
+	                  <Badge variant={getEnergyBadgeVariant(selectedTask.energyRequired)}>
+	                    {selectedTask.energyRequired} Energy
+	                  </Badge>
+	                  <Badge variant={getPriorityBadgeVariant(selectedTask.priority)}>
                     {selectedTask.priority}
                   </Badge>
                 </div>

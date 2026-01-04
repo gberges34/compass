@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { env } from '../config/env';
-import { TaskCategory } from '@prisma/client';
+import { prisma } from '../prisma';
 import type { PostDoLog } from '@prisma/client';
 import { withRetry } from '../utils/retry';
 import { InternalError } from '../errors/AppError';
@@ -17,60 +17,16 @@ const togglAPI = axios.create({
   timeout: 15000, // 15 seconds
 });
 
-// Toggl Project Name → Compass Category mapping.
-// Keep this in sync with docs/timery-projects.md so Compass knows how to bucket Timery data.
-const TOGGL_PROJECT_CATEGORY_MAP: Record<string, TaskCategory> = {
-  'School': 'SCHOOL',
-  'Music': 'MUSIC',
-  'Fitness': 'FITNESS',
-  'Gaming': 'GAMING',
-  'Nutrition': 'NUTRITION',
-  'Hygiene': 'HYGIENE',
-  'Pet': 'PET',
-  'Social': 'SOCIAL',
-  'Personal': 'PERSONAL',
-  'Admin': 'ADMIN',
-};
-
-function normalizeProjectNameKey(value: string): string {
-  return value
-    .trim()
-    .replace(/[\s_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .toLowerCase();
-}
-
-function toTitleCase(value: string): string {
-  const normalized = value
-    .trim()
-    .replace(/[\s_-]+/g, ' ')
-    .replace(/\s+/g, ' ');
-  if (!normalized) return '';
-
-  return normalized
-    .split(' ')
-    .map((token) => {
-      if (!token) return token;
-      return token[0].toUpperCase() + token.slice(1).toLowerCase();
-    })
-    .join(' ');
-}
-
 type TogglContext = {
   workspaceId: number;
-  projectNameToId: Map<string, number>;
-  projectNameKeyToId: Map<string, number>;
 };
-
-const CATEGORY_TO_TOGGL_PROJECT_NAME: Partial<Record<TaskCategory, string>> =
-  Object.fromEntries(
-    Object.entries(TOGGL_PROJECT_CATEGORY_MAP).map(([projectName, category]) => [category, projectName])
-  );
-
-const prismaCategorySet = new Set<string>(Object.values(TaskCategory));
 
 let cachedContext: { value: TogglContext; fetchedAt: number } | null = null;
 const TOGGL_CONTEXT_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+function normalizeCategoryNameKey(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').toLowerCase();
+}
 
 async function fetchDefaultWorkspaceId(): Promise<number> {
   const response = await withRetry(() =>
@@ -88,81 +44,44 @@ export function clearTogglContextCache(): void {
 }
 
 /**
- * Fetches and caches Toggl workspace + project metadata.
+ * Fetches and caches Toggl workspace metadata.
  */
 export async function getTogglContext(): Promise<TogglContext> {
   if (cachedContext && Date.now() - cachedContext.fetchedAt < TOGGL_CONTEXT_TTL_MS) {
     return cachedContext.value;
   }
 
-  const [workspaceId, projectIdToName] = await Promise.all([
-    fetchDefaultWorkspaceId(),
-    getProjects(),
-  ]);
-
-  const projectNameToId = new Map<string, number>();
-  const projectNameKeyToId = new Map<string, number>();
-  projectIdToName.forEach((name, id) => projectNameToId.set(name, id));
-  projectIdToName.forEach((name, id) =>
-    projectNameKeyToId.set(normalizeProjectNameKey(name), id)
-  );
-
-  const value = { workspaceId, projectNameToId, projectNameKeyToId };
+  const workspaceId = await fetchDefaultWorkspaceId();
+  const value = { workspaceId };
   cachedContext = { value, fetchedAt: Date.now() };
   return value;
 }
 
-async function createProject(input: {
-  workspaceId: number;
-  name: string;
-}): Promise<{ id: number; name: string }> {
-  const response = await withRetry(() =>
-    togglAPI.post(`/workspaces/${input.workspaceId}/projects`, {
-      name: input.name,
-    })
-  );
-  return response.data;
-}
-
 /**
- * Resolves Compass Category to Toggl project_id if mapped; otherwise null.
+ * Resolves a Compass category to Toggl project_id if mapped; otherwise null.
+ * Manual mapping only: uses Category.togglProjectId and never auto-creates projects.
  */
-export async function resolveProjectIdForCategory(category: string): Promise<number | null> {
-  const ctx = await getTogglContext();
+export async function resolveProjectIdForCategory(input: {
+  categoryId?: string;
+  categoryName?: string;
+}): Promise<number | null> {
+  const category =
+    input.categoryId
+      ? await prisma.category.findUnique({
+          where: { id: input.categoryId },
+          select: { togglProjectId: true },
+        })
+      : input.categoryName
+        ? await prisma.category.findUnique({
+            where: { nameKey: normalizeCategoryNameKey(input.categoryName) },
+            select: { togglProjectId: true },
+          })
+        : null;
 
-  const desiredProjectName = prismaCategorySet.has(category)
-    ? CATEGORY_TO_TOGGL_PROJECT_NAME[category as TaskCategory] || toTitleCase(category)
-    : toTitleCase(category);
-  if (!desiredProjectName) return null;
-
-  const key = normalizeProjectNameKey(desiredProjectName);
-  const existingId = ctx.projectNameKeyToId.get(key);
-  if (existingId) return existingId;
-
-  try {
-    const created = await createProject({
-      workspaceId: ctx.workspaceId,
-      name: desiredProjectName,
-    });
-    ctx.projectNameToId.set(created.name, created.id);
-    ctx.projectNameKeyToId.set(normalizeProjectNameKey(created.name), created.id);
-    cachedContext = { value: ctx, fetchedAt: Date.now() };
-    return created.id;
-  } catch (error) {
-    console.warn(
-      'Failed to auto-create Toggl project; will refresh and retry once',
-      error
-    );
-  }
-
-  clearTogglContextCache();
-  try {
-    const refreshed = await getTogglContext();
-    return refreshed.projectNameKeyToId.get(key) ?? null;
-  } catch (error) {
-    console.warn('Failed to refresh Toggl context after project create failure', error);
-    return null;
-  }
+  const raw = category?.togglProjectId?.trim();
+  if (!raw) return null;
+  if (!/^\d+$/.test(raw)) return null;
+  return Number(raw);
 }
 
 export const TOGGL_OVERLAP_TOLERANCE_MINUTES = 15;
@@ -398,11 +317,6 @@ export function isTogglEntryDuplicate(
   });
 }
 
-interface TogglProject {
-  id: number;
-  name: string;
-}
-
 interface TogglTimeEntry {
   id: number;
   duration: number; // seconds (negative if running)
@@ -439,26 +353,6 @@ export async function getTimeEntriesForDateRange(startDate: Date, endDate: Date)
 }
 
 /**
- * Get all projects to map project_id to project name.
- * @throws {Error} If Toggl API call fails
- * @returns {Map<number, string>} Project map
- */
-export async function getProjects(): Promise<Map<number, string>> {
-  const response = await withRetry(() =>
-    togglAPI.get('/me/projects')
-  );
-
-  const projects: TogglProject[] = response.data || [];
-
-  const projectMap = new Map<number, string>();
-  projects.forEach(project => {
-    projectMap.set(project.id, project.name);
-  });
-
-  return projectMap;
-}
-
-/**
  * Calculate category balance from Toggl time entries.
  * @throws {Error} If Toggl API calls fail
  * @returns {Record<string, number>} Category balance
@@ -468,11 +362,20 @@ export async function getCategoryBalanceFromToggl(
   endDate: Date,
   postDoLogs: PostDoLogTimeRange[] = []
 ): Promise<Record<string, number>> {
-  // Get time entries and projects
-  const [entries, projectMap] = await Promise.all([
+  const [entries, mappedCategories] = await Promise.all([
     getTimeEntriesForDateRange(startDate, endDate),
-    getProjects(),
+    prisma.category.findMany({
+      where: { togglProjectId: { not: null } },
+      select: { togglProjectId: true, name: true },
+    }),
   ]);
+
+  const projectIdToCategoryName = new Map<number, string>();
+  mappedCategories.forEach((category) => {
+    const raw = category.togglProjectId?.trim();
+    if (!raw || !/^\d+$/.test(raw)) return;
+    projectIdToCategoryName.set(Number(raw), category.name);
+  });
 
   const categoryBalance: Record<string, number> = {};
 
@@ -493,22 +396,14 @@ export async function getCategoryBalanceFromToggl(
       return;
     }
 
-    // Get project name
-    const projectName = entry.project_id
-      ? projectMap.get(entry.project_id)
-      : null;
-
-    // Map project to category
-    const category = projectName && TOGGL_PROJECT_CATEGORY_MAP[projectName]
-      ? TOGGL_PROJECT_CATEGORY_MAP[projectName]
-      : null;
+    const categoryName = entry.project_id ? projectIdToCategoryName.get(entry.project_id) : null;
 
     // Skip unmapped projects with warning
-    if (!category) {
+    if (!categoryName) {
       console.warn(
-        `Skipping Toggl entry: unmapped project "${projectName || 'No Project'}" ` +
-        `(ID: ${entry.project_id || 'none'}, duration: ${Math.floor(entry.duration / 60)}m). ` +
-        `Add to TOGGL_PROJECT_CATEGORY_MAP to include in metrics.`
+        `Skipping Toggl entry: unmapped project ` +
+          `(ID: ${entry.project_id || 'none'}, duration: ${Math.floor(entry.duration / 60)}m). ` +
+          `Map a Compass category to this project ID to include it in metrics.`
       );
       return;
     }
@@ -517,7 +412,7 @@ export async function getCategoryBalanceFromToggl(
     const durationMinutes = Math.floor(entry.duration / 60);
 
     // Accumulate
-    categoryBalance[category] = (categoryBalance[category] || 0) + durationMinutes;
+    categoryBalance[categoryName] = (categoryBalance[categoryName] || 0) + durationMinutes;
   });
 
   return categoryBalance;

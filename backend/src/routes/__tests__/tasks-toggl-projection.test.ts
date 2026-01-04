@@ -45,12 +45,16 @@ describe('tasks routes Toggl projection', () => {
   it('projects slice on activate', async () => {
     mockTransaction.mockImplementation(async (cb: any) =>
       cb({
-        task: { update: jest.fn().mockResolvedValue({ id: 't1', category: 'SCHOOL' }) },
+        task: {
+          update: jest
+            .fn()
+            .mockResolvedValue({ id: 't1', categoryId: 'c1', category: { name: 'School' } }),
+        },
       } as any)
     );
     startSlice.mockResolvedValue({
       id: 's1',
-      category: 'SCHOOL',
+      category: 'School',
       dimension: 'PRIMARY',
       start: new Date(),
       end: null,
@@ -68,7 +72,8 @@ describe('tasks routes Toggl projection', () => {
             id: 't1',
             status: 'ACTIVE',
             duration: 10,
-            category: 'SCHOOL',
+            categoryId: 'c1',
+            category: { name: 'School' },
             postDoLog: null,
           }),
           update: jest.fn().mockResolvedValue({ id: 't1', status: 'DONE' }),
@@ -78,7 +83,7 @@ describe('tasks routes Toggl projection', () => {
     );
     stopSliceIfExists.mockResolvedValue({
       id: 's1',
-      category: 'SCHOOL',
+      category: 'School',
       dimension: 'PRIMARY',
       start: new Date(),
       end: new Date(),

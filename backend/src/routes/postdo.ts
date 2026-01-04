@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { startOfDay, endOfDay } from 'date-fns';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { NotFoundError, BadRequestError } from '../errors/AppError';
-import { categoryEnum } from '../schemas/enums';
 import { paginationSchema } from '../schemas/pagination';
 import type { PaginationResponse } from '@compass/dto/pagination';
 import { cacheControl, CachePolicies } from '../middleware/cacheControl';
@@ -16,13 +15,13 @@ const router = Router();
 const getPostDoLogsSchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  category: categoryEnum.optional(),
+  categoryId: z.string().uuid().optional(),
 }).merge(paginationSchema);
 
 // GET /api/postdo - Get Post-Do logs with optional filters
 router.get('/', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Request, res: Response) => {
   // Validate query parameters
-  const { startDate, endDate, category, cursor, limit } = getPostDoLogsSchema.parse(req.query);
+  const { startDate, endDate, categoryId, cursor, limit } = getPostDoLogsSchema.parse(req.query);
 
   // Build where clause
   const where: Prisma.PostDoLogWhereInput = {};
@@ -43,9 +42,9 @@ router.get('/', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Req
   }
 
   // Add category filter if provided (filter by task category)
-  if (category) {
+  if (categoryId) {
     where.task = {
-      category: category
+      categoryId,
     };
   }
 
@@ -55,7 +54,7 @@ router.get('/', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: Req
     take: limit + 1, // Fetch one extra to determine if there's a next page
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: {
-      task: true, // Include full task details
+      task: { include: { category: true } }, // Include full task details + category
     },
     orderBy: [
       { completionDate: 'desc' }, // Most recent first
@@ -82,7 +81,7 @@ router.get('/:id', cacheControl(CachePolicies.MEDIUM), asyncHandler(async (req: 
   const postDoLog = await prisma.postDoLog.findUnique({
     where: { id },
     include: {
-      task: true,
+      task: { include: { category: true } },
     },
   });
 

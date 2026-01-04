@@ -2,7 +2,9 @@ import { prisma } from '../prisma';
 import { Prisma } from '@prisma/client';
 import { getCategoryBalanceFromToggl, type PostDoLogTimeRange } from '../services/timery';
 
-type PostDoLogWithTask = Prisma.PostDoLogGetPayload<{ include: { task: true } }>;
+type PostDoLogWithTask = Prisma.PostDoLogGetPayload<{
+  include: { task: { include: { category: true } } };
+}>;
 
 // Derive transaction client type from the extended Prisma client to support both base and extended clients
 type PrismaTransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
@@ -83,7 +85,7 @@ export async function calculateMetrics(
       },
     },
     include: {
-      task: true,
+      task: { include: { category: true } },
     },
   });
 
@@ -96,7 +98,7 @@ export async function calculateMetrics(
   // Calculate category balance from Compass tasks
   const compassCategoryBalance: Record<string, number> = {};
   postDoLogs.forEach((log) => {
-    const category = log.task.category;
+    const category = log.task.category.name;
     compassCategoryBalance[category] = (compassCategoryBalance[category] || 0) + log.actualDuration;
   });
 

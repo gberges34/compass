@@ -249,13 +249,13 @@ const TodayPage: React.FC = () => {
                     <div className="flex-1">
                       <h3 className="font-semibold text-ink">{task.name}</h3>
                       <p className="text-small text-slate mt-4">{task.definitionOfDone}</p>
-                      <div className="flex items-center space-x-12 mt-8">
-                        <Badge variant={getPriorityBadgeVariant(task.priority)} size="small">
-                          {task.priority}
-                        </Badge>
-                        <span className="text-micro text-slate">{task.duration} min</span>
-                        <span className="text-micro text-slate">{task.category}</span>
-                      </div>
+	                      <div className="flex items-center space-x-12 mt-8">
+	                        <Badge variant={getPriorityBadgeVariant(task.priority)} size="small">
+	                          {task.priority}
+	                        </Badge>
+	                        <span className="text-micro text-slate">{task.duration} min</span>
+	                        <span className="text-micro text-slate">{task.category.name}</span>
+	                      </div>
                     </div>
                     <button
                       type="button"
@@ -305,15 +305,15 @@ const TodayPage: React.FC = () => {
                     <div className="flex-1">
                       <h3 className="font-semibold text-ink">{task.name}</h3>
                       <p className="text-small text-slate mt-4">{task.definitionOfDone}</p>
-                      <div className="flex items-center space-x-12 mt-8">
-                        <Badge variant={getPriorityBadgeVariant(task.priority)} size="small">
-                          {task.priority}
-                        </Badge>
-                        <span className="text-micro text-slate">{task.duration} min</span>
-                        <span className="text-micro text-slate">{task.category}</span>
-                        <span className="text-micro text-slate">
-                          Energy: {task.energyRequired}
-                        </span>
+	                      <div className="flex items-center space-x-12 mt-8">
+	                        <Badge variant={getPriorityBadgeVariant(task.priority)} size="small">
+	                          {task.priority}
+	                        </Badge>
+	                        <span className="text-micro text-slate">{task.duration} min</span>
+	                        <span className="text-micro text-slate">{task.category.name}</span>
+	                        <span className="text-micro text-slate">
+	                          Energy: {task.energyRequired}
+	                        </span>
                       </div>
                     </div>
                   </div>

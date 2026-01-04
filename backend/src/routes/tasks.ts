@@ -15,7 +15,6 @@ import { syncPrimaryStart, syncPrimaryStop } from '../services/togglProjection';
 import {
   priorityEnum,
   statusEnum,
-  categoryEnum,
   contextEnum,
   energyEnum,
   effortEnum,
@@ -75,7 +74,7 @@ function getWeekBoundsInTimezone(dateString: string, timezone: string = 'UTC'): 
 const createTaskSchema = z.object({
   name: z.string().min(1),
   priority: priorityEnum,
-  category: categoryEnum,
+  categoryId: z.string().uuid(),
   context: contextEnum,
   energyRequired: energyEnum,
   duration: z.number().positive(),
@@ -115,7 +114,7 @@ const completeTaskSchema = z.object({
 export const listTasksQuerySchema = z.object({
   status: z.nativeEnum($Enums.TaskStatus).optional(),
   priority: z.nativeEnum($Enums.Priority).optional(),
-  category: z.nativeEnum($Enums.TaskCategory).optional(),
+  categoryId: z.string().uuid().optional(),
   scheduledFilter: z.string().optional(),
   timezone: z.string().optional(),
 }).merge(paginationSchema);
@@ -130,7 +129,7 @@ router.get('/', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Requ
 
   if (query.status) where.status = query.status;
   if (query.priority) where.priority = query.priority;
-  if (query.category) where.category = query.category;
+  if (query.categoryId) where.categoryId = query.categoryId;
   if (query.scheduledFilter) {
     if (query.scheduledFilter === 'true') {
       // All scheduled tasks (scheduledStart is not null)
@@ -157,6 +156,9 @@ router.get('/', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: Requ
     where,
     take: query.limit + 1, // Fetch one extra to determine if there's a next page
     ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
+    include: {
+      category: true,
+    },
     orderBy: [
       { status: 'asc' },
       { priority: 'asc' },
@@ -190,18 +192,21 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
       status: validatedData.status || (validatedData.priority === 'MUST' || validatedData.priority === 'SHOULD' ? 'NEXT' : 'WAITING'),
       dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
     },
+    include: {
+      category: true,
+    },
   });
 
   log('[POST /tasks] Created task:', task.id);
   res.status(201).json(task);
 }));
 
-// POST /api/tasks/process-captured - Process a captured task with fully formed data
-router.post('/process-captured', asyncHandler(async (req: Request, res: Response) => {
-  // Validate that we received all necessary fields for a full task
-  // The schema already requires: name, priority, category, context, energyRequired, definitionOfDone
-  const validatedData = processCapturedTaskSchema.parse(req.body);
-  const { tempTaskId, ...taskData } = validatedData;
+	// POST /api/tasks/process-captured - Process a captured task with fully formed data
+	router.post('/process-captured', asyncHandler(async (req: Request, res: Response) => {
+	  // Validate that we received all necessary fields for a full task
+	  // The schema already requires: name, priority, categoryId, context, energyRequired, definitionOfDone
+	  const validatedData = processCapturedTaskSchema.parse(req.body);
+	  const { tempTaskId, ...taskData } = validatedData;
 
   // Verify temp task exists and hasn't been processed
   const tempTask = await prisma.tempCapturedTask.findUnique({
@@ -222,19 +227,20 @@ router.post('/process-captured', asyncHandler(async (req: Request, res: Response
 
   // TRANSACTION: Atomic task creation + temp task marking
   const result = await prisma.$transaction(async (tx) => {
-    const task = await tx.task.create({
-      data: {
-        name: validatedData.name,               // Name is already rephrased by iOS Shortcut
-        status: status,
-        priority: validatedData.priority,
-        category: validatedData.category,
-        context: validatedData.context,
-        energyRequired: validatedData.energyRequired, // Correct property name
-        duration: validatedData.duration,
-        definitionOfDone: validatedData.definitionOfDone,
-        dueDate: tempTask.dueDate
-      }
-    });
+	    const task = await tx.task.create({
+	      data: {
+	        name: validatedData.name,               // Name is already rephrased by iOS Shortcut
+	        status: status,
+	        priority: validatedData.priority,
+	        categoryId: validatedData.categoryId,
+	        context: validatedData.context,
+	        energyRequired: validatedData.energyRequired, // Correct property name
+	        duration: validatedData.duration,
+	        definitionOfDone: validatedData.definitionOfDone,
+	        dueDate: tempTask.dueDate
+	      },
+	      include: { category: true },
+	    });
 
     await tx.tempCapturedTask.update({
       where: { id: tempTaskId },
@@ -259,6 +265,7 @@ router.patch('/:id', asyncHandler(async (req: Request, res: Response) => {
       ...validatedData,
       dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : undefined,
     },
+    include: { category: true },
   });
 
   log('[PATCH /tasks/:id] Updated task:', task.id);
@@ -412,7 +419,7 @@ router.get('/:id', cacheControl(CachePolicies.SHORT), asyncHandler(async (req: R
 
   const task = await prisma.task.findUnique({
     where: { id },
-    include: { postDoLog: true },
+    include: { postDoLog: true, category: true },
   });
 
   if (!task) {
@@ -435,12 +442,13 @@ router.post('/:id/activate', asyncHandler(async (req: Request, res: Response) =>
         status: 'ACTIVE',
         activatedAt: new Date(),
       },
+      include: { category: true },
     });
 
     // Create TimeSlice linked to task (within same transaction)
     const slice = await TimeEngine.startSlice(
       {
-        category: task.category,
+        category: task.category.name,
         dimension: 'PRIMARY',
         source: 'API',
         linkedTaskId: task.id,
@@ -451,21 +459,7 @@ router.post('/:id/activate', asyncHandler(async (req: Request, res: Response) =>
     return { task, slice };
   });
 
-  // Map category to Focus Mode
-  const focusModeMap: Record<string, string> = {
-    SCHOOL: 'School',
-    MUSIC: 'Music Practice',
-    FITNESS: 'Workout',
-    GAMING: 'Gaming',
-    NUTRITION: 'Meal Prep',
-    HYGIENE: 'Personal Care',
-    PET: 'Pet Care',
-    SOCIAL: 'Social',
-    PERSONAL: 'Deep Work',
-    ADMIN: 'Deep Work',
-  };
-
-  const focusMode = focusModeMap[result.task.category] || 'Deep Work';
+  const focusMode = result.task.category.name;
 
   syncPrimaryStart(result.slice).catch((error) =>
     console.error('Toggl projection failed (task activate)', error)
@@ -476,7 +470,7 @@ router.post('/:id/activate', asyncHandler(async (req: Request, res: Response) =>
     task: result.task,
     slice: result.slice,
     focusMode,
-    timeryProject: result.task.category,
+    timeryProject: result.task.category.name,
     definitionOfDone: result.task.definitionOfDone,
   });
 }));
