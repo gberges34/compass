@@ -241,7 +241,7 @@ function CategoryRow({
 
 const CategoriesPage: React.FC = () => {
   const toast = useToast();
-  const { data: categories = [], isLoading, error } = useCategories();
+  const { data: categories = [], isLoading, error } = useCategories({ includeArchived: true });
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();

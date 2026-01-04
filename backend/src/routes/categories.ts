@@ -93,11 +93,19 @@ const updateCategorySchema = z.object({
   sortOrder: z.number().int().optional(),
 });
 
+const listCategoriesQuerySchema = z.object({
+  includeArchived: z.enum(['true', '1']).optional(),
+});
+
 router.get(
   '/',
   cacheControl(CachePolicies.LONG),
-  asyncHandler(async (_req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
+    const query = listCategoriesQuerySchema.parse(req.query);
+    const includeArchived = query.includeArchived !== undefined;
+
     const categories = await prisma.category.findMany({
+      ...(includeArchived ? {} : { where: { isArchived: false } }),
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     });
     res.json(categories);

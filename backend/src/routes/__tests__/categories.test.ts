@@ -34,6 +34,7 @@ describe('Categories API', () => {
     expect(response.body).toHaveLength(1);
     expect(prisma.category.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
+        where: { isArchived: false },
         orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
       })
     );

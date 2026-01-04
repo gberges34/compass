@@ -182,8 +182,16 @@ export type UpdateCategoryInput = Partial<{
   sortOrder: number;
 }>;
 
-export const getCategories = async (): Promise<CategoryEntity[]> => {
-  const response = await api.get<CategoryEntity[]>('/categories');
+export type GetCategoriesFilters = {
+  includeArchived?: boolean;
+};
+
+export const getCategories = async (filters?: GetCategoriesFilters): Promise<CategoryEntity[]> => {
+  const params = new URLSearchParams();
+  if (filters?.includeArchived) params.append('includeArchived', 'true');
+
+  const url = params.toString() ? `/categories?${params.toString()}` : '/categories';
+  const response = await api.get<CategoryEntity[]>(url);
   return response.data;
 };
 

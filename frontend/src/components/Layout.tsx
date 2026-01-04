@@ -110,7 +110,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       prefetchTasks(queryClient, { status: 'NEXT' });
     },
     '/tasks/categories': () => {
-      prefetchCategories(queryClient);
+      prefetchCategories(queryClient, { includeArchived: true });
     },
     '/calendar': () => {
       // Calendar page: prefetch NEXT tasks + today's plan

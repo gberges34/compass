@@ -3,28 +3,36 @@ import type { CategoryEntity } from '../types';
 import * as api from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
 
+type CategoriesFilters = api.GetCategoriesFilters;
+
+const normalizeFilters = (filters?: CategoriesFilters): Required<CategoriesFilters> => ({
+  includeArchived: !!filters?.includeArchived,
+});
+
 export const categoryKeys = {
   all: ['categories'] as const,
   lists: () => [...categoryKeys.all, 'list'] as const,
-  list: (filters?: { includeArchived?: boolean }) => [...categoryKeys.lists(), { filters }] as const,
+  list: (filters?: CategoriesFilters) => [...categoryKeys.lists(), { filters: normalizeFilters(filters) }] as const,
   details: () => [...categoryKeys.all, 'detail'] as const,
   detail: (id: string) => [...categoryKeys.details(), id] as const,
 };
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
-export const prefetchCategories = (queryClient: QueryClient) => {
+export const prefetchCategories = (queryClient: QueryClient, filters?: CategoriesFilters) => {
+  const normalizedFilters = normalizeFilters(filters);
   return queryClient.prefetchQuery({
-    queryKey: categoryKeys.list(),
-    queryFn: api.getCategories,
+    queryKey: categoryKeys.list(normalizedFilters),
+    queryFn: () => api.getCategories(normalizedFilters),
     staleTime: FIVE_MINUTES_MS,
   });
 };
 
-export function useCategories() {
+export function useCategories(filters?: CategoriesFilters) {
+  const normalizedFilters = normalizeFilters(filters);
   return useQuery({
-    queryKey: categoryKeys.list(),
-    queryFn: api.getCategories,
+    queryKey: categoryKeys.list(normalizedFilters),
+    queryFn: () => api.getCategories(normalizedFilters),
     staleTime: FIVE_MINUTES_MS,
   });
 }
@@ -36,9 +44,14 @@ export function useCreateCategory() {
   return useMutation({
     mutationFn: api.createCategory,
     onSuccess: (created) => {
-      queryClient.setQueryData<CategoryEntity[]>(categoryKeys.list(), (prev) => {
-        if (!prev) return [created];
-        return [created, ...prev];
+      const listQueries = queryClient.getQueriesData<CategoryEntity[]>({ queryKey: categoryKeys.lists() });
+      listQueries.forEach(([queryKey, data]) => {
+        if (!data) return;
+        const maybeFilters = (queryKey as any[])?.at(-1)?.filters as Required<CategoriesFilters> | undefined;
+        const includeArchived = !!maybeFilters?.includeArchived;
+
+        if (!includeArchived && created.isArchived) return;
+        queryClient.setQueryData<CategoryEntity[]>(queryKey, [created, ...data]);
       });
     },
     onError: (err: any) => {
@@ -58,19 +71,31 @@ export function useUpdateCategory() {
     mutationFn: ({ id, updates }: { id: string; updates: api.UpdateCategoryInput }) =>
       api.updateCategory(id, updates),
     onMutate: async ({ id, updates }) => {
-      await queryClient.cancelQueries({ queryKey: categoryKeys.all });
-      const previous = queryClient.getQueryData<CategoryEntity[]>(categoryKeys.list());
+      await queryClient.cancelQueries({ queryKey: categoryKeys.lists() });
+      const previous = queryClient.getQueriesData<CategoryEntity[]>({ queryKey: categoryKeys.lists() });
 
-      queryClient.setQueryData<CategoryEntity[]>(categoryKeys.list(), (prev) => {
-        if (!prev) return prev;
-        return prev.map((cat) => (cat.id === id ? { ...cat, ...updates } : cat));
+      previous.forEach(([queryKey]) => {
+        queryClient.setQueryData<CategoryEntity[]>(queryKey, (prevData) => {
+          if (!prevData) return prevData;
+          const maybeFilters = (queryKey as any[])?.at(-1)?.filters as Required<CategoriesFilters> | undefined;
+          const includeArchived = !!maybeFilters?.includeArchived;
+
+          return prevData.flatMap((cat) => {
+            if (cat.id !== id) return [cat];
+            const next = { ...cat, ...updates };
+            if (!includeArchived && next.isArchived) return [];
+            return [next];
+          });
+        });
       });
 
       return { previous };
     },
     onError: (err: any, _vars, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(categoryKeys.list(), context.previous);
+        context.previous.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       }
       toast.showError(err?.userMessage || 'Failed to update category');
     },
@@ -87,17 +112,29 @@ export function useDeleteCategory() {
   return useMutation({
     mutationFn: api.deleteCategory,
     onMutate: async (id: string) => {
-      await queryClient.cancelQueries({ queryKey: categoryKeys.all });
-      const previous = queryClient.getQueryData<CategoryEntity[]>(categoryKeys.list());
-      queryClient.setQueryData<CategoryEntity[]>(categoryKeys.list(), (prev) => {
-        if (!prev) return prev;
-        return prev.map((cat) => (cat.id === id ? { ...cat, isArchived: true } : cat));
+      await queryClient.cancelQueries({ queryKey: categoryKeys.lists() });
+      const previous = queryClient.getQueriesData<CategoryEntity[]>({ queryKey: categoryKeys.lists() });
+      previous.forEach(([queryKey]) => {
+        queryClient.setQueryData<CategoryEntity[]>(queryKey, (prevData) => {
+          if (!prevData) return prevData;
+          const maybeFilters = (queryKey as any[])?.at(-1)?.filters as Required<CategoriesFilters> | undefined;
+          const includeArchived = !!maybeFilters?.includeArchived;
+
+          return prevData.flatMap((cat) => {
+            if (cat.id !== id) return [cat];
+            const archived = { ...cat, isArchived: true };
+            if (!includeArchived) return [];
+            return [archived];
+          });
+        });
       });
       return { previous };
     },
     onError: (err: any, _vars, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(categoryKeys.list(), context.previous);
+        context.previous.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       }
       toast.showError(err?.userMessage || 'Failed to archive category');
     },
