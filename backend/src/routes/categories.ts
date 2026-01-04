@@ -4,6 +4,7 @@ import { prisma } from '../prisma';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { BadRequestError, NotFoundError } from '../errors/AppError';
 import { cacheControl, CachePolicies } from '../middleware/cacheControl';
+import type { Prisma } from '@prisma/client';
 
 const router = Router();
 
@@ -39,6 +40,27 @@ const colorTokenEnum = z.enum(CATEGORY_ACCENT_TOKENS);
 
 function normalizeName(value: string): string {
   return value.trim().replace(/\s+/g, ' ');
+}
+
+function toTitleCase(value: string): string {
+  const normalized = normalizeName(value);
+  if (normalized === '') return '';
+
+  return normalized
+    .split(' ')
+    .map((word) => {
+      if (word === '') return word;
+      const hasLetter = /[a-zA-Z]/.test(word);
+      const hasUpper = /[A-Z]/.test(word);
+      const hasLower = /[a-z]/.test(word);
+      const hasNonAlpha = /[^a-zA-Z]/.test(word);
+
+      if (!hasLetter || hasNonAlpha || (hasUpper && hasLower)) return word;
+
+      const lower = word.toLowerCase();
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(' ');
 }
 
 function toNameKey(value: string): string {
@@ -86,19 +108,23 @@ router.post(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
     const input = createCategorySchema.parse(req.body);
-    const name = normalizeName(input.name);
+    const name = toTitleCase(input.name);
+    if (name.length === 0) {
+      throw new BadRequestError('Category name cannot be empty');
+    }
     const nameKey = toNameKey(name);
     const togglProjectId = normalizeTogglProjectId(input.togglProjectId);
 
     try {
+      const data: Prisma.CategoryCreateInput = {
+        name,
+        nameKey,
+        color: input.color,
+        icon: input.icon,
+        togglProjectId: togglProjectId ?? null,
+      };
       const created = await prisma.category.create({
-        data: {
-          name,
-          nameKey,
-          color: input.color,
-          icon: input.icon,
-          togglProjectId: togglProjectId ?? null,
-        },
+        data,
       });
       res.status(201).json(created);
     } catch (error: any) {
@@ -129,19 +155,21 @@ router.patch(
       }
     }
 
-    const data: Record<string, any> = {};
-    if (input.name !== undefined) {
-      const name = normalizeName(input.name);
-      data.name = name;
-      data.nameKey = toNameKey(name);
+    const name = input.name !== undefined ? toTitleCase(input.name) : undefined;
+    if (name !== undefined && name.length === 0) {
+      throw new BadRequestError('Category name cannot be empty');
     }
-    if (input.color !== undefined) data.color = input.color;
-    if (input.icon !== undefined) data.icon = input.icon;
-    if (input.togglProjectId !== undefined) {
-      data.togglProjectId = normalizeTogglProjectId(input.togglProjectId) ?? null;
-    }
-    if (input.isArchived !== undefined) data.isArchived = input.isArchived;
-    if (input.sortOrder !== undefined) data.sortOrder = input.sortOrder;
+
+    const data: Prisma.CategoryUpdateInput = {
+      ...(name !== undefined ? { name, nameKey: toNameKey(name) } : {}),
+      ...(input.color !== undefined ? { color: input.color } : {}),
+      ...(input.icon !== undefined ? { icon: input.icon } : {}),
+      ...(input.togglProjectId !== undefined
+        ? { togglProjectId: normalizeTogglProjectId(input.togglProjectId) ?? null }
+        : {}),
+      ...(input.isArchived !== undefined ? { isArchived: input.isArchived } : {}),
+      ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
+    };
 
     try {
       const updated = await prisma.category.update({
@@ -178,4 +206,3 @@ router.delete(
 );
 
 export default router;
-

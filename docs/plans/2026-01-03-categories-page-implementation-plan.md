@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Expand accent color tokens
+## Task 1: Expand accent color tokens
 
 **Files:**
 - Modify: `frontend/tailwind.config.js`
@@ -27,7 +27,7 @@
 
 ---
 
-### Task 2: Add backend Category model + routes
+## Task 2: Add backend Category model + routes
 
 **Files:**
 - Modify: `backend/prisma/schema.prisma`
@@ -54,7 +54,7 @@
 
 ---
 
-### Task 3: Add frontend Categories API + hooks
+## Task 3: Add frontend Categories API + hooks
 
 **Files:**
 - Modify: `frontend/src/types/index.ts`
@@ -68,7 +68,7 @@
 
 ---
 
-### Task 4: Build Categories page (table-like, inline autosave)
+## Task 4: Build Categories page (table-like, inline autosave)
 
 **Files:**
 - Create: `frontend/src/pages/CategoriesPage.tsx`
@@ -85,4 +85,3 @@
 
 **Test:**
 - Run: `cd frontend && npm test -- --runTestsByPath src/components/__tests__/LayoutNav.test.tsx`
-

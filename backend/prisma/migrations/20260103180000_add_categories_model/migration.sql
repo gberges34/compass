@@ -31,3 +31,14 @@ CREATE TABLE "Category" (
 -- CreateIndex
 CREATE UNIQUE INDEX "Category_nameKey_key" ON "Category"("nameKey");
 
+-- Seed system categories used throughout the app.
+INSERT INTO "Category" ("id", "name", "nameKey", "color", "icon", "isSystem", "isLocked", "sortOrder", "createdAt", "updatedAt")
+VALUES
+  (gen_random_uuid()::TEXT, 'Work', 'work', 'sky', '💼', true, false, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (gen_random_uuid()::TEXT, 'Personal', 'personal', 'mint', '🧩', true, false, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (gen_random_uuid()::TEXT, 'School', 'school', 'lavender', '📚', true, false, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (gen_random_uuid()::TEXT, 'Fitness', 'fitness', 'lime', '🏋️', true, true, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (gen_random_uuid()::TEXT, 'Music', 'music', 'orchid', '🎵', true, false, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (gen_random_uuid()::TEXT, 'Sleep', 'sleep', 'ice', '🛌', true, true, 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (gen_random_uuid()::TEXT, 'Other', 'other', 'butter', '📁', true, true, 6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT ("nameKey") DO NOTHING;
