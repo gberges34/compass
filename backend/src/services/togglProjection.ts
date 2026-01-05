@@ -47,18 +47,22 @@ export function syncPrimaryStart(slice: TimeSlice): Promise<void> {
       select: { category: true },
     });
 
-    let description = slice.category;
-    if (slice.linkedTaskId) {
-      const task = await prisma.task.findUnique({
-        where: { id: slice.linkedTaskId },
-        select: { name: true },
-      });
-      if (task?.name) {
-        description = task.name;
-      }
-    }
+    const description = slice.category;
 
-    const projectId = await resolveProjectIdForCategory(slice.category);
+    const linkedTaskCategoryId = slice.linkedTaskId
+      ? (
+          await prisma.task.findUnique({
+            where: { id: slice.linkedTaskId },
+            select: { categoryId: true },
+          })
+        )?.categoryId ?? null
+      : null;
+
+    const projectId = await resolveProjectIdForCategory(
+      linkedTaskCategoryId
+        ? { categoryId: linkedTaskCategoryId }
+        : { categoryName: slice.category }
+    );
 
     const tags = ['compass'];
     if (workMode?.category) {

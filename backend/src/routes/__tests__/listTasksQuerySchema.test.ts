@@ -13,14 +13,14 @@ describe('listTasksQuerySchema', () => {
     const parsed = listTasksQuerySchema.parse({
       status: 'NEXT',
       priority: 'MUST',
-      category: 'ADMIN',
+      categoryId: '11111111-1111-1111-1111-111111111111',
       limit: '10',
     });
 
     expect(parsed).toMatchObject({
       status: 'NEXT',
       priority: 'MUST',
-      category: 'ADMIN',
+      categoryId: '11111111-1111-1111-1111-111111111111',
       limit: 10,
     });
   });

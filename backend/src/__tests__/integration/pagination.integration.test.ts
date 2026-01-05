@@ -28,12 +28,27 @@ describe('Pagination Integration Tests', () => {
       isDatabaseAvailable = true;
 
       // Setup: Create test data
+      const personalCategory = await prisma.category.upsert({
+        where: { nameKey: 'personal' },
+        update: {},
+        create: {
+          name: 'Personal',
+          nameKey: 'personal',
+          color: 'mint',
+          icon: '🧩',
+          isSystem: true,
+          isLocked: false,
+          isArchived: false,
+          sortOrder: 0,
+        },
+      });
+
       await prisma.task.createMany({
         data: Array.from({ length: 50 }, (_, i) => ({
           name: `Test Task ${i}`,
           status: 'NEXT',
           priority: 'MUST',
-          category: 'PERSONAL',
+          categoryId: personalCategory.id,
           context: 'ANYWHERE',
           energyRequired: 'MEDIUM',
           duration: 30,
@@ -73,8 +88,8 @@ describe('Pagination Integration Tests', () => {
       const url: string = cursor ? `/api/tasks?cursor=${cursor}&limit=20` : '/api/tasks?limit=20';
       const response: any = await request(app).get(url).expect(200);
 
-      allTasks.push(...response.body.data);
-      cursor = response.body.pagination.nextCursor;
+      allTasks.push(...response.body.items);
+      cursor = response.body.nextCursor;
       pageCount++;
 
       // Safety check

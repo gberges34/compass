@@ -32,7 +32,8 @@ export interface Task {
   name: string;
   status: TaskStatus;
   priority: Priority;
-  category: Category;
+  categoryId: string;
+  category: CategoryEntity;
   context: Context;
   energyRequired: Energy;
   duration: number;
@@ -125,7 +126,7 @@ export interface ProcessCapturedTaskRequest {
   tempTaskId: string;
   name: string;
   priority: Priority;
-  category: Category;
+  categoryId: string;
   context: Context;
   energyRequired: Energy;
   duration: number;
@@ -136,6 +137,7 @@ export interface ProcessCapturedTaskRequest {
 
 export interface ActivateTaskResponse {
   task: Task;
+  slice?: any;
   focusMode: string;
   timeryProject: string;
   definitionOfDone: string;
@@ -187,7 +189,7 @@ import type { Event as BigCalendarEvent } from 'react-big-calendar';
 
 export interface TaskFilters {
   status?: TaskStatus;
-  category?: Category;
+  categoryId?: string;
   context?: Context;
   priority?: Priority;
   energyRequired?: Energy;

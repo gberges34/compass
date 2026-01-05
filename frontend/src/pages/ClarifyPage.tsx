@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import type { TempCapturedTask, Priority, Category, Energy, Context } from '../types';
+import type { TempCapturedTask, Priority, Energy, Context } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useTodoistPending } from '../hooks/useTodoist';
 import { useProcessCapturedTask } from '../hooks/useTasks';
+import { useCategories } from '../hooks/useCategories';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -28,9 +29,11 @@ const ClarifyPage: React.FC = () => {
   const [priority, setPriority] = useState<number>(1);
   const [duration, setDuration] = useState<number>(30);
   const [energy, setEnergy] = useState<Energy>('MEDIUM');
-  const [category, setCategory] = useState<Category>('PERSONAL');
+  const [categoryId, setCategoryId] = useState<string>('');
   const [context, setContext] = useState<Context>('ANYWHERE');
   const [definitionOfDone, setDefinitionOfDone] = useState('');
+
+  const { data: categories = [] } = useCategories();
 
   // Reset form when a task is selected
   useEffect(() => {
@@ -39,11 +42,12 @@ const ClarifyPage: React.FC = () => {
       setPriority(1); // Default to Must
       setDuration(30);
       setEnergy('MEDIUM');
-      setCategory('PERSONAL');
+      const personal = categories.find((cat) => cat.nameKey === 'personal');
+      setCategoryId(personal?.id || categories[0]?.id || '');
       setContext('ANYWHERE');
       setDefinitionOfDone('');
     }
-  }, [selectedTask]);
+  }, [selectedTask, categories]);
 
   const handleSelectTask = (task: TempCapturedTask) => {
     setSelectedTask(task);
@@ -54,6 +58,10 @@ const ClarifyPage: React.FC = () => {
 
     if (definitionOfDone.trim().length < 5) {
       toast.showError('Please provide a Definition of Done');
+      return;
+    }
+    if (!categoryId) {
+      toast.showError('Please select a Category');
       return;
     }
 
@@ -71,7 +79,7 @@ const ClarifyPage: React.FC = () => {
         tempTaskId: selectedTask.id,
         name: name.trim(),
         priority: priorityMap[priority],
-        category,
+        categoryId,
         context,
         energyRequired: energy,
         duration,
@@ -208,24 +216,16 @@ const ClarifyPage: React.FC = () => {
                       <label className="block text-small font-medium text-ink mb-4">
                         Category
                       </label>
-                      <Select
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value as Category)}
-                        options={[
-                          { value: 'SCHOOL', label: 'School' },
-                          { value: 'MUSIC', label: 'Music' },
-                          { value: 'FITNESS', label: 'Fitness' },
-                          { value: 'GAMING', label: 'Gaming' },
-                          { value: 'NUTRITION', label: 'Nutrition' },
-                          { value: 'HYGIENE', label: 'Hygiene' },
-                          { value: 'PET', label: 'Pet' },
-                          { value: 'SOCIAL', label: 'Social' },
-                          { value: 'PERSONAL', label: 'Personal' },
-                          { value: 'ADMIN', label: 'Admin' },
-                        ]}
-                        fullWidth
-                        disabled={isProcessing}
-                      />
+	                      <Select
+	                        value={categoryId}
+	                        onChange={(e) => setCategoryId(e.target.value)}
+	                        options={categories.map((category) => ({
+	                          value: category.id,
+	                          label: `${category.icon} ${category.name}`,
+	                        }))}
+	                        fullWidth
+	                        disabled={isProcessing}
+	                      />
                     </div>
 
                     <div>

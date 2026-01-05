@@ -6,18 +6,19 @@ import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { enUS } from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
-import type { Task, CalendarEvent, Category } from '../types';
+import type { Task, CalendarEvent } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useFlatTasks } from '../hooks/useTasks';
 import { useTodayPlan } from '../hooks/useDailyPlans';
 import { useDocumentVisibility } from '../hooks/useDocumentVisibility';
 import { useScheduleTask, useUnscheduleTask, useUpdateTask } from '../hooks/useTasks';
 import { useCalendarEvents } from '../hooks/useCalendarEvents';
+import { useCategories } from '../hooks/useCategories';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import { getPriorityBadgeVariant, getEnergyBadgeVariant } from '../lib/badgeUtils';
-import { categoryColors } from '../lib/designTokens';
+import { getCategoryAccentTokenConfig } from '../lib/designTokens';
 import {
   formatDisplayDateTime,
   formatDisplayDate,
@@ -44,8 +45,8 @@ const localizer = dateFnsLocalizer({
 const DnDCalendar = withDragAndDrop<CalendarEvent>(Calendar);
 
 // Category color mapping - defined outside component to prevent recreations
-const getCategoryColor = (category: Category): string => {
-  return categoryColors[category]?.hex || '#6b7280';
+const getCategoryColor = (colorToken: string): string => {
+  return getCategoryAccentTokenConfig(colorToken).hex || '#6b7280';
 };
 
 // Memoized UnscheduledTaskCard component to prevent unnecessary re-renders
@@ -66,7 +67,7 @@ const UnscheduledTaskCard = React.memo<UnscheduledTaskCardProps>(({ task, index,
       className="border border-stone rounded-card p-12 cursor-move hover:shadow-e02 transition-shadow duration-micro bg-snow"
       style={{
         borderLeftWidth: '4px',
-        borderLeftColor: getCategoryColor(task.category),
+        borderLeftColor: getCategoryColor(task.category.color),
       }}
     >
       <div className="flex items-start justify-between mb-8">
@@ -83,7 +84,7 @@ const UnscheduledTaskCard = React.memo<UnscheduledTaskCardProps>(({ task, index,
       </h3>
       <div className="flex items-center justify-between text-micro text-slate mb-8">
         <span>{task.duration} min</span>
-        <span>{task.category}</span>
+        <span>{task.category.name}</span>
       </div>
       <Button
         variant="primary"
@@ -107,6 +108,7 @@ const CalendarPage: React.FC = () => {
   // React Query hooks - replace manual state management
   // TODO: Add back refetchInterval support for infinite queries
   const { tasks = [], isLoading: tasksLoading } = useFlatTasks({ status: 'NEXT' });
+  const { data: categories = [] } = useCategories();
   const { data: todayPlan, isLoading: planLoading } = useTodayPlan({
     refetchInterval,
     refetchIntervalInBackground: false,
@@ -310,7 +312,7 @@ const CalendarPage: React.FC = () => {
       let color = 'white';
 
       if (calendarEvent.type === 'task' && calendarEvent.task) {
-        backgroundColor = getCategoryColor(calendarEvent.task.category);
+        backgroundColor = getCategoryColor(calendarEvent.task.category.color);
         borderColor = backgroundColor;
       } else if (calendarEvent.type === 'plannedBlock') {
         backgroundColor = '#0ea5e9';
@@ -385,7 +387,7 @@ const CalendarPage: React.FC = () => {
   const tooltipAccessor = useCallback((event: BigCalendarEvent) => {
     const calendarEvent = event as unknown as CalendarEvent;
     if (calendarEvent.task) {
-      return `${calendarEvent.title}\nDuration: ${calendarEvent.task.duration} min\nCategory: ${calendarEvent.task.category}`;
+      return `${calendarEvent.title}\nDuration: ${calendarEvent.task.duration} min\nCategory: ${calendarEvent.task.category.name}`;
     }
     return calendarEvent.title;
   }, []);
@@ -498,21 +500,26 @@ const CalendarPage: React.FC = () => {
                 <span className="text-ink">Planned Blocks</span>
               </div>
               <div className="pt-8 border-t border-fog">
-                <p className="text-slate font-medium mb-8 text-small">Task Categories:</p>
-                <div className="grid grid-cols-2 gap-4">
-                  {Object.entries(categoryColors).map(([category, config]) => (
-                    <div key={category} className="flex items-center">
-                      <div
-                        className="w-12 h-12 rounded mr-4"
-                        style={{ backgroundColor: config.hex }}
-                      ></div>
-                      <span className="text-ink text-micro">{config.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Card>
+	                <p className="text-slate font-medium mb-8 text-small">Task Categories:</p>
+	                <div className="grid grid-cols-2 gap-4">
+	                  {categories.map((category) => {
+	                    const config = getCategoryAccentTokenConfig(category.color);
+	                    return (
+	                      <div key={category.id} className="flex items-center">
+	                        <div
+	                          className="w-12 h-12 rounded mr-4"
+	                          style={{ backgroundColor: config.hex }}
+	                        />
+	                        <span className="text-ink text-micro">
+	                          {category.icon} {category.name}
+	                        </span>
+	                      </div>
+	                    );
+	                  })}
+	                </div>
+	              </div>
+	            </div>
+	          </Card>
         </div>
 
         {/* Calendar */}
@@ -609,7 +616,7 @@ const CalendarPage: React.FC = () => {
 
                 <div>
                   <h3 className="font-medium text-ink mb-4">Category</h3>
-                  <span className="text-slate">{selectedTask.category}</span>
+                  <span className="text-slate">{selectedTask.category.name}</span>
                 </div>
 
                 <div>

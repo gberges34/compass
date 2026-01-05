@@ -123,7 +123,7 @@ export const getTasks = async (
 ): Promise<PaginatedResponse<Task>> => {
   const params = new URLSearchParams();
   if (filters?.status) params.append('status', filters.status);
-  if (filters?.category) params.append('category', filters.category);
+  if (filters?.categoryId) params.append('categoryId', filters.categoryId);
   if (filters?.context) params.append('context', filters.context);
   if (filters?.priority) params.append('priority', filters.priority);
   if (filters?.energyRequired) params.append('energyRequired', filters.energyRequired);
@@ -324,12 +324,12 @@ export const createWeeklyReview = async (request: CreateReviewRequest): Promise<
 export const getPostDoLogs = async (filters?: {
   startDate?: string;
   endDate?: string;
-  category?: string;
+  categoryId?: string;
 }): Promise<PostDoLog[]> => {
   const params = new URLSearchParams();
   if (filters?.startDate) params.append('startDate', filters.startDate);
   if (filters?.endDate) params.append('endDate', filters.endDate);
-  if (filters?.category) params.append('category', filters.category);
+  if (filters?.categoryId) params.append('categoryId', filters.categoryId);
 
   const response = await api.get<PaginatedResponse<PostDoLog>>(`/postdo?${params.toString()}`);
   return response.data.items; // Extract items from paginated response

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import type { Task, Priority, Category, Context, Energy } from '../types';
+import type { Task, Priority, Context, Energy, CategoryEntity } from '../types';
 import { dateToISO } from '../lib/dateUtils';
 import Button from './Button';
 import Input from './Input';
 import Modal from './Modal';
 import Select from './Select';
 import EnergySelector from './EnergySelector';
+import { useCategories } from '../hooks/useCategories';
 
 interface TaskModalProps {
   mode: 'create' | 'edit';
@@ -17,7 +18,7 @@ interface TaskModalProps {
 const TaskModal: React.FC<TaskModalProps> = ({ mode, task, onClose, onSave }) => {
   const [name, setName] = useState('');
   const [priority, setPriority] = useState<Priority>('SHOULD');
-  const [category, setCategory] = useState<Category>('PERSONAL');
+  const [categoryId, setCategoryId] = useState<string>('');
   const [context, setContext] = useState<Context>('ANYWHERE');
   const [energyRequired, setEnergyRequired] = useState<Energy>('MEDIUM');
   const [duration, setDuration] = useState(30);
@@ -27,11 +28,13 @@ const TaskModal: React.FC<TaskModalProps> = ({ mode, task, onClose, onSave }) =>
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { data: categories = [] } = useCategories({ includeArchived: mode === 'edit' });
+
   useEffect(() => {
     if (mode === 'edit' && task) {
       setName(task.name);
       setPriority(task.priority);
-      setCategory(task.category);
+      setCategoryId(task.categoryId);
       setContext(task.context);
       setEnergyRequired(task.energyRequired);
       setDuration(task.duration);
@@ -40,6 +43,19 @@ const TaskModal: React.FC<TaskModalProps> = ({ mode, task, onClose, onSave }) =>
       setScheduledStart(task.scheduledStart || '');
     }
   }, [mode, task]);
+
+  useEffect(() => {
+    if (mode !== 'create') return;
+    if (categoryId) return;
+    if (categories.length === 0) return;
+
+    const personal = categories.find((cat) => cat.nameKey === 'personal');
+    setCategoryId(personal?.id || categories[0].id);
+  }, [categories, categoryId, mode]);
+
+  const visibleCategories: CategoryEntity[] = categories.filter(
+    (cat) => !cat.isArchived || cat.id === categoryId
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,13 +74,17 @@ const TaskModal: React.FC<TaskModalProps> = ({ mode, task, onClose, onSave }) =>
       setError('Duration must be greater than 0');
       return;
     }
+    if (!categoryId) {
+      setError('Category is required');
+      return;
+    }
 
     setSaving(true);
     try {
       const taskData: Partial<Task> = {
         name: name.trim(),
         priority,
-        category,
+        categoryId,
         context,
         energyRequired,
         duration,
@@ -152,20 +172,12 @@ const TaskModal: React.FC<TaskModalProps> = ({ mode, task, onClose, onSave }) =>
 
           <Select
             label="Category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value as Category)}
-            options={[
-              { value: 'SCHOOL', label: 'School' },
-              { value: 'MUSIC', label: 'Music' },
-              { value: 'FITNESS', label: 'Fitness' },
-              { value: 'GAMING', label: 'Gaming' },
-              { value: 'NUTRITION', label: 'Nutrition' },
-              { value: 'HYGIENE', label: 'Hygiene' },
-              { value: 'PET', label: 'Pet' },
-              { value: 'SOCIAL', label: 'Social' },
-              { value: 'PERSONAL', label: 'Personal' },
-              { value: 'ADMIN', label: 'Admin' },
-            ]}
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            options={visibleCategories.map((cat) => ({
+              value: cat.id,
+              label: `${cat.icon} ${cat.name}${cat.isArchived ? ' (Archived)' : ''}`,
+            }))}
             fullWidth
             disabled={saving}
           />
